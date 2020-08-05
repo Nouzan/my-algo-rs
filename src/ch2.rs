@@ -1,0 +1,207 @@
+use std::ops::Deref;
+
+/// 下标错误类型.
+#[derive(Debug)]
+pub struct IndexError;
+
+/// 元素类型为`Item`的线性表.
+pub trait List<Item> {
+    /// 创建一个空的线性表.
+    fn new() -> Self;
+
+    /// 判断线性表是否为空.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// 获取线性表的长度.
+    fn len(&self) -> usize;
+
+    /// 获取序号为`index`的元素.
+    ///
+    /// # Errors
+    ///
+    /// 若位置不合法, 返回错误.
+    fn get(&self, index: usize) -> Result<&Item, IndexError>;
+
+    /// 在位置`index`插入元素. 新元素将会被放置在位置`index`, 原来`index`位置及其后元素后移1位.
+    ///
+    /// # Errors
+    ///
+    /// 若位置不合法, 返回错误.
+    fn insert(&mut self, index: usize, x: Item) -> Result<(), IndexError>;
+
+    /// 删除位置`index`上的元素. 其后元素将会前移1位置, 填补空缺.
+    ///
+    /// # Errors
+    ///
+    /// 若位置不合法, 返回错误.
+    fn delete(&mut self, index: usize) -> Result<Item, IndexError>;
+}
+
+impl<T, U> PartialEqListExt<U> for T
+where
+    T: List<U>,
+    U: PartialEq,
+{
+}
+
+/// `List` trait的一个扩展trait, 提供了一些基于判等的方法.
+pub trait PartialEqListExt<Item: PartialEq>: List<Item> {
+    /// 查找值等于`x`的元素, 找到后返回序号, 若未找到则返回`None`.
+    fn locate(&self, x: &Item) -> Option<usize> {
+        for i in 0..self.len() {
+            if *x == *self.get(i).unwrap() {
+                return Some(i);
+            }
+        }
+        None
+    }
+}
+
+impl<T, U> PartialOrdListExt<U> for T
+where
+    T: List<U>,
+    U: PartialOrd,
+{
+}
+
+/// `List` trait的一个扩展trait, 提供了一些基于偏序的方法.
+pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
+    /// 寻找第一个极小元的位置. 若表空, 则返回`None`.
+    fn locate_min(&self) -> Option<usize> {
+        if !self.is_empty() {
+            let mut min = 0;
+            for i in 1..self.len() {
+                let x = self.get(i).unwrap();
+                let y = self.get(min).unwrap();
+                if *x < *y {
+                    min = i;
+                }
+            }
+            Some(min)
+        } else {
+            None
+        }
+    }
+
+    /// 删除第一个极小元. 若表空, 则返回`None`.
+    fn delete_min(&mut self) -> Option<Item> {
+        self.locate_min().map(|idx| {
+            self.delete(idx).unwrap()
+        })
+    }
+}
+
+impl<T> List<T> for Vec<T> {
+    fn new() -> Self {
+        Vec::new()
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn get(&self, index: usize) -> Result<&T, IndexError> {
+        if index < self.len() {
+            Ok((self as &dyn Deref<Target = [T]>).get(index).unwrap())
+        } else {
+            Err(IndexError {})
+        }
+    }
+
+    fn insert(&mut self, index: usize, x: T) -> Result<(), IndexError> {
+        if index <= self.len() {
+            self.push(x);
+            let mut i = self.len() - 1;
+            while i != index {
+                self.swap(i - 1, i);
+                i -= 1;
+            }
+            Ok(())
+        } else {
+            Err(IndexError {})
+        }
+    }
+
+    fn delete(&mut self, index: usize) -> Result<T, IndexError> {
+        if index < self.len() {
+            let mut i = index;
+            let last = self.len() - 1;
+            while i != last {
+                self.swap(i, i + 1);
+                i += 1;
+            }
+            Ok(self.pop().unwrap())
+        } else {
+            Err(IndexError {})
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::{IndexError, List, PartialEqListExt, PartialOrdListExt};
+
+    #[test]
+    fn test_insert() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        assert_eq!(List::len(&x), 0);
+        assert!(List::is_empty(&x));
+        List::insert(&mut x, 0, 11)?;
+        assert_eq!(*List::get(&x, 0)?, 11);
+        assert_eq!(List::len(&x), 1);
+        List::insert(&mut x, 0, 12)?;
+        assert_eq!(List::len(&x), 2);
+        assert_eq!(*List::get(&x, 1)?, 11);
+        assert_eq!(*List::get(&x, 0)?, 12);
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        List::insert(&mut x, 0, 11)?;
+        assert_eq!(*List::get(&x, 0)?, 11);
+        List::insert(&mut x, 0, 12)?;
+        assert_eq!(*List::get(&x, 1)?, 11);
+        assert_eq!(*List::get(&x, 0)?, 12);
+        List::delete(&mut x, 0)?;
+        assert_eq!(List::len(&x), 1);
+        assert_eq!(*List::get(&x, 0)?, 11);
+        List::delete(&mut x, 0)?;
+        assert_eq!(List::len(&x), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn test_locate() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        List::insert(&mut x, 0, 11)?;
+        assert_eq!(PartialEqListExt::locate(&x, &11), Some(0));
+        Ok(())
+    }
+
+    #[test]
+    fn test_locate_min() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        List::insert(&mut x, 0, 11)?;
+        assert_eq!(x.locate_min(), Some(0));
+        List::insert(&mut x, 0, 10)?;
+        assert_eq!(x.locate_min(), Some(0));
+        List::insert(&mut x, 2, 9)?;
+        assert_eq!(x.locate_min(), Some(2));
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_min() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        List::insert(&mut x, 0, 11)?;
+        List::insert(&mut x, 0, 10)?;
+        List::insert(&mut x, 2, 9)?;
+        assert_eq!(x.delete_min(), Some(9));
+        assert_eq!(List::len(&x), 2);
+        Ok(())
+    }
+}
