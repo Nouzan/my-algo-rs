@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 /// 下标错误类型.
 #[derive(Debug)]
@@ -14,15 +14,45 @@ pub trait List<Item> {
         self.len() == 0
     }
 
+    /// 判断下标是否越界(访问时).
+    fn is_index_read_valid(&self, index: usize) -> bool {
+        index < self.len()
+    }
+
+    /// 判断下标是否越界(插入时).
+    fn is_index_insert_valid(&self, index: usize) -> bool {
+        index <= self.len()
+    }
+
+    /// 交换`i`, `j`两个位置的元素.
+    fn swap(&mut self, i: usize, j: usize) -> Result<(), IndexError>;
+
+    /// 逆置所有元素.
+    fn reverse(&mut self) {
+        let (mut i, mut j) = (0, self.len() - 1);
+        while i < j {
+            self.swap(i, j).unwrap();
+            i += 1;
+            j -= 1;
+        }
+    }
+
     /// 获取线性表的长度.
     fn len(&self) -> usize;
 
-    /// 获取序号为`index`的元素.
+    /// 获取序号为`index`的元素的只读引用.
     ///
     /// # Errors
     ///
     /// 若位置不合法, 返回错误.
     fn get(&self, index: usize) -> Result<&Item, IndexError>;
+
+    /// 获取序号为`index`的元素的可写引用.
+    ///
+    /// # Errors
+    ///
+    /// 若位置不合法, 返回错误.
+    fn get_mut(&mut self, index: usize) -> Result<&mut Item, IndexError>;
 
     /// 在位置`index`插入元素. 新元素将会被放置在位置`index`, 原来`index`位置及其后元素后移1位.
     ///
@@ -85,10 +115,11 @@ pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
         }
     }
 
-    /// 删除第一个极小元. 若表空, 则返回`None`.
+    /// 删除第一个极小元. 若表空, 则返回`None`. 这不是一个保序的算法.
     fn delete_min(&mut self) -> Option<Item> {
         self.locate_min().map(|idx| {
-            self.delete(idx).unwrap()
+            self.swap(idx, self.len() - 1).unwrap();
+            self.delete(self.len() - 1).unwrap()
         })
     }
 }
@@ -103,19 +134,40 @@ impl<T> List<T> for Vec<T> {
     }
 
     fn get(&self, index: usize) -> Result<&T, IndexError> {
-        if index < self.len() {
+        if self.is_index_read_valid(index) {
             Ok((self as &dyn Deref<Target = [T]>).get(index).unwrap())
         } else {
             Err(IndexError {})
         }
     }
 
+    fn get_mut(&mut self, index: usize) -> Result<&mut T, IndexError> {
+        if self.is_index_read_valid(index) {
+            Ok((self as &mut dyn DerefMut<Target = [T]>)
+                .get_mut(index)
+                .unwrap())
+        } else {
+            Err(IndexError {})
+        }
+    }
+
+    fn swap(&mut self, i: usize, j: usize) -> Result<(), IndexError> {
+        if i == j {
+            Ok(())
+        } else if self.is_index_read_valid(i) && self.is_index_read_valid(j) {
+            (self as &mut dyn DerefMut<Target = [T]>).swap(i, j);
+            Ok(())
+        } else {
+            Err(IndexError {})
+        }
+    }
+
     fn insert(&mut self, index: usize, x: T) -> Result<(), IndexError> {
-        if index <= self.len() {
+        if self.is_index_insert_valid(index) {
             self.push(x);
             let mut i = self.len() - 1;
             while i != index {
-                self.swap(i - 1, i);
+                (self as &mut dyn DerefMut<Target = [T]>).swap(i - 1, i);
                 i -= 1;
             }
             Ok(())
@@ -125,11 +177,11 @@ impl<T> List<T> for Vec<T> {
     }
 
     fn delete(&mut self, index: usize) -> Result<T, IndexError> {
-        if index < self.len() {
+        if self.is_index_read_valid(index) {
             let mut i = index;
             let last = self.len() - 1;
             while i != last {
-                self.swap(i, i + 1);
+                (self as &mut dyn DerefMut<Target = [T]>).swap(i, i + 1);
                 i += 1;
             }
             Ok(self.pop().unwrap())
@@ -202,6 +254,32 @@ mod test {
         List::insert(&mut x, 2, 9)?;
         assert_eq!(x.delete_min(), Some(9));
         assert_eq!(List::len(&x), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_reverse() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        List::insert(&mut x, 0, 11)?;
+        List::insert(&mut x, 0, 10)?;
+        List::insert(&mut x, 2, 9)?;
+        // before: 10, 11, 9
+        assert_eq!(*List::get(&x, 0)?, 10);
+        assert_eq!(*List::get(&x, 1)?, 11);
+        assert_eq!(*List::get(&x, 2)?, 9);
+        List::reverse(&mut x);
+        // after: 9, 11, 10
+        assert_eq!(*List::get(&x, 0)?, 9);
+        assert_eq!(*List::get(&x, 1)?, 11);
+        assert_eq!(*List::get(&x, 2)?, 10);
+        List::insert(&mut x, 0, 12)?;
+        // before: 12, 9, 11, 10
+        List::reverse(&mut x);
+        // after: 10, 11, 9, 12
+        assert_eq!(*List::get(&x, 0)?, 10);
+        assert_eq!(*List::get(&x, 1)?, 11);
+        assert_eq!(*List::get(&x, 2)?, 9);
+        assert_eq!(*List::get(&x, 3)?, 12);
         Ok(())
     }
 }
