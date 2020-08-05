@@ -87,6 +87,16 @@ pub trait PartialEqListExt<Item: PartialEq>: List<Item> {
         }
         None
     }
+
+    /// 删除所有值等于`x`的元素. 这是一个不保序的算法.
+    fn delete_all(&mut self, x: &Item) {
+        for i in (0..self.len()).rev() {
+            if *self.get(i).unwrap() == *x {
+                self.swap(i, self.len() - 1).unwrap();
+                self.delete(self.len() - 1).unwrap();
+            }
+        }
+    }
 }
 
 impl<T, U> PartialOrdListExt<U> for T
@@ -98,6 +108,42 @@ where
 
 /// `List` trait的一个扩展trait, 提供了一些基于偏序的方法.
 pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
+    /// 快速排序中的helper function.
+    /// # Panics
+    /// 越界时报错.
+    fn partition(&mut self, begin: usize, end: usize) -> Option<usize> {
+        let mut k = None;
+        for i in begin..end {
+            let x = self.get(end).unwrap();
+            let y = self.get(i).unwrap();
+            if *y < *x {
+                k = k.map_or(Some(begin), |v| Some(v + 1));
+                self.swap(i, k.unwrap()).unwrap();
+            }
+        }
+        k = k.map_or(Some(begin), |v| Some(v + 1));
+        self.swap(end, k.unwrap()).unwrap();
+        k
+    }
+
+    /// 对`begin`~`end`之间的元素进行快速排序.
+    fn sort_between(&mut self, begin: usize, end: usize) {
+        if begin < end && self.is_index_read_valid(begin) && self.is_index_read_valid(end) {
+            let k = self.partition(begin, end).unwrap(); // 这里一定是一个Some.
+            if k > begin {
+                self.sort_between(begin, k - 1);
+            }
+            self.sort_between(k + 1, end);
+        }
+    }
+
+    /// 快速排序.
+    fn sort(&mut self) {
+        if !self.is_empty() {
+            self.sort_between(0, self.len() - 1);
+        }
+    }
+
     /// 寻找第一个极小元的位置. 若表空, 则返回`None`.
     fn locate_min(&self) -> Option<usize> {
         if !self.is_empty() {
@@ -280,6 +326,45 @@ mod test {
         assert_eq!(*List::get(&x, 1)?, 11);
         assert_eq!(*List::get(&x, 2)?, 9);
         assert_eq!(*List::get(&x, 3)?, 12);
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_all() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1].iter() {
+            let len = x.len();
+            List::insert(&mut x, len, *v)?;
+        }
+
+        x.delete_all(&1);
+
+        for (idx, v) in vec![7, 7, 9, 11, 2, 3, 11, 5].iter().enumerate() {
+            assert_eq!(*List::get(&x, idx)?, *v);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_sort() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        x.sort();
+        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
+            let len = x.len();
+            List::insert(&mut x, len, *v)?;
+            x.sort();
+        }
+
+        x.sort();
+
+        for (idx, v) in vec![1, 1, 1, 2, 3, 5, 6, 7, 7, 9, 11, 11]
+            .iter()
+            .enumerate()
+        {
+            assert_eq!(*List::get(&x, idx)?, *v);
+        }
+
         Ok(())
     }
 }
