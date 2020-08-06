@@ -3,7 +3,7 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 struct Opt {
-    input: u64,
+    input: usize,
 }
 
 fn main() {
