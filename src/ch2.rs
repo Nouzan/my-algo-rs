@@ -108,24 +108,46 @@ where
 
 /// `List` trait的一个扩展trait, 提供了一些基于偏序的方法.
 pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
-    /// 删除有序表中值介于`x`,`y`之间的所有元素(`x` < `y`, 且不含`x`, `y`), 返回被删除的元素列表. 这是一个保序的算法, 但返回的列表并不保持顺序.
+    /// 删除有序表中值介于`x`,`y`之间的所有元素(`x` < `y`, 不含`x`及`y`), 返回被删除的元素列表. 这是一个保序的算法, 但返回的列表并不保持顺序.
     /// # Correctness
     /// 此方法要求表有序(且为顺序).
-    /// 算法的正确性依赖于交换循环的不变式: `j`始终指向首个需要被删除的元素, `k`始终指向首个不需要被删除的元素.
     fn delete_between(&mut self, x: &Item, y: &Item) -> Vec<Item> {
+        self.delete_between_opt(x, y, false)
+    }
+
+    /// 删除有序表中值介于`x`,`y`之间的所有元素(`x` < `y`, 若`contain`为`true`则包含`x`及`y`), 返回被删除的元素列表. 这是一个保序的算法, 但返回的列表并不保持顺序.
+    /// # Correctness
+    /// 此方法要求表有序(且为顺序).
+    ///
+    /// 算法的正确性依赖于交换循环的不变式: `j`始终指向首个需要被删除的元素, `k`始终指向首个不需要被删除的元素.
+    fn delete_between_opt(&mut self, x: &Item, y: &Item, contain: bool) -> Vec<Item> {
         if self.is_empty() || *x >= *y {
             vec![]
         } else {
             let (mut j, mut k) = (None, None);
-            for i in 0..self.len() {
-                let z = self.get(i).unwrap();
-                if *z <= *x {
-                    j = Some(i);
+            if contain {
+                for i in 0..self.len() {
+                    let z = self.get(i).unwrap();
+                    if *z < *x {
+                        j = Some(i);
+                    }
+                    if *z <= *y {
+                        k = Some(i);
+                    } else {
+                        break;
+                    }
                 }
-                if *z < *y {
-                    k = Some(i);
-                } else {
-                    break;
+            } else {
+                for i in 0..self.len() {
+                    let z = self.get(i).unwrap();
+                    if *z <= *x {
+                        j = Some(i);
+                    }
+                    if *z < *y {
+                        k = Some(i);
+                    } else {
+                        break;
+                    }
                 }
             }
             let mut j = j.map_or(0, |v| v + 1);
@@ -432,6 +454,34 @@ mod test {
         let mut res = x.delete_between(&0, &100);
         res.sort();
         assert_eq!(res, vec![1, 1, 1, 2, 3, 9, 11, 11]);
+        assert!(x.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_between_opt() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        let res = x.delete_between_opt(&1, &2, true);
+        assert_eq!(res, vec![]);
+        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
+            let len = x.len();
+            List::insert(&mut x, len, *v)?;
+        }
+        x.sort();
+        let res = x.delete_between_opt(&7, &4, true);
+        assert_eq!(res, vec![]);
+        let mut res = x.delete_between_opt(&3, &9, true);
+        res.sort();
+        for (idx, v) in vec![3, 5, 6, 7, 7, 9].iter().enumerate() {
+            assert_eq!(*List::get(&res, idx)?, *v);
+        }
+        for (idx, v) in vec![1, 1, 1, 2, 11, 11].iter().enumerate() {
+            assert_eq!(*List::get(&x, idx)?, *v);
+        }
+        let mut res = x.delete_between_opt(&0, &11, true);
+        res.sort();
+        assert_eq!(res, vec![1, 1, 1, 2, 11, 11]);
         assert!(x.is_empty());
 
         Ok(())
