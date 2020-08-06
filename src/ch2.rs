@@ -108,6 +108,27 @@ where
 
 /// `List` trait的一个扩展trait, 提供了一些基于偏序的方法.
 pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
+    /// 对有序表去重. 这是一个保序的算法.
+    /// # Correctness
+    /// 此方法要求表有序(且为顺序).
+    fn dedup_sorted(&mut self) {
+        if !self.is_empty() {
+            let mut k: usize = 0; // k始终指向已知最后一个不重复的元素
+            for i in 1..self.len() {
+                let x = self.get(k).unwrap();
+                let y = self.get(i).unwrap();
+                if *x != *y {
+                    k += 1;
+                    self.swap(k, i).unwrap();
+                }
+            }
+            k += 1;
+            for i in (k..self.len()).rev() {
+                self.delete(i).unwrap();
+            }
+        }
+    }
+
     /// 删除表中值介于`x`, `y`之间(含)的所有元素(`x` < `y`), 返回被删除的元素列表. 这是一个保序的算法, 但返回的列表并不保持顺序.
     /// 注意: 该方法与`delete_between`不同, 不要求表是有序的.
     fn delete_between_unsorted(&mut self, x: &Item, y: &Item) -> Vec<Item> {
@@ -558,6 +579,19 @@ mod test {
         assert_eq!(res, vec![1, 1, 1, 2, 11, 11]);
         assert!(x.is_empty());
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_dedup_sorted() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
+            let len = x.len();
+            List::insert(&mut x, len, *v)?;
+        }
+        x.sort();
+        x.dedup_sorted();
+        assert_eq!(x, vec![1, 2, 3, 5, 6, 7, 9, 11]);
         Ok(())
     }
 }
