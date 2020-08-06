@@ -108,6 +108,29 @@ where
 
 /// `List` trait的一个扩展trait, 提供了一些基于偏序的方法.
 pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
+    /// 删除表中值介于`x`, `y`之间(含)的所有元素(`x` < `y`), 返回被删除的元素列表. 这是一个保序的算法, 但返回的列表并不保持顺序.
+    /// 注意: 该方法与`delete_between`不同, 不要求表是有序的.
+    fn delete_between_unsorted(&mut self, x: &Item, y: &Item) -> Vec<Item> {
+        if self.is_empty() || *x >= *y {
+            vec![]
+        } else {
+            let mut k: Option<usize> = None; // 始终指向已知最后一个不需要删除的元素
+            for i in 0..self.len() {
+                let z = self.get(i).unwrap();
+                if *z < *x || *y < *z {
+                    k = k.map_or(Some(0), |v| Some(v + 1));
+                    self.swap(i, k.unwrap()).unwrap();
+                }
+            }
+            let k = k.map_or(0, |v| v + 1);
+            let mut result = vec![];
+            for i in (k..self.len()).rev() {
+                result.push(self.delete(i).unwrap());
+            }
+            result
+        }
+    }
+
     /// 删除有序表中值介于`x`,`y`之间的所有元素(`x` < `y`, 不含`x`及`y`), 返回被删除的元素列表. 这是一个保序的算法, 但返回的列表并不保持顺序.
     /// # Correctness
     /// 此方法要求表有序(且为顺序).
@@ -480,6 +503,57 @@ mod test {
             assert_eq!(*List::get(&x, idx)?, *v);
         }
         let mut res = x.delete_between_opt(&0, &11, true);
+        res.sort();
+        assert_eq!(res, vec![1, 1, 1, 2, 11, 11]);
+        assert!(x.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_between_unsorted_sorted() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        let res = x.delete_between_unsorted(&1, &2);
+        assert_eq!(res, vec![]);
+        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
+            let len = x.len();
+            List::insert(&mut x, len, *v)?;
+        }
+        x.sort();
+        let res = x.delete_between_unsorted(&7, &4);
+        assert_eq!(res, vec![]);
+        let mut res = x.delete_between_unsorted(&3, &9);
+        res.sort();
+        for (idx, v) in vec![3, 5, 6, 7, 7, 9].iter().enumerate() {
+            assert_eq!(*List::get(&res, idx)?, *v);
+        }
+        for (idx, v) in vec![1, 1, 1, 2, 11, 11].iter().enumerate() {
+            assert_eq!(*List::get(&x, idx)?, *v);
+        }
+        let mut res = x.delete_between_unsorted(&0, &11);
+        res.sort();
+        assert_eq!(res, vec![1, 1, 1, 2, 11, 11]);
+        assert!(x.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_between_unsorted_unsorted() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = List::new();
+        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
+            let len = x.len();
+            List::insert(&mut x, len, *v)?;
+        }
+        let mut res = x.delete_between_unsorted(&3, &9);
+        res.sort();
+        for (idx, v) in vec![3, 5, 6, 7, 7, 9].iter().enumerate() {
+            assert_eq!(*List::get(&res, idx)?, *v);
+        }
+        for (idx, v) in vec![1, 11, 2, 1, 11, 1].iter().enumerate() {
+            assert_eq!(*List::get(&x, idx)?, *v);
+        }
+        let mut res = x.delete_between_unsorted(&0, &11);
         res.sort();
         assert_eq!(res, vec![1, 1, 1, 2, 11, 11]);
         assert!(x.is_empty());
