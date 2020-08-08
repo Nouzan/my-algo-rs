@@ -69,6 +69,37 @@ pub trait List<Item> {
     fn delete(&mut self, index: usize) -> Result<Item, IndexError>;
 }
 
+impl<T, U> ListExt<U> for T where T: List<U> {}
+
+/// `List` trait的一个扩展trait.
+pub trait ListExt<Item>: List<Item> {
+    /// 将`[0, index)`与`[index, len)`位置上的进行交换, 即交换后变为`[index, len), [0, index)`.
+    fn swap_at(&mut self, index: usize) -> Result<(), IndexError>
+    where
+        Self: Sized,
+    {
+        if self.is_index_read_valid(index) {
+            let mut front = Self::new();
+            let mut back = Self::new();
+            for i in (index..self.len()).rev() {
+                front.insert(front.len(), self.delete(i).unwrap()).unwrap();
+            }
+            for i in (0..self.len()).rev() {
+                back.insert(back.len(), self.delete(i).unwrap()).unwrap();
+            }
+            for i in (0..front.len()).rev() {
+                self.insert(self.len(), front.delete(i).unwrap()).unwrap();
+            }
+            for i in (0..back.len()).rev() {
+                self.insert(self.len(), back.delete(i).unwrap()).unwrap();
+            }
+            Ok(())
+        } else {
+            Err(IndexError {})
+        }
+    }
+}
+
 impl<T, U> PartialEqListExt<U> for T
 where
     T: List<U>,
@@ -108,6 +139,36 @@ where
 
 /// `List` trait的一个扩展trait, 提供了一些基于偏序的方法.
 pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
+    /// 合并两个有序表, 得到一个新的有序表.
+    /// # Correctness
+    /// 此方法要求表有序(且为顺序).
+    fn merge(mut self, mut rhs: Self) -> Self
+    where
+        Self: Sized,
+    {
+        let mut res = Self::new();
+        self.reverse();
+        rhs.reverse();
+        while !self.is_empty() && !rhs.is_empty() {
+            let l = self.get(self.len() - 1).unwrap();
+            let r = rhs.get(rhs.len() - 1).unwrap();
+
+            // 这里用到了顺序性
+            let x = if *l < *r {
+                self.delete(self.len() - 1).unwrap()
+            } else {
+                rhs.delete(rhs.len() - 1).unwrap()
+            };
+            res.insert(res.len(), x).unwrap();
+        }
+        let mut remain = if !self.is_empty() { self } else { rhs };
+        while !remain.is_empty() {
+            res.insert(res.len(), remain.delete(remain.len() - 1).unwrap())
+                .unwrap();
+        }
+        res
+    }
+
     /// 对有序表去重. 这是一个保序的算法.
     /// # Correctness
     /// 此方法要求表有序(且为顺序).
@@ -345,7 +406,7 @@ impl<T> List<T> for Vec<T> {
 
 #[cfg(test)]
 mod test {
-    use super::{IndexError, List, PartialEqListExt, PartialOrdListExt};
+    use super::{IndexError, List, ListExt, PartialEqListExt, PartialOrdListExt};
 
     #[test]
     fn test_insert() -> Result<(), IndexError> {
@@ -592,6 +653,23 @@ mod test {
         x.sort();
         x.dedup_sorted();
         assert_eq!(x, vec![1, 2, 3, 5, 6, 7, 9, 11]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_merge() -> Result<(), IndexError> {
+        let x: Vec<usize> = vec![1, 3, 5, 6, 8, 10];
+        let y: Vec<usize> = vec![2, 4, 6, 7, 9, 11];
+        let z = x.merge(y);
+        assert_eq!(z, vec![1, 2, 3, 4, 5, 6, 6, 7, 8, 9, 10, 11]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_swap_at() -> Result<(), IndexError> {
+        let mut x: Vec<usize> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        x.swap_at(4)?;
+        assert_eq!(x, vec![4, 5, 6, 7, 8, 9, 0, 1, 2, 3]);
         Ok(())
     }
 }
