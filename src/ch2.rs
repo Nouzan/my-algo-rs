@@ -27,14 +27,24 @@ pub trait List<Item> {
     /// 交换`i`, `j`两个位置的元素.
     fn swap(&mut self, i: usize, j: usize) -> Result<(), IndexError>;
 
+    /// 逆置[begin, end]之间的元素.
+    fn reverse_between(&mut self, begin: usize, end: usize) -> Result<(), IndexError> {
+        if begin <= end && self.is_index_read_valid(begin) && self.is_index_read_valid(end) {
+            let (mut i, mut j) = (begin, end);
+            while i < j {
+                self.swap(i, j).unwrap();
+                i += 1;
+                j -= 1;
+            }
+            Ok(())
+        } else {
+            Err(IndexError {})
+        }
+    }
+
     /// 逆置所有元素.
     fn reverse(&mut self) {
-        let (mut i, mut j) = (0, self.len() - 1);
-        while i < j {
-            self.swap(i, j).unwrap();
-            i += 1;
-            j -= 1;
-        }
+        self.reverse_between(0, self.len() - 1).unwrap();
     }
 
     /// 获取线性表的长度.
@@ -74,25 +84,12 @@ impl<T, U> ListExt<U> for T where T: List<U> {}
 /// `List` trait的一个扩展trait.
 pub trait ListExt<Item>: List<Item> {
     /// 将`[0, index)`与`[index, len)`位置上的进行交换, 即交换后变为`[index, len), [0, index)`.
-    fn swap_at(&mut self, index: usize) -> Result<(), IndexError>
-    where
-        Self: Sized,
-    {
+    fn swap_at(&mut self, index: usize) -> Result<(), IndexError> {
         if self.is_index_read_valid(index) {
-            let mut front = Self::new();
-            let mut back = Self::new();
-            for i in (index..self.len()).rev() {
-                front.insert(front.len(), self.delete(i).unwrap()).unwrap();
-            }
-            for i in (0..self.len()).rev() {
-                back.insert(back.len(), self.delete(i).unwrap()).unwrap();
-            }
-            for i in (0..front.len()).rev() {
-                self.insert(self.len(), front.delete(i).unwrap()).unwrap();
-            }
-            for i in (0..back.len()).rev() {
-                self.insert(self.len(), back.delete(i).unwrap()).unwrap();
-            }
+            let split = self.len() - index;
+            self.reverse();
+            self.reverse_between(0, split - 1).unwrap();
+            self.reverse_between(split, self.len() - 1).unwrap();
             Ok(())
         } else {
             Err(IndexError {})
