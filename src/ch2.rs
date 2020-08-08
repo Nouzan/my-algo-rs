@@ -136,6 +136,41 @@ where
 
 /// `List` trait的一个扩展trait, 提供了一些基于偏序的方法.
 pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
+    /// 二分搜索. 在有序表中搜索元素`x`, 返回最大的不超过`x`的元素序号, 若所有元素都比`x`大, 则返回`None`.
+    /// # Correnctness
+    /// 此方法要求表有序(且为顺序).
+    fn search(&self, x: &Item) -> Option<usize> {
+        if self.is_empty() {
+            None
+        } else {
+            let (mut begin, mut end) = (0, self.len() - 1);
+            let a = self.get(begin).unwrap();
+            let b = self.get(end).unwrap();
+            if *a <= *x && *x < *b {
+                // 上式即为循环不变式.
+                while begin + 1 < end {
+                    // 若`begin` + 1 < `end`, 则`mid`必然不等于`begin`或`end`,
+                    // 因此每一次迭代后, `begin`与`end`必然会更接近, 故循环会终止.
+                    // 而循环终止于`begin` == `end` 或 `begin` + 1 == `end`,
+                    // 不论何种情况, `begin`都是目标结果.
+                    // (事实上由论证的第一行, 不可能有`begin` == `end`.)
+                    let mid = (begin + end) / 2;
+                    let c = self.get(mid).unwrap();
+                    if *c <= *x {
+                        begin = mid;
+                    } else {
+                        end = mid;
+                    }
+                }
+                Some(begin)
+            } else if *x < *a {
+                None
+            } else {
+                Some(self.len() - 1)
+            }
+        }
+    }
+
     /// 合并两个有序表, 得到一个新的有序表.
     /// # Correctness
     /// 此方法要求表有序(且为顺序).
@@ -669,4 +704,26 @@ mod test {
         assert_eq!(x, vec![4, 5, 6, 7, 8, 9, 0, 1, 2, 3]);
         Ok(())
     }
+
+    #[test]
+    fn test_search() -> Result<(), IndexError> {
+        let x: Vec<usize> = vec![1, 2, 3, 3, 3, 4, 5, 6, 9, 11];
+        assert_eq!(x.search(&3), Some(4));
+        assert_eq!(x.search(&4), Some(5));
+        assert_eq!(x.search(&0), None);
+        assert_eq!(x.search(&12), Some(9));
+        assert_eq!(x.search(&1), Some(0));
+        assert_eq!(x.search(&11), Some(9));
+        let x: Vec<usize> = vec![1];
+        assert_eq!(x.search(&1), Some(0));
+        assert_eq!(x.search(&0), None);
+        assert_eq!(x.search(&11), Some(0));
+        Ok(())
+    }
 }
+
+// 0, 8
+// 4, 8
+// 4, 6
+// 4, 5
+// 4, 5
