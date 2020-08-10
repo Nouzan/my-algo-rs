@@ -5,10 +5,7 @@ use std::ops::{Deref, DerefMut};
 pub struct IndexError;
 
 /// 元素类型为`Item`的线性表.
-pub trait List<Item> {
-    /// 创建一个空的线性表.
-    fn new() -> Self;
-
+pub trait List<Item>: Default {
     /// 判断线性表是否为空.
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -178,7 +175,7 @@ pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
     where
         Self: Sized,
     {
-        let mut res = Self::new();
+        let mut res = Self::default();
         self.reverse();
         rhs.reverse();
         while !self.is_empty() && !rhs.is_empty() {
@@ -370,10 +367,6 @@ pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
 }
 
 impl<T> List<T> for Vec<T> {
-    fn new() -> Self {
-        Vec::new()
-    }
-
     fn len(&self) -> usize {
         self.len()
     }
@@ -439,10 +432,11 @@ impl<T> List<T> for Vec<T> {
 #[cfg(test)]
 mod test {
     use super::{IndexError, List, ListExt, PartialEqListExt, PartialOrdListExt};
+    use crate::vec::MyVec;
 
     #[test]
     fn test_insert() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         assert_eq!(List::len(&x), 0);
         assert!(List::is_empty(&x));
         List::insert(&mut x, 0, 11)?;
@@ -457,7 +451,7 @@ mod test {
 
     #[test]
     fn test_delete() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         List::insert(&mut x, 0, 11)?;
         assert_eq!(*List::get(&x, 0)?, 11);
         List::insert(&mut x, 0, 12)?;
@@ -473,7 +467,7 @@ mod test {
 
     #[test]
     fn test_locate() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         List::insert(&mut x, 0, 11)?;
         assert_eq!(PartialEqListExt::locate(&x, &11), Some(0));
         Ok(())
@@ -481,7 +475,7 @@ mod test {
 
     #[test]
     fn test_locate_min() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         List::insert(&mut x, 0, 11)?;
         assert_eq!(x.locate_min(), Some(0));
         List::insert(&mut x, 0, 10)?;
@@ -493,7 +487,7 @@ mod test {
 
     #[test]
     fn test_delete_min() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         List::insert(&mut x, 0, 11)?;
         List::insert(&mut x, 0, 10)?;
         List::insert(&mut x, 2, 9)?;
@@ -504,7 +498,7 @@ mod test {
 
     #[test]
     fn test_reverse() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         List::insert(&mut x, 0, 11)?;
         List::insert(&mut x, 0, 10)?;
         List::insert(&mut x, 2, 9)?;
@@ -530,7 +524,7 @@ mod test {
 
     #[test]
     fn test_delete_all() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1].iter() {
             let len = x.len();
             List::insert(&mut x, len, *v)?;
@@ -547,7 +541,7 @@ mod test {
 
     #[test]
     fn test_sort() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         x.sort();
         for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
             let len = x.len();
@@ -570,7 +564,7 @@ mod test {
 
     #[test]
     fn test_delete_between() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         let res = x.delete_between(&1, &2);
         assert_eq!(res, vec![]);
         for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
@@ -598,7 +592,7 @@ mod test {
 
     #[test]
     fn test_delete_between_opt() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         let res = x.delete_between_opt(&1, &2, true);
         assert_eq!(res, vec![]);
         for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
@@ -626,7 +620,7 @@ mod test {
 
     #[test]
     fn test_delete_between_unsorted_sorted() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         let res = x.delete_between_unsorted(&1, &2);
         assert_eq!(res, vec![]);
         for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
@@ -654,7 +648,7 @@ mod test {
 
     #[test]
     fn test_delete_between_unsorted_unsorted() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
             let len = x.len();
             List::insert(&mut x, len, *v)?;
@@ -677,53 +671,60 @@ mod test {
 
     #[test]
     fn test_dedup_sorted() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = List::new();
+        let mut x: MyVec<usize> = MyVec::new();
         for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
             let len = x.len();
             List::insert(&mut x, len, *v)?;
         }
         x.sort();
         x.dedup_sorted();
-        assert_eq!(x, vec![1, 2, 3, 5, 6, 7, 9, 11]);
+        assert_eq!(*x, *vec![1, 2, 3, 5, 6, 7, 9, 11]);
         Ok(())
     }
 
     #[test]
     fn test_merge() -> Result<(), IndexError> {
-        let x: Vec<usize> = vec![1, 3, 5, 6, 8, 10];
-        let y: Vec<usize> = vec![2, 4, 6, 7, 9, 11];
+        let mut x: MyVec<usize> = MyVec::new();
+        for i in &[1, 3, 5, 6, 8, 10] {
+            x.push(*i)
+        }
+        let mut y: MyVec<usize> = MyVec::new();
+        for i in &[2, 4, 6, 7, 9, 11] {
+            y.push(*i)
+        }
         let z = x.merge(y);
-        assert_eq!(z, vec![1, 2, 3, 4, 5, 6, 6, 7, 8, 9, 10, 11]);
+        assert_eq!(*z, *vec![1, 2, 3, 4, 5, 6, 6, 7, 8, 9, 10, 11]);
         Ok(())
     }
 
     #[test]
     fn test_swap_at() -> Result<(), IndexError> {
-        let mut x: Vec<usize> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let mut x: MyVec<usize> = MyVec::new();
+        for i in &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
+            x.push(*i);
+        }
         x.swap_at(4)?;
-        assert_eq!(x, vec![4, 5, 6, 7, 8, 9, 0, 1, 2, 3]);
+        assert_eq!(*x, *vec![4, 5, 6, 7, 8, 9, 0, 1, 2, 3]);
         Ok(())
     }
 
     #[test]
     fn test_search() -> Result<(), IndexError> {
-        let x: Vec<usize> = vec![1, 2, 3, 3, 3, 4, 5, 6, 9, 11];
+        let mut x: MyVec<usize> = MyVec::new();
+        for i in &[1, 2, 3, 3, 3, 4, 5, 6, 9, 11] {
+            x.push(*i);
+        }
         assert_eq!(x.search(&3), Some(4));
         assert_eq!(x.search(&4), Some(5));
         assert_eq!(x.search(&0), None);
         assert_eq!(x.search(&12), Some(9));
         assert_eq!(x.search(&1), Some(0));
         assert_eq!(x.search(&11), Some(9));
-        let x: Vec<usize> = vec![1];
+        let mut x: MyVec<usize> = MyVec::new();
+        x.push(1);
         assert_eq!(x.search(&1), Some(0));
         assert_eq!(x.search(&0), None);
         assert_eq!(x.search(&11), Some(0));
         Ok(())
     }
 }
-
-// 0, 8
-// 4, 8
-// 4, 6
-// 4, 5
-// 4, 5
