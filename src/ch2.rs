@@ -1,3 +1,4 @@
+use crate::vec::MyVec;
 use std::ops::{Deref, DerefMut};
 
 /// 下标错误类型.
@@ -74,14 +75,34 @@ pub trait List<Item>: Default {
     ///
     /// 若位置不合法, 返回错误.
     fn delete(&mut self, index: usize) -> Result<Item, IndexError>;
+
+    /// 将`List<T>`转化为`List<&T>`
+    fn to_refs<'a, T>(&'a self) -> T
+    where
+        T: List<&'a Item>,
+        Item: 'a,
+    {
+        let mut res = T::default();
+        for i in 0..self.len() {
+            res.insert(i, self.get(i).unwrap()).unwrap();
+        }
+        res
+    }
 }
 
 impl<T, U> ListExt<U> for T where T: List<U> {}
 
 /// `List` trait的一个扩展trait.
 pub trait ListExt<Item>: List<Item> {
-    /// 将`[0, index)`与`[index, len)`位置上的进行交换, 即交换后变为`[index, len), [0, index)`.
-    fn swap_at(&mut self, index: usize) -> Result<(), IndexError> {
+    /// 循环左移`index`个位置.
+    /// # 算法
+    /// 实际上我们只需要将`[0, index)`与`[index, len)`位置上的进行交换, 即交换后变为`[index, len), [0, index)`.
+    /// 而这个过程可以通过先对所有元素逆置, 再在分割位置前后各自逆置完成, 如:
+    /// `[0, 1, 2, 3, 4, 5] -> [5, 4, 3, 2, 1] -> [4, 5, 1, 2, 3]`.
+    /// 它的思想可类比于给定`ab`求`ba`, 而`(a^{-1}b^{-1})^{-1} == ba`(串运算).
+    /// 这个算法的时间复杂度为`O(n)`, 空间复杂度为`O(1)`.
+    // 习题 2.8, 2.10
+    fn shift(&mut self, index: usize) -> Result<(), IndexError> {
         if self.is_index_read_valid(index) {
             let split = self.len() - index;
             self.reverse();
@@ -168,9 +189,36 @@ pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
         }
     }
 
+    /// 给出两个有序表的中位数(即两个有序表合并为新的有序表后的中位数).
+    /// # Correctness
+    /// 此方法要求两个表有序且为顺序.
+    // 习题 2.11
+    fn merge_mid<'a>(&'a self, rhs: &'a Self) -> Option<&'a Item> {
+        let a: MyVec<&Item> = self.to_refs(); // TODO: 如何才能使用非具体的类型?(使用associated type?)
+        let b = rhs.to_refs();
+        let c = a.merge(b);
+        c.mid().copied()
+    }
+
+    /// 给出有序表的中位数(第`⌈len / 2⌉`个).
+    /// # Correctness
+    /// 此方法要求表有序(且为顺序).
+    fn mid(&self) -> Option<&Item> {
+        if !self.is_empty() {
+            let idx = (self.len() + 1) / 2 - 1; // ⌊(len + 1) / 2⌋ == ⌈len / 2⌉
+            Some(self.get(idx).unwrap())
+        } else {
+            None
+        }
+    }
+
     /// 合并两个有序表, 得到一个新的有序表.
     /// # Correctness
     /// 此方法要求表有序(且为顺序).
+    /// # 算法
+    /// 从头部开始删除元素(先行逆置以避免不必要的移位), 将较小者插入新的表, 直到两个表都为空.
+    /// 该算法的时间复杂度为`O(n_1 + n_2)`, 空间复杂度为`O(n_1 + n_2)`.
+    // 习题 2.7
     fn merge(mut self, mut rhs: Self) -> Self
     where
         Self: Sized,
@@ -698,12 +746,12 @@ mod test {
     }
 
     #[test]
-    fn test_swap_at() -> Result<(), IndexError> {
+    fn test_shift() -> Result<(), IndexError> {
         let mut x: MyVec<usize> = MyVec::new();
         for i in &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
             x.push(*i);
         }
-        x.swap_at(4)?;
+        x.shift(4)?;
         assert_eq!(*x, *vec![4, 5, 6, 7, 8, 9, 0, 1, 2, 3]);
         Ok(())
     }
@@ -725,6 +773,33 @@ mod test {
         assert_eq!(x.search(&1), Some(0));
         assert_eq!(x.search(&0), None);
         assert_eq!(x.search(&11), Some(0));
+        Ok(())
+    }
+
+    #[test]
+    fn test_mid() -> Result<(), IndexError> {
+        let mut x: MyVec<usize> = MyVec::new();
+        for i in &[11, 13, 15, 17, 19] {
+            x.push(*i);
+        }
+        assert_eq!(x.mid(), Some(&15));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_merge_mid() -> Result<(), IndexError> {
+        let mut x: MyVec<usize> = MyVec::new();
+        for i in &[11, 13, 15, 17, 19] {
+            x.push(*i);
+        }
+        let mut y: MyVec<usize> = MyVec::new();
+        for i in &[2, 4, 6, 8, 20] {
+            y.push(*i);
+        }
+
+        assert_eq!(x.merge_mid(&y), Some(&11));
+
         Ok(())
     }
 }
