@@ -481,6 +481,7 @@ impl<T> List<T> for Vec<T> {
 mod test {
     use super::{IndexError, List, ListExt, PartialEqListExt, PartialOrdListExt};
     use crate::vec::MyVec;
+    use proptest::prelude::*;
 
     #[test]
     fn test_insert() -> Result<(), IndexError> {
@@ -570,44 +571,44 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn test_delete_all() -> Result<(), IndexError> {
-        let mut x: MyVec<usize> = MyVec::new();
-        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1].iter() {
-            let len = x.len();
-            List::insert(&mut x, len, *v)?;
+    proptest!{
+        #[test]
+        fn test_delete_all(data: Vec<usize>) {
+            let mut x: MyVec<usize> = MyVec::new();
+            for v in data.iter() {
+                let len = x.len();
+                List::insert(&mut x, len, *v).unwrap();
+            }
+
+            if !x.is_empty() {
+                let v = *x.get(0).unwrap();
+                x.delete_all(&v);
+                for i in 0..x.len() {
+                    let w = x.get(i).unwrap();
+                    prop_assert_ne!(v, *w);
+                }
+            }
         }
-
-        x.delete_all(&1);
-
-        for (idx, v) in vec![7, 7, 9, 11, 2, 3, 11, 5].iter().enumerate() {
-            assert_eq!(*List::get(&x, idx)?, *v);
-        }
-
-        Ok(())
     }
 
-    #[test]
-    fn test_sort() -> Result<(), IndexError> {
-        let mut x: MyVec<usize> = MyVec::new();
-        x.sort();
-        for v in vec![7, 1, 9, 11, 2, 3, 1, 5, 7, 11, 1, 6].iter() {
-            let len = x.len();
-            List::insert(&mut x, len, *v)?;
+    proptest!{
+        #[test]
+        fn test_sort(data: Vec<usize>) {
+            let mut x: MyVec<usize> = MyVec::new();
+            for v in data.iter() {
+                let len = x.len();
+                List::insert(&mut x, len, *v).unwrap();
+            }
             x.sort();
+            if !x.is_empty() {
+                let mut last = x.get(0).unwrap();
+                for i in 1..x.len() {
+                    let now = x.get(i).unwrap();
+                    prop_assert!(*last <= *now);
+                    last = now;
+                }
+            }
         }
-
-        x.reverse();
-        x.sort();
-
-        for (idx, v) in vec![1, 1, 1, 2, 3, 5, 6, 7, 7, 9, 11, 11]
-            .iter()
-            .enumerate()
-        {
-            assert_eq!(*List::get(&x, idx)?, *v);
-        }
-
-        Ok(())
     }
 
     #[test]
