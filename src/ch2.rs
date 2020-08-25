@@ -1,4 +1,3 @@
-use crate::vec::MyVec;
 use std::ops::{Deref, DerefMut};
 
 /// 下标错误类型.
@@ -194,21 +193,136 @@ pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
     /// 此方法要求两个表有序且为顺序.
     // 习题 2.11
     fn merge_mid<'a>(&'a self, rhs: &'a Self) -> Option<&'a Item> {
-        let a: MyVec<&Item> = self.to_refs(); // TODO: 如何才能使用非具体的类型?(使用associated type?)
-        let b = rhs.to_refs();
-        let c = a.merge(b);
-        c.mid().copied()
+        if self.is_empty() {
+            rhs.mid()
+        } else if rhs.is_empty() {
+            self.mid()
+        } else {
+            let (mut ia, mut ja) = (0, self.len());
+            let (mut ib, mut jb) = (0, rhs.len());
+            while (ja - ia) != 0 && (jb - ib) != 0 {
+                let ma = self.mid_between(ia, ja).unwrap();
+                let mb = rhs.mid_between(ib, jb).unwrap();
+                if *ma <= *mb {
+                    let idx = ((ja - ia) + (jb - ib) + 1) / 2 - 1;
+                    let idy = (ja - ia + 1) / 2 + (jb - ib + 1) / 2 - 2;
+                    let la = if idy < idx {
+                        (ja - ia + 1) / 2
+                    } else {
+                        (ja - ia + 1) / 2 - 1
+                    };
+                    let lb = if idy > idx {
+                        (jb - ib) / 2 + 1
+                    } else {
+                        (jb - ib) / 2
+                    };
+                    let l = usize::min(la, lb);
+                    if l == 0 {
+                        break;
+                    }
+                    ia += l;
+                    jb -= l;
+                } else {
+                    let idx = ((ja - ia) + (jb - ib) + 1) / 2 - 1;
+                    let idy = (ja - ia + 1) / 2 + (jb - ib + 1) / 2 - 2;
+                    let lb = if idy < idx {
+                        (jb - ib + 1) / 2
+                    } else {
+                        (jb - ib + 1) / 2 - 1
+                    };
+                    let la = if idy > idx {
+                        (ja - ia) / 2 + 1
+                    } else {
+                        (ja - ia) / 2
+                    };
+                    let l = usize::min(la, lb);
+                    if l == 0 {
+                        break;
+                    }
+                    ib += l;
+                    ja -= l;
+                }
+            }
+            let ma = self.mid_between(ia, ja);
+            let mb = rhs.mid_between(ib, jb);
+            if let (Some(ma), Some(mb)) = (ma, mb) {
+                if (ja - ia) == 1 && (jb - ib) == 1 {
+                    if *ma <= *mb {
+                        Some(ma)
+                    } else {
+                        Some(mb)
+                    }
+                } else if (ja - ia) == 1 {
+                    if *ma <= *mb {
+                        if (jb - ib) % 2 == 0 {
+                            Some(mb)
+                        } else {
+                            let idx = (jb + ib + 1) / 2 - 2;
+                            let c = rhs.get(idx).unwrap();
+                            if *ma <= *c {
+                                Some(c)
+                            } else {
+                                Some(ma)
+                            }
+                        }
+                    } else if (jb - ib) % 2 == 1 {
+                        Some(mb)
+                    } else {
+                        let idx = (jb + ib + 1) / 2;
+                        let c = rhs.get(idx).unwrap();
+                        if *c < *ma {
+                            Some(c)
+                        } else {
+                            Some(ma)
+                        }
+                    }
+                } else if *mb < *ma {
+                    if (ja - ia) % 2 == 0 {
+                        Some(ma)
+                    } else {
+                        let idx = (ja + ia + 1) / 2 - 2;
+                        let c = self.get(idx).unwrap();
+                        if *mb < *c {
+                            Some(c)
+                        } else {
+                            Some(mb)
+                        }
+                    }
+                } else if (ja - ia) % 2 == 1 {
+                    Some(ma)
+                } else {
+                    let idx = (ja + ia + 1) / 2;
+                    let c = self.get(idx).unwrap();
+                    if *c <= *mb {
+                        Some(c)
+                    } else {
+                        Some(mb)
+                    }
+                }
+            } else if ma.is_some() {
+                ma
+            } else {
+                mb
+            }
+        }
     }
 
     /// 给出有序表的中位数(第`⌈len / 2⌉`个).
     /// # Correctness
     /// 此方法要求表有序(且为顺序).
     fn mid(&self) -> Option<&Item> {
-        if !self.is_empty() {
-            let idx = (self.len() + 1) / 2 - 1; // ⌊(len + 1) / 2⌋ == ⌈len / 2⌉
-            Some(self.get(idx).unwrap())
-        } else {
+        self.mid_between(0, self.len())
+    }
+
+    /// 在[a, b)范围内计算中位数(第`⌈(a + b) / 2⌉`个).
+    /// # Correctness
+    /// 此方法要求表有序(且为顺序).
+    fn mid_between(&self, a: usize, b: usize) -> Option<&Item> {
+        if b <= a || !self.is_index_read_valid(a) || !self.is_index_insert_valid(b) {
             None
+        } else {
+            let idx = (a + b + 1) / 2 - 1; // ⌊(a + b + 1) / 2⌋ == ⌈(a + b) / 2⌉
+            Some(self.get(idx).unwrap())
         }
     }
 
@@ -571,7 +685,7 @@ mod test {
         Ok(())
     }
 
-    proptest!{
+    proptest! {
         #[test]
         fn test_delete_all(data: Vec<usize>) {
             let mut x: MyVec<usize> = MyVec::new();
@@ -591,7 +705,7 @@ mod test {
         }
     }
 
-    proptest!{
+    proptest! {
         #[test]
         fn test_sort(data: Vec<usize>) {
             let mut x: MyVec<usize> = MyVec::new();
@@ -788,19 +902,179 @@ mod test {
         Ok(())
     }
 
+    proptest! {
+        #[test]
+        fn test_merge_mid(a: Vec<isize>, b: Vec<isize>) {
+            let mut x: MyVec<isize> = MyVec::new();
+            let mut y: MyVec<isize> = MyVec::new();
+            let mut z: MyVec<isize> = MyVec::new();
+            for v in a.iter() {
+                let len = x.len();
+                List::insert(&mut x, len, *v).unwrap();
+                let len = z.len();
+                List::insert(&mut z, len, *v).unwrap();
+            }
+            for v in b.iter() {
+                let len = y.len();
+                List::insert(&mut y, len, *v).unwrap();
+                let len = z.len();
+                List::insert(&mut z, len, *v).unwrap();
+            }
+            x.sort();
+            y.sort();
+            z.sort();
+            let mid = x.merge_mid(&y).map(|v| *v);
+            let zmid = z.mid().map(|v| *v);
+            assert_eq!(mid, zmid);
+        }
+    }
+
     #[test]
-    fn test_merge_mid() -> Result<(), IndexError> {
-        let mut x: MyVec<usize> = MyVec::new();
-        for i in &[11, 13, 15, 17, 19] {
-            x.push(*i);
+    fn test_merge_mid_debug() {
+        let mut x: MyVec<isize> = MyVec::new();
+        let mut y: MyVec<isize> = MyVec::new();
+        let mut z: MyVec<isize> = MyVec::new();
+        let a = vec![
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -2897281253,
+            -6196200173237906148,
+            8925592336651969408,
+            2455274111052877208,
+            -656826015673857378,
+            -3918187044768650842,
+            -7166999091199384584,
+            -5996361932006152609,
+            2889077960617313680,
+            88271664092555393,
+            2899996647040923106,
+            -6516672597673576215,
+            -5546300437270337926,
+            1473724560447567648,
+            2059516156938740199,
+            -171858695312451639,
+            8522714349128348863,
+            4264948759076353221,
+            1594454708689104818,
+            7681715165400207596,
+            -8148621855136367066,
+            -644209070338910506,
+            5220468932815270648,
+            -6625493688883664448,
+            1397876726542150767,
+            -4727728100751890483,
+            7531905508060828888,
+            6519918035677179251,
+            -5583427334731038398,
+            -2967049700757160626,
+            -1721576352507059971,
+            1727757225621534506,
+            2170186811265331760,
+            5922347655179323346,
+            -8204506787910346843,
+            3005523099967943604,
+            -1605301380642725877,
+            -7332893205306610347,
+            -938746561832165523,
+            -8789972477573055083,
+            -3835164436479195405,
+            4786210369317527761,
+            3594225956822071679,
+            -1748670941390812505,
+            3876800443306823381,
+            -2257341117945605237,
+            5677367518449984234,
+            8405782022434682455,
+            7581027924183879849,
+            4096207420437071452,
+            8085920046616710860,
+        ];
+        let b = vec![
+            7482600966255041402,
+            -8333722760038280943,
+            -4250333620945924187,
+            -880643609219279756,
+            -5071519582309135839,
+            -3223679753249750427,
+            99164523170473582,
+            3290501520063790669,
+            -4598488739711737148,
+            4473989299141740021,
+            -6781163372128545589,
+            5548457122780486112,
+            -3557150876905369710,
+            -6908408383691144508,
+            -6691672864717401851,
+            -1937234497355224888,
+            1707928323010534440,
+            -6339963453647765820,
+            7531816131263962515,
+            -1284471083586039299,
+            7403650438578929422,
+            -3829572531986954543,
+            386140615396125578,
+            -7203738925830004739,
+            -8544999182076961763,
+            -1490629782192538174,
+            5090487921526136898,
+            -5141834306885877895,
+            -6956565386351062722,
+            -7576159871494786891,
+            -7491376982597399724,
+            4720093450235912204,
+            -4053929147728379618,
+            4161325017029619931,
+            -7081740323715740893,
+            8102254179923436400,
+            461968019096134908,
+            2689246687889717639,
+            -7665274172393783307,
+            4662732249364662193,
+            70100343326846188,
+            6099973236709120471,
+            -5341597363607795057,
+            -7862231724152292154,
+            734124934836851694,
+            2449474722449367057,
+            3081651409021500712,
+            7122530452107911687,
+            -6074493196840102323,
+            4838248576879314072,
+            7383191579363050811,
+            -3914598055905828817,
+            3109065319387327394,
+            -1781297907957027685,
+            -3583352287771982849,
+        ];
+        for v in a.iter() {
+            let len = x.len();
+            List::insert(&mut x, len, *v).unwrap();
+            let len = z.len();
+            List::insert(&mut z, len, *v).unwrap();
         }
-        let mut y: MyVec<usize> = MyVec::new();
-        for i in &[2, 4, 6, 8, 20] {
-            y.push(*i);
+        for v in b.iter() {
+            let len = y.len();
+            List::insert(&mut y, len, *v).unwrap();
+            let len = z.len();
+            List::insert(&mut z, len, *v).unwrap();
         }
-
-        assert_eq!(x.merge_mid(&y), Some(&11));
-
-        Ok(())
+        x.sort();
+        y.sort();
+        z.sort();
+        let mid = x.merge_mid(&y).map(|v| *v);
+        let zmid = z.mid().map(|v| *v);
+        assert_eq!(mid, zmid);
     }
 }
