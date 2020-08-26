@@ -20,6 +20,7 @@ jobs:
           - stable
           - beta
           - nightly
+          - 1.45.2 # MSRV
 
     steps:
       - name: Checkout
