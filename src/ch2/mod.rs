@@ -1,8 +1,10 @@
+pub mod integer;
 pub mod list;
 pub mod partial_eq;
 pub mod partial_ord;
 pub mod slice;
 
+pub use integer::*;
 pub use list::*;
 pub use partial_eq::*;
 pub use partial_ord::*;
