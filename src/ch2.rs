@@ -1164,8 +1164,8 @@ mod test {
             first.sort();
             second.sort();
             merged.sort();
-            let mid = first.merge_mid(&second).map(|v| *v);
-            let merged_mid = merged.mid().map(|v| *v);
+            let mid = first.merge_mid(&second).copied();
+            let merged_mid = merged.mid().copied();
             assert_eq!(mid, merged_mid);
         }
     }
@@ -1314,8 +1314,8 @@ mod test {
         first.sort();
         second.sort();
         merged.sort();
-        let mid = first.merge_mid(&second).map(|v| *v);
-        let merged_mid = merged.mid().map(|v| *v);
+        let mid = first.merge_mid(&second).copied();
+        let merged_mid = merged.mid().copied();
         assert_eq!(mid, merged_mid);
     }
 }
