@@ -323,9 +323,43 @@ pub trait PartialEqListExt<Item: PartialEq>: List<Item> {
     }
 
     /// 计算序列的主元素, 若存在则返回该元素的引用, 若不存在则返回`None`.
-    /// 一个序列(的主元素定义为其中出现次数超过`len/2`的元素.
+    /// 一个序列的主元素定义为其中出现次数超过`len/2`的元素.
+    /// # 算法
+    /// 从左往右扫描. `c`初始化为1, `x`初始化为第1个元素, 后面每遇到一个元素,
+    /// 若与`x`相同则`c+=1`, 若不同则`c-=1`, 若`c`归0则重新初始化为1, 并
+    /// 将x改为当前元素, 直到扫描完毕. 则`x`为主元素的唯一候选, 此时只需要再扫描
+    /// 一遍, 检验`x`是否为主元素即可.
     fn primary(&self) -> Option<&Item> {
-        unimplemented!()
+        if self.is_empty() {
+            None
+        } else {
+            let mut x = self.get(0).unwrap();
+            let mut count: usize = 1;
+            for i in 1..self.len() {
+                let y = self.get(i).unwrap();
+                if *x == *y {
+                    count += 1;
+                } else {
+                    count -= 1;
+                }
+                if count == 0 {
+                    count = 1;
+                    x = y;
+                }
+            }
+            count = 0;
+            for i in 0..self.len() {
+                let y = self.get(i).unwrap();
+                if *x == *y {
+                    count += 1;
+                }
+            }
+            if count > self.len() / 2 {
+                Some(x)
+            } else {
+                None
+            }
+        }
     }
 }
 
@@ -793,6 +827,26 @@ mod test {
     use super::{IndexError, List, ListExt, PartialEqListExt, PartialOrdListExt};
     use crate::vec::MyVec;
     use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_primary(data: Vec<usize>) {
+            let mut list= MyVec::new();
+            for v in data {
+                list.push(v);
+            }
+            if let Some(p) = list.primary().copied() {
+                let mut count = 0;
+                for i in 0..list.len() {
+                    let x = list.get(i).unwrap();
+                    if *x == p {
+                        count += 1;
+                    }
+                }
+                prop_assert!(count > list.len() / 2)
+            }
+        }
+    }
 
     proptest! {
         #[test]
