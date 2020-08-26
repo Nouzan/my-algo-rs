@@ -1,11 +1,97 @@
+use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 /// 下标错误类型.
 #[derive(Debug)]
 pub struct IndexError;
 
+#[derive(Debug)]
+pub struct SliceMut<'a, L, Item> {
+    list: &'a mut L,
+    start: usize,
+    len: usize,
+    _marker: PhantomData<Item>,
+}
+
+impl<'a, L, Item> SliceMut<'a, L, Item>
+where
+    L: List<Item>,
+{
+    pub fn new(list: &'a mut L, start: usize, len: usize) -> Result<Self, IndexError> {
+        if list.is_index_read_valid(start) && list.is_index_insert_valid(start + len) {
+            Ok(Self {
+                list,
+                start,
+                len,
+                _marker: PhantomData::default(),
+            })
+        } else {
+            Err(IndexError)
+        }
+    }
+
+    fn index(&self, i: usize) -> Result<usize, IndexError> {
+        if self.is_index_read_valid(i) {
+            Ok(i + self.start)
+        } else {
+            Err(IndexError)
+        }
+    }
+
+    fn insert_index(&self, i: usize) -> Result<usize, IndexError> {
+        if self.is_index_insert_valid(i) {
+            Ok(i + self.start)
+        } else {
+            Err(IndexError)
+        }
+    }
+}
+
+impl<'a, L, Item> List<Item> for SliceMut<'a, L, Item>
+where
+    L: List<Item>,
+{
+    fn len(&self) -> usize {
+        self.len
+    }
+
+    fn get(&self, index: usize) -> Result<&Item, IndexError> {
+        self.list.get(self.index(index)?)
+    }
+
+    fn get_mut(&mut self, index: usize) -> Result<&mut Item, IndexError> {
+        self.list.get_mut(self.index(index)?)
+    }
+
+    fn swap(&mut self, i: usize, j: usize) -> Result<(), IndexError> {
+        let i = self.index(i)?;
+        let j = self.index(j)?;
+        self.list.swap(i, j)
+    }
+
+    fn insert(&mut self, index: usize, x: Item) -> Result<(), IndexError> {
+        let index = self.insert_index(index)?;
+        if self.list.insert(index, x).is_ok() {
+            self.len += 1;
+            Ok(())
+        } else {
+            Err(IndexError)
+        }
+    }
+
+    fn delete(&mut self, index: usize) -> Result<Item, IndexError> {
+        let index = self.index(index)?;
+        if let Ok(item) = self.list.delete(index) {
+            self.len -= 1;
+            Ok(item)
+        } else {
+            Err(IndexError)
+        }
+    }
+}
+
 /// 元素类型为`Item`的线性表.
-pub trait List<Item>: Default {
+pub trait List<Item> {
     /// 判断线性表是否为空.
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -76,7 +162,7 @@ pub trait List<Item>: Default {
     fn delete(&mut self, index: usize) -> Result<Item, IndexError>;
 
     /// 将`List<T>`转化为`List<&T>`
-    fn to_refs<'a, T>(&'a self) -> T
+    fn to_refs<'a, T: Default>(&'a self) -> T
     where
         T: List<&'a Item>,
         Item: 'a,
@@ -112,6 +198,23 @@ pub trait ListExt<Item>: List<Item> {
             Err(IndexError {})
         }
     }
+
+    /// 获取一个可变切片范围`start..end`.
+    fn slice_mut(
+        &mut self,
+        start: usize,
+        end: usize,
+    ) -> Result<SliceMut<'_, Self, Item>, IndexError>
+    where
+        Self: Sized,
+    {
+        if start <= end {
+            let len = end - start;
+            SliceMut::new(self, start, len)
+        } else {
+            Err(IndexError)
+        }
+    }
 }
 
 impl<T, U> PartialEqListExt<U> for T
@@ -141,6 +244,12 @@ pub trait PartialEqListExt<Item: PartialEq>: List<Item> {
                 self.delete(self.len() - 1).unwrap();
             }
         }
+    }
+
+    /// 计算序列的主元素, 若存在则返回该元素的引用, 若不存在则返回`None`.
+    /// 一个序列(的主元素定义为其中出现次数超过`len/2`的元素.
+    fn primary(&self) -> Option<&Item> {
+        unimplemented!()
     }
 }
 
@@ -335,7 +444,7 @@ pub trait PartialOrdListExt<Item: PartialOrd>: PartialEqListExt<Item> {
     // 习题 2.7
     fn merge(mut self, mut rhs: Self) -> Self
     where
-        Self: Sized,
+        Self: Sized + Default,
     {
         let mut res = Self::default();
         self.reverse();
@@ -591,11 +700,55 @@ impl<T> List<T> for Vec<T> {
     }
 }
 
+// impl<T: List<usize>> UsizeListExt for T {}
+
+// pub trait UsizeListExt: List<usize> {
+//     /// 计算非负整数序列(其元素取值在`0..len`之间)的主元素.
+//     /// 一个非负整数序列(其元素取值在`0..len`之间)的主元素定义为其中出现次数超过`len/2`的元素.
+//     /// # Correctness
+//     /// 设序列长度为`len`, 则该非负整数序列的元素只能在`0..len`取值.
+//     fn primary(&self) -> Option<usize> {
+//         None
+//     }
+// }
+
 #[cfg(test)]
 mod test {
     use super::{IndexError, List, ListExt, PartialEqListExt, PartialOrdListExt};
     use crate::vec::MyVec;
     use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_slice_mut(data: Vec<String>, start: usize, end: usize) {
+            let mut x: MyVec<String> = MyVec::new();
+            for s in data {
+                x.insert(x.len(), s).unwrap();
+            }
+            if start > end || !x.is_index_read_valid(start) || !x.is_index_insert_valid(end) {
+                prop_assert!(x.slice_mut(start, end).is_err());
+            } else {
+                let mut v = vec![];
+                for i in start..end {
+                    v.push(x.get(i).unwrap().clone())
+                }
+                let mut slice = x.slice_mut(start, end).unwrap();
+                for i in 0..v.len() {
+                    prop_assert_eq!(slice.get(i).unwrap(), v.get(i).unwrap())
+                }
+                v.insert(0, "Hello".to_string());
+                slice.insert(0, "Hello".to_string()).unwrap();
+                for i in 0..v.len() {
+                    prop_assert_eq!(slice.get(i).unwrap(), v.get(i).unwrap())
+                }
+                v.delete(0).unwrap();
+                slice.delete(0).unwrap();
+                for i in 0..v.len() {
+                    prop_assert_eq!(slice.get(i).unwrap(), v.get(i).unwrap())
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_insert() -> Result<(), IndexError> {

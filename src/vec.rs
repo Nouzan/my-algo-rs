@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::ptr::{self, NonNull};
 
+#[derive(Debug)]
 struct RawVec<T> {
     ptr: NonNull<T>,
     cap: usize,
@@ -58,6 +59,7 @@ impl<T> Drop for RawVec<T> {
 }
 
 /// 自定义的`Vec`, 采用和`Vec`一样的翻倍扩容策略.
+#[derive(Debug)]
 pub struct MyVec<T> {
     buf: RawVec<T>,
     len: usize,
