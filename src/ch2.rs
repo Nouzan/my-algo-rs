@@ -6,6 +6,69 @@ use std::ops::{Deref, DerefMut};
 pub struct IndexError;
 
 #[derive(Debug)]
+pub struct Slice<'a, L, Item> {
+    list: &'a L,
+    start: usize,
+    len: usize,
+    _marker: PhantomData<Item>,
+}
+
+impl<'a, L, Item> Slice<'a, L, Item>
+where
+    L: List<Item>,
+{
+    pub fn new(list: &'a L, start: usize, len: usize) -> Result<Self, IndexError> {
+        if list.is_index_read_valid(start) && list.is_index_insert_valid(start + len) {
+            Ok(Self {
+                list,
+                start,
+                len,
+                _marker: PhantomData::default(),
+            })
+        } else {
+            Err(IndexError)
+        }
+    }
+
+    fn index(&self, i: usize) -> Result<usize, IndexError> {
+        if self.is_index_read_valid(i) {
+            Ok(i + self.start)
+        } else {
+            Err(IndexError)
+        }
+    }
+}
+
+impl<'a, L, Item> List<Item> for Slice<'a, L, Item>
+where
+    L: List<Item>,
+{
+    fn len(&self) -> usize {
+        self.len
+    }
+
+    fn get(&self, index: usize) -> Result<&Item, IndexError> {
+        self.list.get(self.index(index)?)
+    }
+
+    fn get_mut(&mut self, _index: usize) -> Result<&mut Item, IndexError> {
+        Err(IndexError)
+    }
+
+    fn swap(&mut self, _i: usize, _j: usize) -> Result<(), IndexError> {
+        Err(IndexError)
+    }
+
+    fn insert(&mut self, _index: usize, _x: Item) -> Result<(), IndexError> {
+        Err(IndexError)
+    }
+
+    fn delete(&mut self, _index: usize) -> Result<Item, IndexError> {
+        Err(IndexError)
+    }
+}
+
+#[derive(Debug)]
 pub struct SliceMut<'a, L, Item> {
     list: &'a mut L,
     start: usize,
@@ -211,6 +274,19 @@ pub trait ListExt<Item>: List<Item> {
         if start <= end {
             let len = end - start;
             SliceMut::new(self, start, len)
+        } else {
+            Err(IndexError)
+        }
+    }
+
+    /// 获取一个只读切片范围`start..end`.
+    fn slice(&self, start: usize, end: usize) -> Result<Slice<'_, Self, Item>, IndexError>
+    where
+        Self: Sized,
+    {
+        if start <= end {
+            let len = end - start;
+            Slice::new(self, start, len)
         } else {
             Err(IndexError)
         }
@@ -720,7 +796,7 @@ mod test {
 
     proptest! {
         #[test]
-        fn test_slice_mut(data: Vec<String>, start: usize, end: usize) {
+        fn test_slices(data: Vec<String>, start: usize, end: usize) {
             let mut x: MyVec<String> = MyVec::new();
             for s in data {
                 x.insert(x.len(), s).unwrap();
@@ -732,17 +808,29 @@ mod test {
                 for i in start..end {
                     v.push(x.get(i).unwrap().clone())
                 }
-                let mut slice = x.slice_mut(start, end).unwrap();
+
+                let slice = x.slice(start, end).unwrap();
+                prop_assert_eq!(slice.len(), v.len());
                 for i in 0..v.len() {
                     prop_assert_eq!(slice.get(i).unwrap(), v.get(i).unwrap())
                 }
+
+                let mut slice = x.slice_mut(start, end).unwrap();
+                prop_assert_eq!(slice.len(), v.len());
+                for i in 0..v.len() {
+                    prop_assert_eq!(slice.get(i).unwrap(), v.get(i).unwrap())
+                }
+
                 v.insert(0, "Hello".to_string());
                 slice.insert(0, "Hello".to_string()).unwrap();
+                prop_assert_eq!(slice.len(), v.len());
                 for i in 0..v.len() {
                     prop_assert_eq!(slice.get(i).unwrap(), v.get(i).unwrap())
                 }
+
                 v.delete(0).unwrap();
                 slice.delete(0).unwrap();
+                prop_assert_eq!(slice.len(), v.len());
                 for i in 0..v.len() {
                     prop_assert_eq!(slice.get(i).unwrap(), v.get(i).unwrap())
                 }
@@ -1058,35 +1146,35 @@ mod test {
     proptest! {
         #[test]
         fn test_merge_mid(a: Vec<isize>, b: Vec<isize>) {
-            let mut x: MyVec<isize> = MyVec::new();
-            let mut y: MyVec<isize> = MyVec::new();
-            let mut z: MyVec<isize> = MyVec::new();
+            let mut first: MyVec<isize> = MyVec::new();
+            let mut second: MyVec<isize> = MyVec::new();
+            let mut merged: MyVec<isize> = MyVec::new();
             for v in a.iter() {
-                let len = x.len();
-                List::insert(&mut x, len, *v).unwrap();
-                let len = z.len();
-                List::insert(&mut z, len, *v).unwrap();
+                let len = first.len();
+                List::insert(&mut first, len, *v).unwrap();
+                let len = merged.len();
+                List::insert(&mut merged, len, *v).unwrap();
             }
             for v in b.iter() {
-                let len = y.len();
-                List::insert(&mut y, len, *v).unwrap();
-                let len = z.len();
-                List::insert(&mut z, len, *v).unwrap();
+                let len = second.len();
+                List::insert(&mut second, len, *v).unwrap();
+                let len = merged.len();
+                List::insert(&mut merged, len, *v).unwrap();
             }
-            x.sort();
-            y.sort();
-            z.sort();
-            let mid = x.merge_mid(&y).map(|v| *v);
-            let zmid = z.mid().map(|v| *v);
-            assert_eq!(mid, zmid);
+            first.sort();
+            second.sort();
+            merged.sort();
+            let mid = first.merge_mid(&second).map(|v| *v);
+            let merged_mid = merged.mid().map(|v| *v);
+            assert_eq!(mid, merged_mid);
         }
     }
 
     #[test]
     fn test_merge_mid_debug() {
-        let mut x: MyVec<isize> = MyVec::new();
-        let mut y: MyVec<isize> = MyVec::new();
-        let mut z: MyVec<isize> = MyVec::new();
+        let mut first: MyVec<isize> = MyVec::new();
+        let mut second: MyVec<isize> = MyVec::new();
+        let mut merged: MyVec<isize> = MyVec::new();
         let a = vec![
             0,
             0,
@@ -1212,22 +1300,22 @@ mod test {
             -3583352287771982849,
         ];
         for v in a.iter() {
-            let len = x.len();
-            List::insert(&mut x, len, *v).unwrap();
-            let len = z.len();
-            List::insert(&mut z, len, *v).unwrap();
+            let len = first.len();
+            List::insert(&mut first, len, *v).unwrap();
+            let len = merged.len();
+            List::insert(&mut merged, len, *v).unwrap();
         }
         for v in b.iter() {
-            let len = y.len();
-            List::insert(&mut y, len, *v).unwrap();
-            let len = z.len();
-            List::insert(&mut z, len, *v).unwrap();
+            let len = second.len();
+            List::insert(&mut second, len, *v).unwrap();
+            let len = merged.len();
+            List::insert(&mut merged, len, *v).unwrap();
         }
-        x.sort();
-        y.sort();
-        z.sort();
-        let mid = x.merge_mid(&y).map(|v| *v);
-        let zmid = z.mid().map(|v| *v);
-        assert_eq!(mid, zmid);
+        first.sort();
+        second.sort();
+        merged.sort();
+        let mid = first.merge_mid(&second).map(|v| *v);
+        let merged_mid = merged.mid().map(|v| *v);
+        assert_eq!(mid, merged_mid);
     }
 }
