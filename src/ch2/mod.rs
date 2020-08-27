@@ -1,4 +1,5 @@
 pub mod integer;
+pub mod linked_list;
 pub mod list;
 pub mod partial_eq;
 pub mod partial_ord;
