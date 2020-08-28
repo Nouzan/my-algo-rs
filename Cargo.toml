@@ -20,3 +20,7 @@ path = "examples/fib_recurrence.rs"
 [[example]]
 name = "fib"
 path = "examples/fib.rs"
+
+[[example]]
+name = "list"
+path = "examples/list.rs"
