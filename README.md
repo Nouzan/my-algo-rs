@@ -10,13 +10,9 @@ cd my-algo-rs
 ```
 
 ### 1. 探索文档
-通过`cargo doc`生成文档:
-```bash
-cargo doc
-```
-在浏览器打开`my-algo-rs/target/doc/my-algo/index.html`.
-
-开始你的旅程.
+- 通过`cargo doc`生成文档
+- 在浏览器打开`my-algo-rs/target/doc/my-algo/index.html`.
+- 开始你的旅程.
 
 ### 2. 直接阅读源码
 从`examples`和`test`入手了解本项目.
