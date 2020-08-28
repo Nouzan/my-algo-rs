@@ -84,38 +84,22 @@ impl<'a, T> Iterator for CursorMut<'a, T> {
 use std::cmp::PartialEq;
 
 impl<T: PartialEq> LinkedList<T> {
-    /// 使用`cursor`遍历链表, 递归地删除等于`x`的元素.
-    /// # Correctness
-    /// 要求`cursor`当前所指结点为`None`或其值不为`x`.
-    fn delete_all_inner(mut cursor: CursorMut<T>, x: &T) {
-        if cursor.peek().is_some() {
-            while let Some(elem) = cursor.peek_next() {
-                if *elem == *x {
-                    let node = cursor.as_mut().unwrap(); // 这里必然为`Some`, 否则`peek_next`将不会返回`Some`.
-                    let mut next = *node.next.take().unwrap(); // 同上.
-                    node.next = next.next.take();
-                } else {
-                    break;
-                }
+    /// 使用`Link`遍历链表, 若当前结点值等于`x`则将`Link`改为指向它的后继.
+    fn delete_all_inner(mut link: &mut Link<T>, x: &T) {
+        if let Some(node) = Self::node_mut(link) {
+            if node.elem == *x {
+                let next = link.take().unwrap().next;
+                *link = next;
+            } else {
+                link = &mut Self::node_mut(link).unwrap().next;
             }
-            cursor.next();
-            Self::delete_all_inner(cursor, x)
+            Self::delete_all_inner(link, x)
         }
     }
 
-    /// 删除所有值等于`x`的元素.
+    /// 删除所有值等于`x`的元素(使用`Link`).
     pub fn delete_all(&mut self, x: &T) {
-        let mut cursor = self.cursor_mut();
-        while let Some(elem) = cursor.peek() {
-            if *elem == *x {
-                let mut head = self.head.take().unwrap(); // 这里必然为`Some`, 否则`peek`将不会返回`Some`.
-                self.head = head.next.take();
-                cursor = self.cursor_mut();
-            } else {
-                break;
-            }
-        }
-        Self::delete_all_inner(cursor, x);
+        Self::delete_all_inner(&mut self.head, x)
     }
 }
 
