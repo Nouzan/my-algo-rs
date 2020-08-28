@@ -68,4 +68,4 @@ fn main() -> Result<(), IndexError> {
 ### 线性表(`ch2`)
 - 顺序表, 偏等顺序表, 偏序顺序表上的一些算法: `ch2::{List, ListExt, PartialEqListExt, PartialOrdListExt}`, 为`vec::MyVec`和`Vec`实现了上述`Trait`.
 - 整数顺序表上的一些算法: `ch2::ISizeListExt`.
-- 不带头结点的单链表和带头结点的单链表的实现及其上的一些算法: `ch2::LinkedList::{single, single_head}`.
+- 不带头结点的单链表和带头结点的单链表的实现及其上的一些算法: `ch2::linked_list::{single, single_head}`.
