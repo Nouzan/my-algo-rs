@@ -1,6 +1,60 @@
-# my-algo-rs: 数据结构与算法的Rust实现
+# 数据结构与算法的Rust实现: my-algo-rs
 该项目的目的是在Rust的语境下探讨数据结构与算法的最佳实践，对比我们的实现与标准实现的异同，有助于更好地理解为何它们会被实现成这样.
 项目的推进动力来源于相关的数据结构与算法方面的杂题，并无明确的路线.
+
+## 如何研究本项目
+克隆本仓库：
+```bash
+git clone https://github.com/Nouzan/my-algo-rs.git
+cd my-algo-rs
+```
+
+### 1. 探索文档
+通过`cargo doc`生成文档:
+```bash
+cargo doc
+```
+在浏览器打开`my-algo-rs/target/doc/my-algo/index.html`.
+
+开始你的旅程.
+
+### 2. 直接阅读源码
+从`examples`和`test`入手了解本项目.
+
+### 3. 在你自己的项目中进行尝试
+创建新的二进制项目:
+```
+cargo new your-project
+```
+在`cargo.toml`中添加对该项目的依赖:
+```
+[dependencies]
+my-algo = { git = "https://github.com/Nouzan/my-algo-rs.git" }
+```
+
+在项目中引入一些结构，并尝试使用它们:
+```rust
+use my_algo::{
+    ch2::{IndexError, List, ListExt},
+    vec::MyVec,
+};
+
+fn main() -> Result<(), IndexError> {
+    let mut list = MyVec::new();
+    for i in 0..10 {
+        list.insert(list.len(), i)?;
+    }
+
+    list.shift(5)?;
+
+    for i in 0..list.len() {
+        println!("{}", list.get(i)?);
+    }
+
+    Ok(())
+}
+
+```
 
 ## 内容
 
