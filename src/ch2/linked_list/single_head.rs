@@ -128,6 +128,11 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 
 /// 单链表游标.
 /// 该结构保存着的是“当前”结点的直接前驱(`prev`).
+///
+/// 对于一个带头结点的单链表的游标, 当前结点有可能是以下三种情况之一:
+/// - 任何普通结点: `prev`为普通结点的前驱(可能为头结点)
+/// - 尾结点的后继: `None`, 此时`prev`为尾结点.
+/// - 尾结点的后继的后继: `None`的后继, 此时`prev`为`None`.
 /// # Correctness
 /// 必须保证`prev`结点的所有后继都是`Option<ItemNode>`.
 pub struct CursorMut<'a, T: 'a> {
@@ -193,6 +198,42 @@ impl<'a, T> CursorMut<'a, T> {
             None
         }
     }
+
+    /// 在当前结点前面插入一个新的结点作为当前结点的新前驱, 游标的当前结点变为该新前驱.
+    /// 若插入成功则返回`None`, 否则返回`elem`.
+    /// - 若当前结点是`None`(`prev`为末尾结点或头结点), 则将会在末尾结点之后进行插入, 并返回`None`.
+    /// - 若当前结点是`None`的后继(`prev`为`None`), 则不会进行插入(且游标不会发生移动), 同时返回`Some(elem)`.
+    /// - 其它情况均能按照预期进行插入, 并返回`None`.
+    pub fn insert_before(&mut self, elem: T) -> Option<T> {
+        // # Correctness
+        // 新插入结点是一个普通结点, 且作为`prev`的后继进行插入, 因此依然保持`Correctness`的假设.
+        if let Some(prev) = self.prev.as_mut() {
+            let next = prev.link(Some(Node::new(elem)));
+            prev.next_mut().unwrap().link(next); // `next_mut`返回的是刚刚插入的结点的引用, 故必然不为`None`.
+            None
+        } else {
+            Some(elem)
+        }
+    }
+
+    /// 在当前结点后面插入一个新的结点作为当前结点的后继, 游标仍然指向当前结点.
+    /// 若插入成功则返回`None`, 否则返回`elem`.
+    /// - 若当前结点是`None`(即当前结点为尾结点的后继, `prev`为末尾结点或头结点), 则将会在末尾结点之后进行插入, 并返回`None`.
+    /// - 若当前结点`None`的后继, 将不会进行插入, 并返回`Some(elem)`.
+    /// - 其余情况均能按预期进行插入, 并返回`None`.
+    pub fn insert_after(&mut self, elem: T) -> Option<T> {
+        if let Some(prev) = self.prev.as_mut() {
+            let node = match prev.next_mut() {
+                Some(node) => node,
+                None => prev,
+            };
+            let next = node.link(Some(Node::new(elem)));
+            node.next_mut().unwrap().link(next);
+            None
+        } else {
+            Some(elem)
+        }
+    }
 }
 
 impl<T> LinkedList<T> {
@@ -217,10 +258,10 @@ impl<T> LinkedList<T> {
 use std::cmp::PartialEq;
 
 impl<T: PartialEq> LinkedList<T> {
-    /// 在首部插入新元素.
+    /// 在链表最前面插入新元素作为新的头结点.
     pub fn push_front(&mut self, elem: T) {
-        let first = self.head.link(Some(Node::new(elem)));
-        self.head.next_mut().unwrap().link(first);
+        let mut cursor = self.cursor_mut();
+        cursor.insert_before(elem);
     }
 
     /// 删除所有值等于`x`的元素.
@@ -266,11 +307,58 @@ mod test {
                 let mut iter = list.iter_mut();
                 for v in data {
                     if v != target {
-                        assert_eq!(Some(v), iter.next().copied())
+                        prop_assert_eq!(Some(v), iter.next().copied())
                     }
                 }
             } else {
                 list.delete_all(&1);
+            }
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn test_cursor_mut_insert_before(data: Vec<isize>) {
+            let mut list = LinkedList::default();
+            let mut cursor = list.cursor_mut();
+
+            // 不变式: 游标始终指向尾结点的后继. 因此调用`insert_before`将会始终在末尾插入新元素.
+            // 开始时表为空, `cursor.prev`为头结点(可看作尾结点), 因此游标指向尾结点的后继`None`.
+            for v in data.iter() {
+                prop_assert_eq!(cursor.insert_before(*v), None); // 在尾结点的后继前面插入新的元素, 插入后游标指向新插入的结点(即新的尾结点).
+                cursor.move_next(); // 向后移一步, 此时再次指向尾结点的后继`None`.
+            }
+
+            // 插入到`None`的后继的前面将会失败.
+            cursor.move_next();
+            prop_assert_eq!(cursor.insert_before(1), Some(1));
+
+            for (idx, v) in list.iter_mut().enumerate() {
+                prop_assert_eq!(*v, data[idx]);
+            }
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn test_cursor_mut_insert_after(data: Vec<isize>) {
+            let mut list = LinkedList::default();
+            let mut cursor = list.cursor_mut();
+
+            // 不变式: 游标始终指向尾结点的后继. 因此调用`insert_after`将会始终在末尾插入新元素.
+            // 开始时表为空, `cursor.prev`为头结点(可看作尾结点), 因此游标指向尾结点的后继`None`.
+            for v in data.iter() {
+                // 在尾结点的后继之后插入新的元素(将会直接插入作为尾结点的后继), 插入后游标指向新插入的结点(即新的尾结点).
+                prop_assert_eq!(cursor.insert_after(*v), None);
+                cursor.move_next(); // 向后移一步, 此时再次指向尾结点的后继`None`.
+            }
+
+            // 插入到`None`的后继的后面将会失败.
+            cursor.move_next();
+            prop_assert_eq!(cursor.insert_after(1), Some(1));
+
+            for (idx, v) in list.iter_mut().enumerate() {
+                prop_assert_eq!(*v, data[idx]);
             }
         }
     }
