@@ -558,10 +558,13 @@ mod test {
                         min_idx = Some(idx);
                     }
                 };
+            } else {
+                prop_assert!(data.is_empty());
             }
             if let Some(idx) = min_idx {
                 data.remove(idx);
             }
+
             for (idx, v) in list.iter_mut().enumerate() {
                 prop_assert_eq!(data[idx], *v);
             }
