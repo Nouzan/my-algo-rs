@@ -421,7 +421,7 @@ impl<T: PartialOrd> LinkedList<T> {
             None
         }
     }
-  
+
     /// (按递增序)排序.
     // 习题 2.3.6
     pub fn sort(&mut self) {
