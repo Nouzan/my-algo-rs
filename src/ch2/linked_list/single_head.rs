@@ -28,6 +28,16 @@ impl<T> Node<T> {
         }
     }
 
+    /// 转换为一个`ItemNode`.
+    /// # Panics
+    /// 如果对`Head`进行转换则报错.
+    fn into_item_node_unchecked(self) -> ItemNode<T> {
+        match self {
+            Self::Head(_) => panic!("A `Head` cannot be make into an `ItemNode`."),
+            Self::Item(node) => node,
+        }
+    }
+
     /// 分割引用.
     /// # Panics
     /// 如果对`Head`进行引用分割则报错.
@@ -136,10 +146,21 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 /// # Correctness
 /// 必须保证`prev`结点的所有后继都是`Option<ItemNode>`.
 pub struct Cursor<'a, T: 'a> {
+    index: usize,
     prev: Option<&'a Node<T>>, // 始终保存着“当前”结点的前驱, 因此“当前”结点必然为`Option<ItemNode>`.
 }
 
 impl<'a, T> Cursor<'a, T> {
+    /// 当前结点的下标.
+    /// 若当前结点为`None`或`None`的后继, 则返回`None`.
+    pub fn index(&self) -> Option<usize> {
+        if self.peek().is_some() {
+            Some(self.index)
+        } else {
+            None
+        }
+    }
+
     /// 移动游标到当前结点的直接后继.
     /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`).
     pub fn move_next(&mut self) {
@@ -151,6 +172,7 @@ impl<'a, T> Cursor<'a, T> {
         // 反复调用该方法最终必然会使得`prev`为`None`,
         // 而当`prev`为`None`时, 该方法是`no-op`.
         if let Some(prev) = self.prev.take() {
+            self.index += 1;
             self.prev = prev.next();
         }
     }
@@ -178,10 +200,21 @@ impl<'a, T> Cursor<'a, T> {
 /// # Correctness
 /// 必须保证`prev`结点的所有后继都是`Option<ItemNode>`.
 pub struct CursorMut<'a, T: 'a> {
+    index: usize,
     prev: Option<&'a mut Node<T>>, // 始终保存着“当前”结点的前驱, 因此“当前”结点必然为`Option<ItemNode>`.
 }
 
 impl<'a, T> CursorMut<'a, T> {
+    /// 当前结点的下标.
+    /// 若当前结点为`None`或`None`的后继, 则返回`None`.
+    pub fn index(&self) -> Option<usize> {
+        if self.as_cursor().peek().is_some() {
+            Some(self.index)
+        } else {
+            None
+        }
+    }
+
     /// 移动游标到当前结点的直接后继.
     /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`).
     pub fn move_next(&mut self) {
@@ -193,6 +226,7 @@ impl<'a, T> CursorMut<'a, T> {
         // 反复调用该方法最终必然会使得`prev`为`None`,
         // 而当`prev`为`None`时, 该方法是`no-op`.
         if let Some(prev) = self.prev.take() {
+            self.index += 1;
             self.prev = prev.next_mut();
         }
     }
@@ -212,7 +246,7 @@ impl<'a, T> CursorMut<'a, T> {
     /// 移除当前结点并返回, 当前结点将会变为原来结点的后继.
     /// - 如果游标的当前结点为尾结点, 那么移除后, 当前结点变为`None`;
     /// - 如果游标的当前结点为`None`或`None`的后继, 则该方法是`no-op`, 返回值为`None`.
-    pub fn remove_current(&mut self) -> Link<T> {
+    pub fn remove_current(&mut self) -> Option<T> {
         // # Correctness
         // 如果`prev`的所有后继都是`Option<ItemNode>`,
         // 那么`prev`的后继的所有后继自然也是`Option<ItemNode>`.
@@ -223,7 +257,7 @@ impl<'a, T> CursorMut<'a, T> {
                 let next = node.link(None);
                 prev.link(next);
             }
-            current
+            current.map(|node| node.into_item_node_unchecked().elem)
         } else {
             None
         }
@@ -270,12 +304,18 @@ impl<'a, T> CursorMut<'a, T> {
     /// 转换为一个只读游标.
     pub fn as_cursor(&self) -> Cursor<T> {
         Cursor {
+            index: self.index,
             prev: self.prev.as_deref(),
         }
     }
 }
 
 impl<T> LinkedList<T> {
+    /// 若表为空则返回`true`, 否则返回`false`.
+    pub fn is_empty(&self) -> bool {
+        self.head.next().is_none()
+    }
+
     /// 返回一个从首结点开始的可变迭代器.
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
@@ -289,6 +329,7 @@ impl<T> LinkedList<T> {
     /// 返回一个当前结点为首结点的可变游标.
     pub fn cursor_mut(&mut self) -> CursorMut<T> {
         CursorMut {
+            index: 0,
             prev: Some(self.head.as_mut()),
         }
     }
@@ -296,6 +337,7 @@ impl<T> LinkedList<T> {
     /// 返回一个当前结点为首结点的只读游标.
     pub fn cursor(&self) -> Cursor<T> {
         Cursor {
+            index: 0,
             prev: Some(self.head.as_ref()),
         }
     }
@@ -318,6 +360,35 @@ impl<T: PartialEq> LinkedList<T> {
                 cursor.remove_current();
             }
             cursor.move_next();
+        }
+    }
+}
+
+use std::cmp::PartialOrd;
+
+impl<T: PartialOrd> LinkedList<T> {
+    /// 删除第一次出现的最小值结点.
+    /// 若表空, 则返回`None`.
+    pub fn pop_min(&mut self) -> Option<T> {
+        if !self.is_empty() {
+            let mut cursor = self.cursor_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
+            let mut pionner = cursor.as_cursor(); // 先锋游标.
+            pionner.move_next(); // 先锋前进一步.
+                                 // 遍历全表.
+            while let Some(elem) = pionner.peek() {
+                if *elem < *cursor.as_cursor().peek().unwrap() {
+                    let idx = pionner.index().unwrap(); // 已经经过判空, 这里可以直接`unwrap`.
+                    while cursor.index().unwrap() != idx {
+                        // 追上先锋.
+                        cursor.move_next();
+                    }
+                    pionner = cursor.as_cursor();
+                }
+                pionner.move_next();
+            }
+            cursor.remove_current()
+        } else {
+            None
         }
     }
 }
@@ -467,5 +538,36 @@ mod test {
         assert_eq!(c3.peek(), Some(&1));
         c3.move_next();
         assert_eq!(c1.peek(), c3.peek());
+    }
+
+    proptest! {
+        #[test]
+        fn test_pop_min(mut data: Vec<isize>) {
+            let mut list = LinkedList::default();
+            let mut cursor = list.cursor_mut();
+            for v in data.iter() {
+                cursor.insert_after(*v);
+                cursor.move_next();
+            }
+            let min = list.pop_min();
+            let mut min_idx = None;
+            if let Some(min) = min {
+                for (idx, v) in data.iter().enumerate() {
+                    prop_assert!(min <= *v);
+                    if min_idx.is_none() && min == *v {
+                        min_idx = Some(idx);
+                    }
+                };
+            } else {
+                prop_assert!(data.is_empty());
+            }
+            if let Some(idx) = min_idx {
+                data.remove(idx);
+            }
+
+            for (idx, v) in list.iter_mut().enumerate() {
+                prop_assert_eq!(data[idx], *v);
+            }
+        }
     }
 }
