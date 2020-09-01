@@ -6,6 +6,7 @@ struct Opt {
     input: Vec<u64>,
 }
 
+// 习题2.3.3
 fn main() {
     let opt = Opt::from_args();
     println!("inputs: {:?}", opt.input);
