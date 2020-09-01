@@ -270,7 +270,7 @@ impl<'a, T> CursorMut<'a, T> {
     /// 转换为一个只读游标.
     pub fn as_cursor(&self) -> Cursor<T> {
         Cursor {
-            prev: self.prev.as_ref().map(|prev| &**prev),
+            prev: self.prev.as_deref(),
         }
     }
 }
