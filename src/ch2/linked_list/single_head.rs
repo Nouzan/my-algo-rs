@@ -222,6 +222,8 @@ impl<'a, T> CursorMut<'a, T> {
     /// - 若当前结点`None`的后继, 将不会进行插入, 并返回`Some(elem)`.
     /// - 其余情况均能按预期进行插入, 并返回`None`.
     pub fn insert_after(&mut self, elem: T) -> Option<T> {
+        // # Correctness
+        // 新插入结点是一个普通结点, 且作为`prev`的后继的后继插入, 因此依然保持`Correctness`的假设.
         if let Some(prev) = self.prev.as_mut() {
             let node = match prev.next_mut() {
                 Some(node) => node,
