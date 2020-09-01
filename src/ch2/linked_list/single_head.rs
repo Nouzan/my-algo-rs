@@ -126,7 +126,49 @@ impl<'a, T> Iterator for IterMut<'a, T> {
     }
 }
 
-/// 单链表游标.
+/// 只读单链表游标.
+/// 该结构保存着的是“当前”结点的直接前驱(`prev`).
+///
+/// 对于一个带头结点的单链表的游标, 当前结点有可能是以下三种情况之一:
+/// - 任何普通结点: `prev`为普通结点的前驱(可能为头结点)
+/// - 尾结点的后继: `None`, 此时`prev`为尾结点.
+/// - 尾结点的后继的后继: `None`的后继, 此时`prev`为`None`.
+/// # Correctness
+/// 必须保证`prev`结点的所有后继都是`Option<ItemNode>`.
+pub struct Cursor<'a, T: 'a> {
+    prev: Option<&'a Node<T>>, // 始终保存着“当前”结点的前驱, 因此“当前”结点必然为`Option<ItemNode>`.
+}
+
+impl<'a, T> Cursor<'a, T> {
+    /// 移动游标到当前结点的直接后继.
+    /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`).
+    pub fn move_next(&mut self) {
+        // # Correctness
+        // 如果`prev`的所有后继都是`Option<ItemNode>`,
+        // 那么`prev`的后继的所有后继自然也是`Option<ItemNode>`.
+        // 故依然保持`Correctness`假设.
+        //
+        // 反复调用该方法最终必然会使得`prev`为`None`,
+        // 而当`prev`为`None`时, 该方法是`no-op`.
+        if let Some(prev) = self.prev.take() {
+            self.prev = prev.next();
+        }
+    }
+
+    /// 获取当前结点内容的只读引用.
+    /// 如果游标的当前结点为链表末尾的`None`或`None`的后继, 则返回`None`.
+    pub fn peek(&self) -> Option<&T> {
+        if let Some(prev) = self.prev.as_ref() {
+            prev.next().as_ref().map(|node| {
+                node.elem_unchecked() // `node`是后继, 因此必然是`ItemNode`.
+            })
+        } else {
+            None
+        }
+    }
+}
+
+/// 可变单链表游标.
 /// 该结构保存着的是“当前”结点的直接前驱(`prev`).
 ///
 /// 对于一个带头结点的单链表的游标, 当前结点有可能是以下三种情况之一:
@@ -141,7 +183,7 @@ pub struct CursorMut<'a, T: 'a> {
 
 impl<'a, T> CursorMut<'a, T> {
     /// 移动游标到当前结点的直接后继.
-    /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`), 但这并没有实际意义.
+    /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`).
     pub fn move_next(&mut self) {
         // # Correctness
         // 如果`prev`的所有后继都是`Option<ItemNode>`,
@@ -236,6 +278,13 @@ impl<'a, T> CursorMut<'a, T> {
             Some(elem)
         }
     }
+
+    /// 转换为一个只读游标.
+    pub fn into_cursor(mut self) -> Cursor<'a, T> {
+        Cursor {
+            prev: self.prev.take().map(|prev| &*prev),
+        }
+    }
 }
 
 impl<T> LinkedList<T> {
@@ -253,6 +302,13 @@ impl<T> LinkedList<T> {
     pub fn cursor_mut(&mut self) -> CursorMut<T> {
         CursorMut {
             prev: Some(self.head.as_mut()),
+        }
+    }
+
+    /// 返回一个当前结点为首结点的只读游标.
+    pub fn cursor(&self) -> Cursor<T> {
+        Cursor {
+            prev: Some(self.head.as_ref()),
         }
     }
 }
@@ -395,5 +451,33 @@ mod test {
                 prop_assert_eq!(*v, data[idx]);
             }
         }
+    }
+
+    #[test]
+    fn test_cursor() {
+        let mut list = LinkedList::default();
+        let data = vec![1, 2, 3, 4, 5];
+        let mut cursor = list.cursor_mut();
+        for v in data.iter() {
+            cursor.insert_after(*v);
+            cursor.move_next();
+        }
+        let mut cursor = list.cursor_mut();
+        cursor.move_next();
+        assert_eq!(cursor.peek(), Some(&2));
+        let mut c1 = cursor.into_cursor();
+        c1.move_next();
+        assert_eq!(c1.peek(), Some(&3));
+        let mut c1 = list.cursor();
+        let mut c2 = list.cursor();
+        assert_eq!(c2.peek(), Some(&1));
+        c1.move_next();
+        assert_eq!(c1.peek(), Some(&2));
+        c2.move_next();
+        assert_eq!(c2.peek(), Some(&2));
+        let mut c3 = list.cursor();
+        assert_eq!(c3.peek(), Some(&1));
+        c3.move_next();
+        assert_eq!(c1.peek(), c3.peek());
     }
 }
