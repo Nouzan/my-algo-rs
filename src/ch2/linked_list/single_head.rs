@@ -547,6 +547,21 @@ impl<T: PartialOrd> LinkedList<T> {
             self.append(rhs);
         }
     }
+
+    /// 删除内容在[a, b)之间的结点.
+    // 习题 2.3.7
+    pub fn delete_between(&mut self, a: &T, b: &T) {
+        if *a < *b {
+            let mut cursor = self.cursor_mut();
+            while let Some(elem) = cursor.as_cursor().peek() {
+                if *a <= *elem && *elem < *b {
+                    cursor.remove_current();
+                } else {
+                    cursor.move_next();
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -556,10 +571,21 @@ mod test {
 
     proptest! {
         #[test]
+        fn test_delete_between(data: Vec<isize>, a: isize, b: isize) {
+            let mut list = LinkedList::from(data);
+            list.delete_between(&a, &b);
+            for v in list.iter() {
+                prop_assert!(!(a <= *v && *v < b));
+            }
+        }
+    }
+
+    proptest! {
+        #[test]
         fn test_sort(mut data: Vec<isize>) {
             let mut list = LinkedList::from(data.clone());
             list.sort();
-            data.sort();
+            data.sort_unstable();
             prop_assert_eq!(data, list);
         }
     }
