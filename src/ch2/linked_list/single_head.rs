@@ -355,9 +355,21 @@ impl<T> LinkedList<T> {
     // 习题 2.3.5
     pub fn reverse(&mut self) {
         // a -> b -> c
-        // b -> c -> a
+        // a, b -> c
+        // b -> a, c
         // c -> b -> a
-        unimplemented!()
+        if !self.is_empty() {
+            // a -> b -> c => a, b -> c
+            let mut right = Self::default();
+            let rest = self.head.next_mut().unwrap().link(None); // 已经判过空, 因此可以`unwrap`.
+            right.head.link(rest);
+            let mut cursor_left = self.cursor_mut();
+            let mut cursor_right = right.cursor_mut();
+            while cursor_right.peek().is_some() {
+                let elem = cursor_right.remove_current().unwrap(); // 已经判过空, 因此可以`unwrap`.
+                cursor_left.insert_before(elem);
+            }
+        }
     }
 }
 
@@ -422,6 +434,23 @@ impl<T: PartialOrd> LinkedList<T> {
 mod test {
     use super::*;
     use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_reverse(mut data: Vec<isize>) {
+            let mut list = LinkedList::default();
+            let mut cursor = list.cursor_mut();
+            for v in data.iter() {
+                cursor.insert_after(*v);
+                cursor.move_next();
+            }
+            list.reverse();
+            data.reverse();
+            for (idx, v) in list.iter_mut().enumerate() {
+                assert_eq!(data[idx], *v);
+            }
+        }
+    }
 
     proptest! {
         #[test]
