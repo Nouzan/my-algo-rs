@@ -266,7 +266,7 @@ impl<'a, T> CursorMut<'a, T> {
                 let next = node.link(None);
                 prev.link(next);
             }
-            current.map(|node| node.into_item_node_unchecked().elem)
+            current
         } else {
             None
         }
