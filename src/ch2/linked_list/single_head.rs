@@ -197,21 +197,9 @@ impl<'a, T> CursorMut<'a, T> {
         }
     }
 
-    /// 获取当前结点内容的只读引用.
-    /// 如果游标的当前结点为链表末尾的`None`或`None`的后继, 则返回`None`.
-    pub fn peek(&self) -> Option<&T> {
-        if let Some(prev) = self.prev.as_ref() {
-            prev.next().as_ref().map(|node| {
-                node.elem_unchecked() // `node`是后继, 因此必然是`ItemNode`.
-            })
-        } else {
-            None
-        }
-    }
-
     /// 获取当前结点内容的可变引用.
     /// 如果游标的当前结点为链表末尾的`None`或`None`的后继, 则返回`None`.
-    pub fn peek_mut(&mut self) -> Option<&mut T> {
+    pub fn peek(&mut self) -> Option<&mut T> {
         if let Some(prev) = self.prev.as_mut() {
             prev.next_mut().map(|node| {
                 node.elem_mut_unchecked() // `node`是后继, 因此必然是`ItemNode`.
@@ -280,9 +268,9 @@ impl<'a, T> CursorMut<'a, T> {
     }
 
     /// 转换为一个只读游标.
-    pub fn into_cursor(mut self) -> Cursor<'a, T> {
+    pub fn as_cursor(&self) -> Cursor<T> {
         Cursor {
-            prev: self.prev.take().map(|prev| &*prev),
+            prev: self.prev.as_ref().map(|prev| &**prev),
         }
     }
 }
@@ -325,7 +313,7 @@ impl<T: PartialEq> LinkedList<T> {
     /// 删除所有值等于`x`的元素.
     pub fn delete_all(&mut self, x: &T) {
         let mut cursor = self.cursor_mut();
-        while let Some(current) = cursor.peek_mut() {
+        while let Some(current) = cursor.peek() {
             if *current == *x {
                 cursor.remove_current();
             }
@@ -464,8 +452,8 @@ mod test {
         }
         let mut cursor = list.cursor_mut();
         cursor.move_next();
-        assert_eq!(cursor.peek(), Some(&2));
-        let mut c1 = cursor.into_cursor();
+        assert_eq!(cursor.as_cursor().peek(), Some(&2));
+        let mut c1 = cursor.as_cursor();
         c1.move_next();
         assert_eq!(c1.peek(), Some(&3));
         let mut c1 = list.cursor();
