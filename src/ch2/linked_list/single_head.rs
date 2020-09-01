@@ -433,6 +433,17 @@ impl<T> LinkedList<T> {
         }
     }
 
+    /// 在链表最前面插入新元素作为新的头结点.
+    pub fn push_front(&mut self, elem: T) {
+        self.cursor_mut().insert_before(elem);
+    }
+
+    /// 弹出链表最前面的元素.
+    /// 若表空则返回`None`.
+    pub fn pop_front(&mut self) -> Option<T> {
+        self.cursor_mut().remove_current()
+    }
+
     /// 就地逆置.
     // 习题 2.3.5
     pub fn reverse(&mut self) {
@@ -453,15 +464,18 @@ impl<T> LinkedList<T> {
             }
         }
     }
+
+    /// 连接两个链表.
+    pub fn append(&mut self, mut rhs: Self) {
+        let mut cursor = self.cursor_mut();
+        while cursor.peek().is_some() {
+            cursor.move_next()
+        }
+        cursor.prev.unwrap().link(rhs.head.link(None));
+    }
 }
 
 impl<T: PartialEq> LinkedList<T> {
-    /// 在链表最前面插入新元素作为新的头结点.
-    pub fn push_front(&mut self, elem: T) {
-        let mut cursor = self.cursor_mut();
-        cursor.insert_before(elem);
-    }
-
     /// 删除所有值等于`x`的元素.
     pub fn delete_all(&mut self, x: &T) {
         let mut cursor = self.cursor_mut();
@@ -502,10 +516,51 @@ impl<T: PartialOrd> LinkedList<T> {
         }
     }
 
+    /// 快速排序中的helper.
+    /// # Panics
+    /// 如果表为空则报错.
+    fn partition(&mut self) -> (T, Self) {
+        let flag = self.pop_front().unwrap();
+        let mut rhs = Self::default();
+        let mut rhs_cursor = rhs.cursor_mut();
+        let mut lhs_cursor = self.cursor_mut();
+        while let Some(elem) = lhs_cursor.as_cursor().peek() {
+            if *elem >= flag {
+                // 已判空, 故可直接`unwrap`.
+                rhs_cursor.insert_after(lhs_cursor.remove_current().unwrap());
+                rhs_cursor.move_next();
+            } else {
+                lhs_cursor.move_next();
+            }
+        }
+        (flag, rhs)
+    }
+
     /// (按递增序)排序.
     // 习题 2.3.6
     pub fn sort(&mut self) {
-        unimplemented!()
+        if !self.is_empty() {
+            let (flag, mut rhs) = self.partition();
+            self.sort();
+            rhs.sort();
+            rhs.push_front(flag);
+            self.append(rhs);
+        }
+    }
+
+    /// 删除内容在[a, b)之间的结点.
+    // 习题 2.3.7
+    pub fn delete_between(&mut self, a: &T, b: &T) {
+        if *a < *b {
+            let mut cursor = self.cursor_mut();
+            while let Some(elem) = cursor.as_cursor().peek() {
+                if *a <= *elem && *elem < *b {
+                    cursor.remove_current();
+                } else {
+                    cursor.move_next();
+                }
+            }
+        }
     }
 }
 
@@ -513,6 +568,27 @@ impl<T: PartialOrd> LinkedList<T> {
 mod test {
     use super::*;
     use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_delete_between(data: Vec<isize>, a: isize, b: isize) {
+            let mut list = LinkedList::from(data);
+            list.delete_between(&a, &b);
+            for v in list.iter() {
+                prop_assert!(!(a <= *v && *v < b));
+            }
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn test_sort(mut data: Vec<isize>) {
+            let mut list = LinkedList::from(data.clone());
+            list.sort();
+            data.sort_unstable();
+            prop_assert_eq!(data, list);
+        }
+    }
 
     proptest! {
         #[test]
