@@ -1,12 +1,16 @@
+use std::cmp::PartialEq;
+
 type Link<T> = Option<Box<Node<T>>>;
 
 /// 普通结点.
+#[derive(Debug)]
 pub struct ItemNode<T> {
     elem: T,
     next: Link<T>,
 }
 
 /// 单链表结点.
+#[derive(Debug)]
 pub enum Node<T> {
     Item(ItemNode<T>),
     Head(Link<T>),
@@ -22,6 +26,16 @@ impl<T> Node<T> {
     /// # Panics
     /// 如果对`Head`进行转换则报错.
     fn as_item_node_mut_unchecked(&mut self) -> &mut ItemNode<T> {
+        match self {
+            Self::Head(_) => panic!("A `Head` cannot be make into an `ItemNode`."),
+            Self::Item(node) => node,
+        }
+    }
+
+    /// 转换为一个`ItemNode`的只读引用.
+    /// # Panics
+    /// 如果对`Head`进行转换则报错.
+    fn as_item_node_unchecked(&self) -> &ItemNode<T> {
         match self {
             Self::Head(_) => panic!("A `Head` cannot be make into an `ItemNode`."),
             Self::Item(node) => node,
@@ -102,6 +116,7 @@ impl<T> Node<T> {
 /// 带头结点的单链表.
 /// # Correctness
 /// 该单链表的实现必须保证任何时候任何结点的后继都是`Option<ItemNode>`.
+#[derive(Debug)]
 pub struct LinkedList<T> {
     head: Box<Node<T>>,
 }
@@ -114,7 +129,47 @@ impl<T> Default for LinkedList<T> {
     }
 }
 
-/// 单链表迭代器.
+impl<T> From<Vec<T>> for LinkedList<T> {
+    fn from(data: Vec<T>) -> Self {
+        let mut list = Self::default();
+        let mut cursor = list.cursor_mut();
+        for v in data {
+            cursor.insert_after(v);
+            cursor.move_next();
+        }
+        list
+    }
+}
+
+impl<T> From<LinkedList<T>> for Vec<T> {
+    fn from(mut linked_list: LinkedList<T>) -> Self {
+        let mut list = vec![];
+        let mut cursor = linked_list.cursor_mut();
+        while cursor.peek().is_some() {
+            list.push(cursor.remove_current().unwrap()) // 已经判空, 故可`unwrap`.
+        }
+        list
+    }
+}
+
+impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
+    fn eq(&self, other: &Vec<T>) -> bool {
+        for (idx, v) in self.iter().enumerate() {
+            if !(idx < other.len() && *v == other[idx]) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
+    fn eq(&self, other: &LinkedList<T>) -> bool {
+        other.eq(self)
+    }
+}
+
+/// 单链表可变迭代器.
 pub struct IterMut<'a, T: 'a> {
     inner: Option<&'a mut ItemNode<T>>,
 }
@@ -129,6 +184,26 @@ impl<'a, T> Iterator for IterMut<'a, T> {
                     .as_mut()
                     .map(|node| node.as_item_node_mut_unchecked()),
                 &mut node.elem,
+            );
+            self.inner = next;
+            elem
+        })
+    }
+}
+
+/// 单链表只读迭代器.
+pub struct Iter<'a, T: 'a> {
+    inner: Option<&'a ItemNode<T>>,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.take().map(|node| {
+            let (next, elem) = (
+                node.next.as_ref().map(|node| node.as_item_node_unchecked()),
+                &node.elem,
             );
             self.inner = next;
             elem
@@ -325,6 +400,13 @@ impl<T> LinkedList<T> {
         self.head.next().is_none()
     }
 
+    /// 返回一个从首结点开始的只读迭代器.
+    pub fn iter(&self) -> Iter<T> {
+        Iter {
+            inner: self.head.next().map(|node| node.as_item_node_unchecked()),
+        }
+    }
+
     /// 返回一个从首结点开始的可变迭代器.
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
@@ -372,8 +454,6 @@ impl<T> LinkedList<T> {
         }
     }
 }
-
-use std::cmp::PartialEq;
 
 impl<T: PartialEq> LinkedList<T> {
     /// 在链表最前面插入新元素作为新的头结点.
@@ -437,40 +517,25 @@ mod test {
     proptest! {
         #[test]
         fn test_reverse(mut data: Vec<isize>) {
-            let mut list = LinkedList::default();
-            let mut cursor = list.cursor_mut();
-            for v in data.iter() {
-                cursor.insert_after(*v);
-                cursor.move_next();
-            }
+            let mut list: LinkedList<_> = data.clone().into();
             list.reverse();
             data.reverse();
-            for (idx, v) in list.iter_mut().enumerate() {
-                assert_eq!(data[idx], *v);
-            }
+            prop_assert_eq!(list, data);
         }
     }
 
     proptest! {
         #[test]
         fn test_basic(data: Vec<isize>) {
-            let mut list = LinkedList::default();
-            for v in data.iter().rev() {
-                list.push_front(*v);
-            }
-            for (i, v) in list.iter_mut().enumerate() {
-                prop_assert_eq!(data[i], *v);
-            }
+            let list: LinkedList<_> = data.clone().into();
+            prop_assert_eq!(data, Vec::from(list));
         }
     }
 
     proptest! {
         #[test]
         fn test_delete_all(data: Vec<isize>) {
-            let mut list = LinkedList::default();
-            for v in data.iter().rev() {
-                list.push_front(*v);
-            }
+            let mut list: LinkedList<_> = data.clone().into();
             if !data.is_empty() {
                 let target = data[0];
                 list.delete_all(&target);
@@ -503,10 +568,7 @@ mod test {
             // 插入到`None`的后继的前面将会失败.
             cursor.move_next();
             prop_assert_eq!(cursor.insert_before(1), Some(1));
-
-            for (idx, v) in list.iter_mut().enumerate() {
-                prop_assert_eq!(*v, data[idx]);
-            }
+            prop_assert_eq!(&list, &data);
 
             // 逆序插入
             let mut list = LinkedList::default();
@@ -516,9 +578,7 @@ mod test {
                 prop_assert_eq!(cursor.insert_before(*v), None);
             }
 
-            for (idx, v) in list.iter_mut().enumerate() {
-                prop_assert_eq!(*v, data[idx]);
-            }
+            prop_assert_eq!(list, data);
         }
     }
 
@@ -540,10 +600,7 @@ mod test {
             // 插入到`None`的后继的后面将会失败.
             cursor.move_next();
             prop_assert_eq!(cursor.insert_after(1), Some(1));
-
-            for (idx, v) in list.iter_mut().enumerate() {
-                prop_assert_eq!(*v, data[idx]);
-            }
+            prop_assert_eq!(&list, &data);
 
             // 逆序插入
             let mut list = LinkedList::default();
@@ -558,22 +615,13 @@ mod test {
                     prop_assert_eq!(cursor.insert_after(*v), None);
                 }
             }
-
-            for (idx, v) in list.iter_mut().enumerate() {
-                prop_assert_eq!(*v, data[idx]);
-            }
+            prop_assert_eq!(list, data);
         }
     }
 
     #[test]
     fn test_cursor() {
-        let mut list = LinkedList::default();
-        let data = vec![1, 2, 3, 4, 5];
-        let mut cursor = list.cursor_mut();
-        for v in data.iter() {
-            cursor.insert_after(*v);
-            cursor.move_next();
-        }
+        let mut list: LinkedList<_> = vec![1, 2, 3, 4, 5].into();
         let mut cursor = list.cursor_mut();
         cursor.move_next();
         assert_eq!(cursor.as_cursor().peek(), Some(&2));
@@ -596,12 +644,7 @@ mod test {
     proptest! {
         #[test]
         fn test_pop_min(mut data: Vec<isize>) {
-            let mut list = LinkedList::default();
-            let mut cursor = list.cursor_mut();
-            for v in data.iter() {
-                cursor.insert_after(*v);
-                cursor.move_next();
-            }
+            let mut list: LinkedList<_> = data.clone().into();
             let min = list.pop_min();
             let mut min_idx = None;
             if let Some(min) = min {
@@ -618,9 +661,7 @@ mod test {
                 data.remove(idx);
             }
 
-            for (idx, v) in list.iter_mut().enumerate() {
-                prop_assert_eq!(data[idx], *v);
-            }
+            prop_assert_eq!(list, data);
         }
     }
 }
