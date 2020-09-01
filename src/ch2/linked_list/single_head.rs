@@ -216,7 +216,7 @@ impl<'a, T> CursorMut<'a, T> {
         }
     }
 
-    /// 在当前结点后面插入一个新的结点作为当前结点的后继, 游标仍然指向当前结点.
+    /// 在当前结点后面插入一个新的结点作为当前结点的后继, 游标仍然指向当前结点(若在尾结点的后继之后插入, 则游标指向新的尾结点).
     /// 若插入成功则返回`None`, 否则返回`elem`.
     /// - 若当前结点是`None`(即当前结点为尾结点的后继, `prev`为末尾结点或头结点), 则将会在末尾结点之后进行插入, 并返回`None`.
     /// - 若当前结点`None`的后继, 将不会进行插入, 并返回`Some(elem)`.
@@ -321,6 +321,7 @@ mod test {
     proptest! {
         #[test]
         fn test_cursor_mut_insert_before(data: Vec<isize>) {
+            // 顺序插入
             let mut list = LinkedList::default();
             let mut cursor = list.cursor_mut();
 
@@ -338,12 +339,25 @@ mod test {
             for (idx, v) in list.iter_mut().enumerate() {
                 prop_assert_eq!(*v, data[idx]);
             }
+
+            // 逆序插入
+            let mut list = LinkedList::default();
+            let mut cursor = list.cursor_mut();
+
+            for v in data.iter().rev() {
+                prop_assert_eq!(cursor.insert_before(*v), None);
+            }
+
+            for (idx, v) in list.iter_mut().enumerate() {
+                prop_assert_eq!(*v, data[idx]);
+            }
         }
     }
 
     proptest! {
         #[test]
         fn test_cursor_mut_insert_after(data: Vec<isize>) {
+            // 顺序插入
             let mut list = LinkedList::default();
             let mut cursor = list.cursor_mut();
 
@@ -358,6 +372,24 @@ mod test {
             // 插入到`None`的后继的后面将会失败.
             cursor.move_next();
             prop_assert_eq!(cursor.insert_after(1), Some(1));
+
+            for (idx, v) in list.iter_mut().enumerate() {
+                prop_assert_eq!(*v, data[idx]);
+            }
+
+            // 逆序插入
+            let mut list = LinkedList::default();
+            let mut cursor = list.cursor_mut();
+
+            if !data.is_empty() {
+                prop_assert_eq!(cursor.insert_after(data[0]), None);
+            }
+
+            if data.len() > 1 {
+                for v in data[1..].iter().rev() {
+                    prop_assert_eq!(cursor.insert_after(*v), None);
+                }
+            }
 
             for (idx, v) in list.iter_mut().enumerate() {
                 prop_assert_eq!(*v, data[idx]);
