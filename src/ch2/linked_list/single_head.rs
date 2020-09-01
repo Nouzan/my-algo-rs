@@ -405,7 +405,6 @@ impl<T: PartialOrd> LinkedList<T> {
             let mut cursor = self.cursor_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
             let mut pionner = cursor.as_cursor(); // 先锋游标.
             pionner.move_next(); // 先锋前进一步.
-                                 // 遍历全表.
             while let Some(elem) = pionner.peek() {
                 if *elem < *cursor.as_cursor().peek().unwrap() {
                     let idx = pionner.index().unwrap(); // 已经经过判空, 这里可以直接`unwrap`.
