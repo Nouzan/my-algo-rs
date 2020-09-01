@@ -243,10 +243,19 @@ impl<'a, T> CursorMut<'a, T> {
         }
     }
 
-    /// 移除当前结点并返回, 当前结点将会变为原来结点的后继.
+    /// 移除当前结点并返回它的内容, 当前结点将会变为原来结点的后继.
     /// - 如果游标的当前结点为尾结点, 那么移除后, 当前结点变为`None`;
     /// - 如果游标的当前结点为`None`或`None`的后继, 则该方法是`no-op`, 返回值为`None`.
     pub fn remove_current(&mut self) -> Option<T> {
+        // 当前结点必然是后继, 后继必然是`Option<ItemNode>`.
+        self.remove_current_as_node()
+            .map(|node| node.into_item_node_unchecked().elem)
+    }
+
+    /// 移除当前结点并返回, 当前结点将会变为原来结点的后继.
+    /// - 如果游标的当前结点为尾结点, 那么移除后, 当前结点变为`None`;
+    /// - 如果游标的当前结点为`None`或`None`的后继, 则该方法是`no-op`, 返回值为`None`.
+    fn remove_current_as_node(&mut self) -> Link<T> {
         // # Correctness
         // 如果`prev`的所有后继都是`Option<ItemNode>`,
         // 那么`prev`的后继的所有后继自然也是`Option<ItemNode>`.
@@ -257,7 +266,7 @@ impl<'a, T> CursorMut<'a, T> {
                 let next = node.link(None);
                 prev.link(next);
             }
-            current.map(|node| node.into_item_node_unchecked().elem)
+            current
         } else {
             None
         }
@@ -341,6 +350,15 @@ impl<T> LinkedList<T> {
             prev: Some(self.head.as_ref()),
         }
     }
+
+    /// 就地逆置.
+    // 习题 2.3.5
+    pub fn reverse(&mut self) {
+        // a -> b -> c
+        // b -> c -> a
+        // c -> b -> a
+        unimplemented!()
+    }
 }
 
 use std::cmp::PartialEq;
@@ -369,6 +387,7 @@ use std::cmp::PartialOrd;
 impl<T: PartialOrd> LinkedList<T> {
     /// 删除第一次出现的最小值结点.
     /// 若表空, 则返回`None`.
+    // 习题 2.3.4
     pub fn pop_min(&mut self) -> Option<T> {
         if !self.is_empty() {
             let mut cursor = self.cursor_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
@@ -390,6 +409,12 @@ impl<T: PartialOrd> LinkedList<T> {
         } else {
             None
         }
+    }
+
+    /// (按递增序)排序.
+    // 习题 2.3.6
+    pub fn sort(&mut self) {
+        unimplemented!()
     }
 }
 
