@@ -26,5 +26,5 @@ fn main() {
     while !stack.is_empty() {
         print!("{} ", stack.pop().unwrap())
     }
-    println!("")
+    println!()
 }
