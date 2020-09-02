@@ -159,7 +159,7 @@ mod test {
             lhs.sort();
             rhs.sort();
             data1.append(&mut data2);
-            data1.sort();
+            data1.sort_unstable();
             let merged = merge(lhs, rhs);
             prop_assert_eq!(data1, merged);
         }
