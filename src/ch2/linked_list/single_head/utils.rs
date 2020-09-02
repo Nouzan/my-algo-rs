@@ -49,8 +49,8 @@ pub fn merge<T: PartialOrd>(mut lhs: LinkedList<T>, mut rhs: LinkedList<T>) -> L
 /// use my_algo::ch2::linked_list::single_head::{LinkedList, utils::common};
 ///
 /// let lhs = LinkedList::from(vec![1, 2, 2, 3, 4]);
-/// let rhs = LinkedList::from(vec![1, 2, 3, 3, 4]);
-/// assert_eq!(common(&lhs, &rhs), vec![1, 2, 3, 4]);
+/// let rhs = LinkedList::from(vec![1, 2, 2, 3, 3, 4]);
+/// assert_eq!(common(&lhs, &rhs), vec![1, 2, 2, 3, 4]);
 /// ```
 // 习题 2.3.14
 pub fn common<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -> LinkedList<T> {
@@ -70,6 +70,24 @@ pub fn common<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -
             rcur.move_next();
         }
     }
+    common
+}
+
+/// 求两个链表元素集合的交集.
+/// # Correctness
+/// 要求`lhs`和`rhs`递增有序.
+/// # Examples
+/// ```
+/// use my_algo::ch2::linked_list::single_head::{LinkedList, utils::intersect};
+///
+/// let lhs = LinkedList::from(vec![1, 2, 2, 3, 4]);
+/// let rhs = LinkedList::from(vec![1, 2, 2, 3, 3, 4]);
+/// assert_eq!(intersect(&lhs, &rhs), vec![1, 2, 3, 4]);
+/// ```
+// 习题 2.3.15
+pub fn intersect<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -> LinkedList<T> {
+    let mut common = common(lhs, rhs);
+    common.dedup();
     common
 }
 
