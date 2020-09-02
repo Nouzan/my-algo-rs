@@ -116,7 +116,6 @@ impl<T> Node<T> {
 /// 带头结点的单链表.
 /// # Correctness
 /// 该单链表的实现必须保证任何时候任何结点的后继都是`Option<ItemNode>`.
-#[derive(Debug)]
 pub struct LinkedList<T> {
     head: Box<Node<T>>,
 }
@@ -166,6 +165,22 @@ impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
 impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
     fn eq(&self, other: &LinkedList<T>) -> bool {
         other.eq(self)
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for LinkedList<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.is_empty() {
+            write!(f, "[]")
+        } else {
+            let mut iter = self.iter();
+            write!(f, "[{:?}", iter.next().unwrap())?;
+            for elem in iter {
+                write!(f, ", {:?}", elem)?;
+            }
+            write!(f, "]")?;
+            Ok(())
+        }
     }
 }
 

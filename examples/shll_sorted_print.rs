@@ -12,8 +12,5 @@ fn main() {
     let opt = Opt::from_args();
     let mut list = LinkedList::from(opt.input);
     list.sort();
-    for elem in list.iter() {
-        print!("{} ", *elem)
-    }
-    println!();
+    println!("{:?}", list);
 }
