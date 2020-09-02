@@ -292,6 +292,15 @@ impl<'a, T> Cursor<'a, T> {
             None
         }
     }
+
+    /// 转换为内容的只读引用.
+    pub fn into_inner(mut self) -> Option<&'a T> {
+        if let Some(prev) = self.prev.take() {
+            prev.next().map(|node| node.elem_unchecked())
+        } else {
+            None
+        }
+    }
 }
 
 /// 可变单链表游标.
@@ -502,6 +511,42 @@ impl<T> LinkedList<T> {
         }
         cursor.prev.unwrap().link(rhs.head.link(None));
     }
+
+    /// 获取倒数第n个元素.
+    /// 若表不够长, 则返回`None`.
+    /// # Examples
+    /// ```
+    /// use my_algo::ch2::linked_list::single_head::LinkedList;
+    ///
+    /// let list = LinkedList::from(vec![5, 4, 3, 2, 1]);
+    /// assert_eq!(list.last(1), Some(&1));
+    /// assert_eq!(list.last(0), None);
+    /// assert_eq!(list.last(6), None);
+    /// assert_eq!(list.last(5), Some(&5));
+    /// ```
+    // 习题 2.3.21
+    pub fn last(&self, n: usize) -> Option<&T> {
+        if n == 0 {
+            return None;
+        }
+        let mut lcur = self.cursor();
+        let mut rcur = self.cursor();
+        let mut flag = false;
+        while rcur.peek().is_some() {
+            if flag {
+                lcur.move_next();
+            }
+            if rcur.index().unwrap() - lcur.index().unwrap() >= n - 1 {
+                flag = true;
+            }
+            rcur.move_next();
+        }
+        if flag {
+            lcur.into_inner()
+        } else {
+            None
+        }
+    }
 }
 
 impl<T: PartialEq> LinkedList<T> {
@@ -653,6 +698,16 @@ mod test {
     use proptest::prelude::*;
 
     proptest! {
+        #[test]
+        fn test_last(data: Vec<usize>, n: usize) {
+            let list = LinkedList::from(data.clone());
+            if 1 <= n && n <= data.len() {
+                assert_eq!(list.last(n), Some(&data[data.len() - n]));
+            } else {
+                assert_eq!(list.last(n), None);
+            }
+        }
+
         #[test]
         fn test_find(data: String, pattern: String) {
             let list = LinkedList::from(Vec::from(data.clone()));
