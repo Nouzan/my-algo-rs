@@ -1,3 +1,5 @@
+pub mod utils;
+
 use std::cmp::PartialEq;
 
 type Link<T> = Option<Box<Node<T>>>;
