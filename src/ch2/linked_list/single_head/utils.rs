@@ -80,15 +80,31 @@ pub fn common<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -
 /// ```
 /// use my_algo::ch2::linked_list::single_head::{LinkedList, utils::intersect};
 ///
-/// let lhs = LinkedList::from(vec![1, 2, 2, 3, 4]);
+/// let mut lhs = LinkedList::from(vec![1, 2, 2, 3, 4]);
 /// let rhs = LinkedList::from(vec![1, 2, 2, 3, 3, 4]);
-/// assert_eq!(intersect(&lhs, &rhs), vec![1, 2, 3, 4]);
+/// intersect(&mut lhs, &rhs);
+/// assert_eq!(lhs, vec![1, 2, 3, 4]);
 /// ```
 // 习题 2.3.15
-pub fn intersect<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -> LinkedList<T> {
-    let mut common = common(lhs, rhs);
-    common.dedup();
-    common
+pub fn intersect<T: PartialOrd>(lhs: &mut LinkedList<T>, rhs: &LinkedList<T>) {
+    let mut lcur = lhs.cursor_mut();
+    let mut rcur = rhs.cursor();
+    while let (Some(le), Some(re)) = (lcur.as_cursor().peek(), rcur.peek()) {
+        if *le == *re {
+            lcur.move_next();
+            while lcur.as_cursor().peek() == Some(re) {
+                lcur.remove_current();
+            }
+            rcur.move_next();
+        } else if *le < *re {
+            lcur.remove_current();
+        } else {
+            rcur.move_next();
+        }
+    }
+    while lcur.as_cursor().peek().is_some() {
+        lcur.remove_current();
+    }
 }
 
 #[cfg(test)]
@@ -97,6 +113,18 @@ mod test {
     use proptest::prelude::*;
 
     proptest! {
+        #[test]
+        fn test_intersect(data1: Vec<i64>, data2: Vec<i64>) {
+            let mut lhs = LinkedList::from(data1);
+            let mut rhs = LinkedList::from(data2);
+            lhs.sort();
+            rhs.sort();
+            let mut common = common(&lhs, &rhs);
+            common.dedup();
+            intersect(&mut lhs, &rhs);
+            prop_assert_eq!(lhs, Vec::from(common));
+        }
+
         #[test]
         fn test_common(mut data1: Vec<i64>, mut data2: Vec<i64>) {
             let mut lhs = LinkedList::from(data1.clone());
