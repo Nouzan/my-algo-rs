@@ -503,6 +503,33 @@ impl<T: PartialEq> LinkedList<T> {
             cursor.move_next();
         }
     }
+
+    /// 去除连续重复的元素.
+    ///
+    /// 若单链表是有序的, 这将去除所有重复元素.
+    /// # Examples
+    /// ```
+    /// use my_algo::ch2::linked_list::single_head::LinkedList;
+    ///
+    /// let mut list = LinkedList::from(vec![1, 2, 2, 3, 2]);
+    /// list.dedup();
+    /// assert_eq!(list, vec![1, 2, 3, 2]);
+    /// ```
+    // 习题 2.3.12
+    pub fn dedup(&mut self) {
+        let mut cursor = self.cursor_mut();
+        let mut pionner = cursor.as_cursor();
+        pionner.move_next();
+        while let Some(elem) = pionner.peek() {
+            if *elem == *cursor.as_cursor().peek().unwrap() {
+                cursor.remove_current();
+            } else {
+                cursor.move_next();
+            }
+            pionner = cursor.as_cursor();
+            pionner.move_next();
+        }
+    }
 }
 
 use std::cmp::PartialOrd;
@@ -588,6 +615,14 @@ mod test {
 
     proptest! {
         #[test]
+        fn test_dedup(mut data: Vec<i64>) {
+            let mut list = LinkedList::from(data.clone());
+            list.dedup();
+            data.dedup();
+            assert_eq!(list, data);
+        }
+
+        #[test]
         fn test_delete_between(data: Vec<isize>, a: isize, b: isize) {
             let mut list = LinkedList::from(data);
             list.delete_between(&a, &b);
@@ -595,9 +630,7 @@ mod test {
                 prop_assert!(!(a <= *v && *v < b));
             }
         }
-    }
 
-    proptest! {
         #[test]
         fn test_sort(mut data: Vec<isize>) {
             let mut list = LinkedList::from(data.clone());
@@ -605,9 +638,7 @@ mod test {
             data.sort_unstable();
             prop_assert_eq!(data, list);
         }
-    }
 
-    proptest! {
         #[test]
         fn test_reverse(mut data: Vec<isize>) {
             let mut list: LinkedList<_> = data.clone().into();
@@ -615,17 +646,13 @@ mod test {
             data.reverse();
             prop_assert_eq!(list, data);
         }
-    }
 
-    proptest! {
         #[test]
         fn test_basic(data: Vec<isize>) {
             let list: LinkedList<_> = data.clone().into();
             prop_assert_eq!(data, Vec::from(list));
         }
-    }
 
-    proptest! {
         #[test]
         fn test_delete_all(data: Vec<isize>) {
             let mut list: LinkedList<_> = data.clone().into();
@@ -642,9 +669,7 @@ mod test {
                 list.delete_all(&1);
             }
         }
-    }
 
-    proptest! {
         #[test]
         fn test_cursor_mut_insert_before(data: Vec<isize>) {
             // 顺序插入
@@ -673,9 +698,7 @@ mod test {
 
             prop_assert_eq!(list, data);
         }
-    }
 
-    proptest! {
         #[test]
         fn test_cursor_mut_insert_after(data: Vec<isize>) {
             // 顺序插入
@@ -710,6 +733,28 @@ mod test {
             }
             prop_assert_eq!(list, data);
         }
+
+        #[test]
+        fn test_pop_min(mut data: Vec<isize>) {
+            let mut list: LinkedList<_> = data.clone().into();
+            let min = list.pop_min();
+            let mut min_idx = None;
+            if let Some(min) = min {
+                for (idx, v) in data.iter().enumerate() {
+                    prop_assert!(min <= *v);
+                    if min_idx.is_none() && min == *v {
+                        min_idx = Some(idx);
+                    }
+                };
+            } else {
+                prop_assert!(data.is_empty());
+            }
+            if let Some(idx) = min_idx {
+                data.remove(idx);
+            }
+
+            prop_assert_eq!(list, data);
+        }
     }
 
     #[test]
@@ -732,29 +777,5 @@ mod test {
         assert_eq!(c3.peek(), Some(&1));
         c3.move_next();
         assert_eq!(c1.peek(), c3.peek());
-    }
-
-    proptest! {
-        #[test]
-        fn test_pop_min(mut data: Vec<isize>) {
-            let mut list: LinkedList<_> = data.clone().into();
-            let min = list.pop_min();
-            let mut min_idx = None;
-            if let Some(min) = min {
-                for (idx, v) in data.iter().enumerate() {
-                    prop_assert!(min <= *v);
-                    if min_idx.is_none() && min == *v {
-                        min_idx = Some(idx);
-                    }
-                };
-            } else {
-                prop_assert!(data.is_empty());
-            }
-            if let Some(idx) = min_idx {
-                data.remove(idx);
-            }
-
-            prop_assert_eq!(list, data);
-        }
     }
 }
