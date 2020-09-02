@@ -41,12 +41,71 @@ pub fn merge<T: PartialOrd>(mut lhs: LinkedList<T>, mut rhs: LinkedList<T>) -> L
     merged
 }
 
+/// 生成一个单链表, 它包含两个递增有序的单链表的公共元素.
+/// # Correctness
+/// 要求`lhs`和`rhs`递增有序.
+/// # Examples
+/// ```
+/// use my_algo::ch2::linked_list::single_head::{LinkedList, utils::common};
+///
+/// let lhs = LinkedList::from(vec![1, 2, 2, 3, 4]);
+/// let rhs = LinkedList::from(vec![1, 2, 3, 3, 4]);
+/// assert_eq!(common(&lhs, &rhs), vec![1, 2, 3, 4]);
+/// ```
+// 习题 2.3.14
+pub fn common<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -> LinkedList<T> {
+    let mut common = LinkedList::default();
+    let mut curosr = common.cursor_mut();
+    let mut lcur = lhs.cursor();
+    let mut rcur = rhs.cursor();
+    while let (Some(le), Some(re)) = (lcur.peek(), rcur.peek()) {
+        if *le == *re {
+            curosr.insert_after(le.clone());
+            curosr.move_next();
+            lcur.move_next();
+            rcur.move_next();
+        } else if *le < *re {
+            lcur.move_next();
+        } else {
+            rcur.move_next();
+        }
+    }
+    common
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use proptest::prelude::*;
 
     proptest! {
+        #[test]
+        fn test_common(mut data1: Vec<i64>, mut data2: Vec<i64>) {
+            let mut lhs = LinkedList::from(data1.clone());
+            let mut rhs = LinkedList::from(data2.clone());
+            lhs.sort();
+            rhs.sort();
+            let common = common(&lhs, &rhs);
+            let mut cursor = common.cursor();
+            let mut j = 0;
+            data1.sort_unstable();
+            data2.sort_unstable();
+            for item in data1.iter().take(data1.len().min(data2.len())) {
+                match item.cmp(&data2[j]) {
+                    std::cmp::Ordering::Equal => {
+                        prop_assert_eq!(cursor.peek(), Some(item));
+                        j += 1;
+                        cursor.move_next();
+                    },
+                    std::cmp::Ordering::Greater => {
+                        j += 1;
+                    }
+                    _ => (),
+                }
+            }
+            prop_assert!(cursor.peek().is_none());
+        }
+
         #[test]
         fn test_merge(mut data1: Vec<i64>, mut data2: Vec<i64>) {
             let mut lhs = LinkedList::from(data1.clone());
