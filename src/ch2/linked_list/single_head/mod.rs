@@ -237,10 +237,22 @@ impl<'a, T> Iterator for Iter<'a, T> {
 /// - 尾结点的后继的后继: `None`的后继, 此时`prev`为`None`.
 /// # Correctness
 /// 必须保证`prev`结点的所有后继都是`Option<ItemNode>`.
+#[derive(Debug)]
 pub struct Cursor<'a, T: 'a> {
     index: usize,
     prev: Option<&'a Node<T>>, // 始终保存着“当前”结点的前驱, 因此“当前”结点必然为`Option<ItemNode>`.
 }
+
+impl<'a, T> Clone for Cursor<'a, T> {
+    fn clone(&self) -> Self {
+        Self {
+            index: self.index,
+            prev: self.prev,
+        }
+    }
+}
+
+impl<'a, T> Copy for Cursor<'a, T> {}
 
 impl<'a, T> Cursor<'a, T> {
     /// 当前结点的下标.
@@ -606,6 +618,33 @@ impl<T: PartialOrd> LinkedList<T> {
             }
         }
     }
+
+    /// 串匹配. 若匹配, 则返回最近匹配的位置; 否则返回`None`.
+    /// # 目前的实现
+    /// 朴素匹配算法.
+    // 习题 2.3.16
+    pub fn find(&self, target: &Self) -> Option<Cursor<T>> {
+        let mut cur = self.cursor();
+        if self.is_empty() && target.is_empty() {
+            return Some(cur);
+        }
+        while cur.peek().is_some() {
+            let mut pcur = cur;
+            let mut tcur = target.cursor();
+            while let (Some(pe), Some(te)) = (pcur.peek(), tcur.peek()) {
+                if *pe != *te {
+                    break;
+                }
+                pcur.move_next();
+                tcur.move_next();
+            }
+            if tcur.peek().is_none() {
+                return Some(cur);
+            }
+            cur.move_next();
+        }
+        None
+    }
 }
 
 #[cfg(test)]
@@ -614,6 +653,18 @@ mod test {
     use proptest::prelude::*;
 
     proptest! {
+        #[test]
+        fn test_find(data: String, pattern: String) {
+            let list = LinkedList::from(Vec::from(data.clone()));
+            let cursor = list.find(&LinkedList::from(Vec::from(pattern.clone())));
+            let idx = match cursor.map(|cur| cur.index()) {
+                Some(Some(idx)) => Some(idx),
+                Some(None) => Some(0),
+                _ => None,
+            };
+            prop_assert_eq!(idx, data.find(&pattern));
+        }
+
         #[test]
         fn test_dedup(mut data: Vec<i64>) {
             let mut list = LinkedList::from(data.clone());
