@@ -1,9 +1,12 @@
+pub mod cursor;
+
+pub use cursor::*;
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 
 type Link<T> = NonNull<Node<T>>;
 
-pub struct Node<T> {
+struct Node<T> {
     prev: Link<T>,
     next: Link<T>,
     elem: T,
@@ -34,6 +37,7 @@ impl<T> Node<T> {
 /// 2. 在链表所有权范围内, 任何结点除了首结点外, 仅恰好共享了2个指针, 分别共享给了它的前驱和后继; 首结点还把指针共享给了头指针.
 /// 3. 链表内所有结点指针都来源于`Box::leak`.
 pub struct LinkedList<T> {
+    len: usize,
     head: Option<Link<T>>,
 
     /// 告诉dropck, `LinkedList<T>`的确拥有一些`Box<Node<T>>`,
@@ -44,6 +48,7 @@ pub struct LinkedList<T> {
 impl<T> Default for LinkedList<T> {
     fn default() -> Self {
         Self {
+            len: 0,
             head: None,
             marker: PhantomData::default(),
         }
@@ -55,12 +60,20 @@ impl<T> LinkedList<T> {
         self.head.is_none()
     }
 
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
     pub fn push_front(&mut self, elem: T) {
         self.push_front_node(Box::new(Node::new(elem)))
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
         self.pop_front_node().map(|node| node.into_elem())
+    }
+
+    pub fn cursor(&self) -> Cursor<T> {
+        Cursor::new(self)
     }
 }
 
@@ -114,6 +127,7 @@ impl<T> LinkedList<T> {
             }
             // 共享其指针给`head`(1). 这保持了头指针的不变式.
             self.head = Some(node);
+            self.len += 1;
         }
     }
 
@@ -135,6 +149,7 @@ impl<T> LinkedList<T> {
                 (*(*head.as_ptr()).prev.as_ptr()).next = next;
                 self.head = Some(next);
             }
+            self.len -= 1;
             // Safety: 根据不变式2、3, 这里是安全的.
             Box::from_raw(head.as_ptr())
         })
