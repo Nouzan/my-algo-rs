@@ -75,6 +75,10 @@ impl<T> LinkedList<T> {
     pub fn cursor(&self) -> Cursor<T> {
         Cursor::new(self)
     }
+
+    pub fn cursor_mut(&mut self) -> CursorMut<T> {
+        CursorMut::new(self)
+    }
 }
 
 impl<T> Drop for LinkedList<T> {

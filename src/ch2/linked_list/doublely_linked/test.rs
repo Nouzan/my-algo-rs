@@ -42,3 +42,25 @@ fn test_cursor() {
         assert_eq!(cursor.peek(), Some(elem));
     }
 }
+
+#[test]
+fn test_cursor_mut() {
+    let data = vec![1, 2, 3, 4, 5];
+
+    let mut list = LinkedList::default();
+
+    for elem in data.iter().rev() {
+        list.push_front(*elem);
+    }
+
+    let mut cursor = list.cursor_mut();
+    cursor.move_next();
+    cursor.move_next();
+    cursor.move_next();
+
+    let mut idx = 0;
+    while cursor.peek().is_some() {
+        assert_eq!(cursor.remove_current(), Some(data[(idx + 3) % 5]));
+        idx += 1;
+    }
+}
