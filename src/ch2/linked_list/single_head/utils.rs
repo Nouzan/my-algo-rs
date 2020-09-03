@@ -107,12 +107,49 @@ pub fn intersect<T: PartialOrd>(lhs: &mut LinkedList<T>, rhs: &LinkedList<T>) {
     }
 }
 
+/// 去除绝对值重复的元素结点.
+/// # Correctness
+/// 链表中所有的元素均满足 `|elem| <= n`.
+// 习题 2.3.23
+pub fn dedup_by_abs(list: &mut LinkedList<isize>, n: usize) {
+    let mut bitmap = vec![false; n + 1];
+    let mut cursor = list.cursor_mut();
+
+    while let Some(elem) = cursor.as_cursor().peek() {
+        let k = elem.abs() as usize;
+        if !bitmap[k] {
+            bitmap[k] = true;
+            cursor.move_next();
+        } else {
+            cursor.remove_current();
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use proptest::prelude::*;
 
     proptest! {
+        #[test]
+        fn test_dedup_by_abs(data: Vec<isize>, n in 0..100000) {
+            let n = n as usize;
+            let data: Vec<isize> = data
+                .iter()
+                .copied()
+                .filter(|x| x.abs() < n as isize)
+                .collect();
+            let mut list = LinkedList::from(data);
+            dedup_by_abs(&mut list, n);
+            let mut bitmap = vec![false; n + 1];
+            for elem in list.iter() {
+                let k = elem.abs() as usize;
+                assert!(!bitmap[k]);
+                bitmap[k] = true;
+            }
+        }
+
         #[test]
         fn test_intersect(data1: Vec<i64>, data2: Vec<i64>) {
             let mut lhs = LinkedList::from(data1);
