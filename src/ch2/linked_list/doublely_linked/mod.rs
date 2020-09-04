@@ -47,15 +47,19 @@ pub struct LinkedList<T> {
 
 impl<T> Default for LinkedList<T> {
     fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> LinkedList<T> {
+    pub fn new() -> Self {
         Self {
             len: 0,
             head: None,
             marker: PhantomData::default(),
         }
     }
-}
 
-impl<T> LinkedList<T> {
     pub fn is_empty(&self) -> bool {
         self.head.is_none()
     }
@@ -72,12 +76,24 @@ impl<T> LinkedList<T> {
         self.pop_front_node().map(|node| node.into_elem())
     }
 
-    pub fn cursor(&self) -> Cursor<T> {
+    pub fn cursor_front(&self) -> Cursor<T> {
         Cursor::new(self)
     }
 
-    pub fn cursor_mut(&mut self) -> CursorMut<T> {
+    pub fn cursor_front_mut(&mut self) -> CursorMut<T> {
         CursorMut::new(self)
+    }
+
+    pub fn cursor_back(&self) -> Cursor<T> {
+        let mut cursor = self.cursor_front();
+        cursor.move_prev();
+        cursor
+    }
+
+    pub fn cursor_back_mut(&mut self) -> CursorMut<T> {
+        let mut cursor = self.cursor_front_mut();
+        cursor.move_prev();
+        cursor
     }
 }
 
@@ -98,7 +114,7 @@ impl<T> LinkedList<T> {
         // 该过程保持了不变式: 链表内所有关联指针(若有)都是合法指针(前驱、后继以及头指针).
         unsafe {
             // 泄漏`node`, 以避免它被drop.
-            let node: NonNull<Node<T>> = Box::leak(node).into();
+            let node: Link<T> = Box::leak(node).into();
             match self.head {
                 None => {
                     // 原来的表为空, 因此实现(2)中的“若没有”部分.

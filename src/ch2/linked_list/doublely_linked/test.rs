@@ -1,4 +1,5 @@
 use super::*;
+use proptest::prelude::*;
 
 #[test]
 fn test_drop() {
@@ -28,14 +29,14 @@ fn test_cursor() {
         list.push_front(*elem);
     }
 
-    let mut cursor = list.cursor();
+    let mut cursor = list.cursor_front();
 
     for elem in data.iter() {
         assert_eq!(cursor.peek(), Some(elem));
         cursor.move_next();
     }
 
-    assert!(cursor.is_front());
+    assert!(cursor.is_front_or_empty());
 
     for elem in data.iter().rev() {
         cursor.move_prev();
@@ -44,7 +45,7 @@ fn test_cursor() {
 }
 
 #[test]
-fn test_cursor_mut() {
+fn test_cursor_mut_remove() {
     let data = vec![1, 2, 3, 4, 5];
 
     let mut list = LinkedList::default();
@@ -53,7 +54,7 @@ fn test_cursor_mut() {
         list.push_front(*elem);
     }
 
-    let mut cursor = list.cursor_mut();
+    let mut cursor = list.cursor_front_mut();
     cursor.move_next();
     cursor.move_next();
     cursor.move_next();
@@ -62,5 +63,45 @@ fn test_cursor_mut() {
     while cursor.peek().is_some() {
         assert_eq!(cursor.remove_current(), Some(data[(idx + 3) % 5]));
         idx += 1;
+    }
+}
+
+proptest! {
+    #[test]
+    fn test_cursor_mut_insert_before(data: Vec<i64>) {
+        let mut list = LinkedList::default();
+        let mut cursor = list.cursor_front_mut();
+
+        // 逆序插入.
+        for elem in data.iter() {
+            cursor.insert_before(*elem);
+            cursor.move_prev();
+        }
+
+        let mut cursor = list.cursor_front();
+        for (i, elem) in data.iter().rev().enumerate() {
+            assert_eq!(cursor.index(), Some(i));
+            assert_eq!(cursor.peek(), Some(elem));
+            cursor.move_next();
+        }
+    }
+
+    #[test]
+    fn test_cursor_mut_insert_after(data: Vec<i64>) {
+        let mut list = LinkedList::default();
+        let mut cursor = list.cursor_front_mut();
+
+        // 顺序插入.
+        for elem in data.iter() {
+            cursor.insert_after(*elem);
+            cursor.move_next();
+        }
+
+        let mut cursor = list.cursor_front();
+        for (i, elem) in data.iter().enumerate() {
+            assert_eq!(cursor.index(), Some(i));
+            assert_eq!(cursor.peek(), Some(elem));
+            cursor.move_next();
+        }
     }
 }
