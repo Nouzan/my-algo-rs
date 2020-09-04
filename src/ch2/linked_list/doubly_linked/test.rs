@@ -68,16 +68,30 @@ fn test_cursor_mut_remove() {
 
 proptest! {
     #[test]
+    fn test_append(mut data1: Vec<i64>, mut data2: Vec<i64>) {
+        let mut list1 = LinkedList::from(data1.clone());
+        let mut list2 = LinkedList::from(data2.clone());
+        list1.append(&mut list2);
+        data1.append(&mut data2);
+        let mut cursor = list1.cursor_front();
+        for elem in data1.iter() {
+            assert_eq!(Some(elem), cursor.peek());
+            cursor.move_next();
+        }
+        assert!(cursor.is_front_or_empty());
+    }
+
+    #[test]
     fn test_as_queue(mut data: Vec<i64>) {
         let mut list = LinkedList::default();
         for elem in data.iter().rev() {
             list.push_front(*elem);
         }
         while let Some(elem) = list.pop_back() {
-            assert_eq!(elem, data.pop().unwrap())
+            prop_assert_eq!(elem, data.pop().unwrap())
         }
-        assert!(list.is_empty());
-        assert!(data.is_empty());
+        prop_assert!(list.is_empty());
+        prop_assert!(data.is_empty());
     }
 
     #[test]
@@ -87,10 +101,10 @@ proptest! {
             list.push_back(*elem);
         }
         while let Some(elem) = list.pop_front() {
-            assert_eq!(elem, data.pop().unwrap())
+            prop_assert_eq!(elem, data.pop().unwrap())
         }
-        assert!(list.is_empty());
-        assert!(data.is_empty());
+        prop_assert!(list.is_empty());
+        prop_assert!(data.is_empty());
     }
 
     #[test]

@@ -1,3 +1,4 @@
+pub mod algos;
 pub mod cursor;
 
 pub use cursor::*;
@@ -49,6 +50,16 @@ pub struct LinkedList<T> {
 impl<T> Default for LinkedList<T> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<T> From<Vec<T>> for LinkedList<T> {
+    fn from(mut data: Vec<T>) -> Self {
+        let mut list = Self::new();
+        while let Some(elem) = data.pop() {
+            list.push_front(elem);
+        }
+        list
     }
 }
 
@@ -116,6 +127,14 @@ impl<T> LinkedList<T> {
         let mut cursor = self.cursor_front_mut();
         cursor.move_prev();
         cursor
+    }
+
+    /// 连接两个链表.
+    /// `other`将会变为空表.
+    pub fn append(&mut self, other: &mut Self) {
+        while let Some(elem) = other.pop_front() {
+            self.push_back(elem)
+        }
     }
 }
 
