@@ -1,7 +1,10 @@
 pub mod algos;
 pub mod cursor;
+pub mod iter;
 
 pub use cursor::*;
+pub use iter::*;
+use std::cmp::PartialEq;
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 
@@ -38,6 +41,7 @@ impl<T> Node<T> {
 /// 2. 在链表所有权范围内, 任何结点除了首结点外, 仅恰好共享了2个指针, 分别共享给了它的前驱和后继; 首结点还把指针共享给了头指针.
 /// 3. 链表内所有结点指针都来源于`Box::leak`.
 /// 4. 链表保持循环双链表的性质.
+#[derive(Debug)]
 pub struct LinkedList<T> {
     len: usize,
     head: Option<Link<T>>,
@@ -60,6 +64,36 @@ impl<T> From<Vec<T>> for LinkedList<T> {
             list.push_front(elem);
         }
         list
+    }
+}
+
+impl<T: PartialEq> PartialEq for LinkedList<T> {
+    fn eq(&self, other: &Self) -> bool {
+        let mut q = other.iter();
+        for elem in self.iter() {
+            if q.next() != Some(elem) {
+                return false;
+            }
+        }
+        q.next().is_none()
+    }
+}
+
+impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
+    fn eq(&self, other: &Vec<T>) -> bool {
+        let mut q = other.iter();
+        for elem in self.iter() {
+            if q.next() != Some(elem) {
+                return false;
+            }
+        }
+        q.next().is_none()
+    }
+}
+
+impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
+    fn eq(&self, other: &LinkedList<T>) -> bool {
+        other.eq(self)
     }
 }
 
@@ -135,6 +169,16 @@ impl<T> LinkedList<T> {
         while let Some(elem) = other.pop_front() {
             self.push_back(elem)
         }
+    }
+
+    /// 获得一个从首结点到尾结点的只读迭代器.
+    pub fn iter(&self) -> Iter<T> {
+        Iter::new(self)
+    }
+
+    /// 获得一个从首结点到尾结点的可变迭代器.
+    pub fn iter_mut(&mut self) -> IterMut<T> {
+        IterMut::new(self)
     }
 }
 
