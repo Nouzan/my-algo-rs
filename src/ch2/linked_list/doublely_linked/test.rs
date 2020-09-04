@@ -68,6 +68,32 @@ fn test_cursor_mut_remove() {
 
 proptest! {
     #[test]
+    fn test_as_queue(mut data: Vec<i64>) {
+        let mut list = LinkedList::default();
+        for elem in data.iter().rev() {
+            list.push_front(*elem);
+        }
+        while let Some(elem) = list.pop_back() {
+            assert_eq!(elem, data.pop().unwrap())
+        }
+        assert!(list.is_empty());
+        assert!(data.is_empty());
+    }
+
+    #[test]
+    fn test_as_queue_opposite(mut data: Vec<i64>) {
+        let mut list = LinkedList::default();
+        for elem in data.iter().rev() {
+            list.push_back(*elem);
+        }
+        while let Some(elem) = list.pop_front() {
+            assert_eq!(elem, data.pop().unwrap())
+        }
+        assert!(list.is_empty());
+        assert!(data.is_empty());
+    }
+
+    #[test]
     fn test_cursor_mut_insert_before(data: Vec<i64>) {
         let mut list = LinkedList::default();
         let mut cursor = list.cursor_front_mut();
@@ -80,8 +106,8 @@ proptest! {
 
         let mut cursor = list.cursor_front();
         for (i, elem) in data.iter().rev().enumerate() {
-            assert_eq!(cursor.index(), Some(i));
-            assert_eq!(cursor.peek(), Some(elem));
+            prop_assert_eq!(cursor.index(), Some(i));
+            prop_assert_eq!(cursor.peek(), Some(elem));
             cursor.move_next();
         }
     }
@@ -99,8 +125,8 @@ proptest! {
 
         let mut cursor = list.cursor_front();
         for (i, elem) in data.iter().enumerate() {
-            assert_eq!(cursor.index(), Some(i));
-            assert_eq!(cursor.peek(), Some(elem));
+            prop_assert_eq!(cursor.index(), Some(i));
+            prop_assert_eq!(cursor.peek(), Some(elem));
             cursor.move_next();
         }
     }

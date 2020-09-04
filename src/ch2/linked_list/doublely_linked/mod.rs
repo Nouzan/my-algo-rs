@@ -36,6 +36,7 @@ impl<T> Node<T> {
 /// 1. 链表内所有关联指针(若有)都是合法指针(前驱、后继以及头指针).
 /// 2. 在链表所有权范围内, 任何结点除了首结点外, 仅恰好共享了2个指针, 分别共享给了它的前驱和后继; 首结点还把指针共享给了头指针.
 /// 3. 链表内所有结点指针都来源于`Box::leak`.
+/// 4. 链表保持循环双链表的性质.
 pub struct LinkedList<T> {
     len: usize,
     head: Option<Link<T>>,
@@ -52,6 +53,7 @@ impl<T> Default for LinkedList<T> {
 }
 
 impl<T> LinkedList<T> {
+    /// 创建一个空的链表.
     pub fn new() -> Self {
         Self {
             len: 0,
@@ -60,36 +62,56 @@ impl<T> LinkedList<T> {
         }
     }
 
+    /// 判断表是否为空.
     pub fn is_empty(&self) -> bool {
         self.head.is_none()
     }
 
+    /// 获取表的长度.
     pub fn len(&self) -> usize {
         self.len
     }
 
+    /// 把新值作为新的首结点插入.
     pub fn push_front(&mut self, elem: T) {
         self.push_front_node(Box::new(Node::new(elem)))
     }
 
+    /// 把新值作为新的尾结点插入.
+    pub fn push_back(&mut self, elem: T) {
+        let mut cursor = self.cursor_back_mut();
+        cursor.insert_after(elem);
+    }
+
+    /// 弹出首结点, 首结点的直接后继(若有)将成为新的首结点.
     pub fn pop_front(&mut self) -> Option<T> {
         self.pop_front_node().map(|node| node.into_elem())
     }
 
+    /// 弹出尾结点.
+    pub fn pop_back(&mut self) -> Option<T> {
+        let mut cursor = self.cursor_back_mut();
+        cursor.remove_current()
+    }
+
+    /// 冻结链表, 创建指向首结点(若有)的只读游标.
     pub fn cursor_front(&self) -> Cursor<T> {
         Cursor::new(self)
     }
 
+    /// 创建指向首结点(若有)的可变游标.
     pub fn cursor_front_mut(&mut self) -> CursorMut<T> {
         CursorMut::new(self)
     }
 
+    /// 冻结链表, 创建指向尾结点(若有)的只读游标.
     pub fn cursor_back(&self) -> Cursor<T> {
         let mut cursor = self.cursor_front();
         cursor.move_prev();
         cursor
     }
 
+    /// 创建指向尾结点(若有)的可变游标.
     pub fn cursor_back_mut(&mut self) -> CursorMut<T> {
         let mut cursor = self.cursor_front_mut();
         cursor.move_prev();
