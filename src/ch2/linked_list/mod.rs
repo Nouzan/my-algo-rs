@@ -1,6 +1,9 @@
 pub mod cdll;
 pub mod shll;
 pub mod single;
+pub mod singly;
+
+pub use singly::*;
 
 /// 只读线性游标接口, 用于实现只读的循位置访问.
 pub trait LinearCursor<T> {
