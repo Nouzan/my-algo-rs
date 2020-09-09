@@ -29,11 +29,11 @@ pub trait LinearCursor<T> {
 }
 
 /// 可变游标接口, 用于实现可变的循位置访问.
-pub trait LinearCursorMut<'b, T>: LinearCursor<T> {
-    type Cursor: LinearCursor<T>;
+pub trait LinearCursorMut<T>: LinearCursor<T> {
+    type Cursor<'a, U: 'a>: LinearCursor<U>;
 
     /// 转换为一个只读游标.
-    fn as_cursor(&'b self) -> Self::Cursor;
+    fn as_cursor(&self) -> Self::Cursor<'_, T>;
 
     /// 获取所指结点内容的可变引用. 若表空则返回`None`.
     fn peek_mut(&mut self) -> Option<&mut T>;
@@ -61,15 +61,15 @@ pub trait LinearCursorMut<'b, T>: LinearCursor<T> {
 }
 
 /// 单链表接口.
-pub trait SinglyLinkedList<'a, T> {
-    type Cursor: LinearCursor<T>;
-    type CursorMut: LinearCursorMut<'a, T>;
+pub trait SinglyLinkedList<T> {
+    type Cursor<'a, U: 'a>: LinearCursor<U>;
+    type CursorMut<'a, U: 'a>: LinearCursorMut<U>;
 
     /// 链表是否为空.
     fn is_empty(&self) -> bool;
 
     /// 获取表的长度.
-    fn len(&'a self) -> usize {
+    fn len(&self) -> usize {
         if self.is_empty() {
             0
         } else {
@@ -91,8 +91,8 @@ pub trait SinglyLinkedList<'a, T> {
     fn pop_front(&mut self) -> Option<T>;
 
     /// 冻结链表, 创建指向首结点(若有)的只读游标.
-    fn cursor_front(&'a self) -> Self::Cursor;
+    fn cursor_front(&self) -> Self::Cursor<'_, T>;
 
     /// 创建指向首结点(若有)的可变游标.
-    fn cursor_front_mut(&'a mut self) -> Self::CursorMut;
+    fn cursor_front_mut(&mut self) -> Self::CursorMut<'_, T>;
 }

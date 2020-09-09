@@ -186,19 +186,19 @@ impl<T> LinkedList<T> {
     }
 }
 
-impl<'a, T: 'a> SinglyLinkedList<'a, T> for LinkedList<T> {
-    type Cursor = Cursor<'a, T>;
-    type CursorMut = CursorMut<'a, T>;
+impl<T> SinglyLinkedList<T> for LinkedList<T> {
+    type Cursor<'a, U: 'a> = Cursor<'a, U>;
+    type CursorMut<'a, U: 'a> = CursorMut<'a, U>;
 
     fn is_empty(&self) -> bool {
         self.head.is_none()
     }
 
-    fn cursor_front(&'a self) -> Self::Cursor {
+    fn cursor_front(&self) -> Self::Cursor<'_, T> {
         Cursor::new(self)
     }
 
-    fn cursor_front_mut(&'a mut self) -> Self::CursorMut {
+    fn cursor_front_mut(&mut self) -> Self::CursorMut<'_, T> {
         CursorMut::new(self)
     }
 

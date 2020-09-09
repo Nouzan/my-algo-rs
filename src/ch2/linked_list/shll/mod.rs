@@ -427,10 +427,10 @@ impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
-    type Cursor = Cursor<'b, T>;
+impl<'a, T: 'a> LinearCursorMut<T> for CursorMut<'a, T> {
+    type Cursor<'b, U: 'b> = Cursor<'b, U>;
 
-    fn as_cursor(&'b self) -> Self::Cursor {
+    fn as_cursor(&self) -> Self::Cursor<'_, T> {
         Cursor {
             index: self.index,
             prev: self.prev.as_deref(),
@@ -583,9 +583,9 @@ impl<T> LinkedList<T> {
     }
 }
 
-impl<'a, T: 'a> SinglyLinkedList<'a, T> for LinkedList<T> {
-    type Cursor = Cursor<'a, T>;
-    type CursorMut = CursorMut<'a, T>;
+impl<T> SinglyLinkedList<T> for LinkedList<T> {
+    type Cursor<'a, U: 'a> = Cursor<'a, U>;
+    type CursorMut<'a, U: 'a> = CursorMut<'a, U>;
 
     fn is_empty(&self) -> bool {
         self.head.next().is_none()

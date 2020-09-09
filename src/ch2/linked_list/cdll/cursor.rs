@@ -227,15 +227,15 @@ impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
-    type Cursor = Cursor<'b, T>;
+impl<'a, T: 'a> LinearCursorMut<T> for CursorMut<'a, T> {
+    type Cursor<'b, U: 'b> = Cursor<'b, U>;
 
     /// 转换为一个只读游标.
     ///
     /// 这个操作将会冻结可变游标.
     /// 因为新产生的`Cursor`的生命期与可变游标的只读引用的生命期一样长,
     /// 所以当我们再一次拿到可变游标的可变引用时, 该`Cursor`将会不可用.
-    fn as_cursor(&'b self) -> Self::Cursor {
+    fn as_cursor(&self) -> Self::Cursor<'_, T> {
         Cursor {
             index: self.index,
             current: self.current,
