@@ -134,7 +134,7 @@ impl<T> Default for LinkedList<T> {
 impl<T> From<Vec<T>> for LinkedList<T> {
     fn from(data: Vec<T>) -> Self {
         let mut list = Self::default();
-        let mut cursor = list.cursor_mut();
+        let mut cursor = list.cursor_front_mut();
         for v in data {
             cursor.insert_after_as_current(v);
         }
@@ -145,7 +145,7 @@ impl<T> From<Vec<T>> for LinkedList<T> {
 impl<T> From<LinkedList<T>> for Vec<T> {
     fn from(mut linked_list: LinkedList<T>) -> Self {
         let mut list = vec![];
-        let mut cursor = linked_list.cursor_mut();
+        let mut cursor = linked_list.cursor_front_mut();
         while cursor.peek().is_some() {
             list.push(cursor.remove_current().unwrap()) // 已经判空, 故可`unwrap`.
         }
@@ -499,11 +499,6 @@ impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
 }
 
 impl<T> LinkedList<T> {
-    /// 若表为空则返回`true`, 否则返回`false`.
-    pub fn is_empty(&self) -> bool {
-        self.head.next().is_none()
-    }
-
     /// 返回一个从首结点开始的只读迭代器.
     pub fn iter(&self) -> Iter<T> {
         Iter {
@@ -521,33 +516,6 @@ impl<T> LinkedList<T> {
         }
     }
 
-    /// 返回一个当前结点为首结点的可变游标.
-    pub fn cursor_mut(&mut self) -> CursorMut<T> {
-        CursorMut {
-            index: 0,
-            prev: Some(self.head.as_mut()),
-        }
-    }
-
-    /// 返回一个当前结点为首结点的只读游标.
-    pub fn cursor(&self) -> Cursor<T> {
-        Cursor {
-            index: 0,
-            prev: Some(self.head.as_ref()),
-        }
-    }
-
-    /// 在链表最前面插入新元素作为新的头结点.
-    pub fn push_front(&mut self, elem: T) {
-        self.cursor_mut().insert_before(elem);
-    }
-
-    /// 弹出链表最前面的元素.
-    /// 若表空则返回`None`.
-    pub fn pop_front(&mut self) -> Option<T> {
-        self.cursor_mut().remove_current()
-    }
-
     /// 就地逆置.
     // 习题 2.3.5
     pub fn reverse(&mut self) {
@@ -560,8 +528,8 @@ impl<T> LinkedList<T> {
             let mut right = Self::default();
             let rest = self.head.next_mut().unwrap().link(None); // 已经判过空, 因此可以`unwrap`.
             right.head.link(rest);
-            let mut cursor_left = self.cursor_mut();
-            let mut cursor_right = right.cursor_mut();
+            let mut cursor_left = self.cursor_front_mut();
+            let mut cursor_right = right.cursor_front_mut();
             while cursor_right.peek().is_some() {
                 let elem = cursor_right.remove_current().unwrap(); // 已经判过空, 因此可以`unwrap`.
                 cursor_left.insert_before_as_current(elem);
@@ -571,7 +539,7 @@ impl<T> LinkedList<T> {
 
     /// 连接两个链表.
     pub fn append(&mut self, mut rhs: Self) {
-        let mut cursor = self.cursor_mut();
+        let mut cursor = self.cursor_front_mut();
         while cursor.peek().is_some() {
             cursor.move_next()
         }
@@ -582,7 +550,7 @@ impl<T> LinkedList<T> {
     /// 若表不够长, 则返回`None`.
     /// # Examples
     /// ```
-    /// use my_algo::ch2::linked_list::single_head::LinkedList;
+    /// use my_algo::ch2::linked_list::shll::LinkedList;
     ///
     /// let list = LinkedList::from(vec![5, 4, 3, 2, 1]);
     /// assert_eq!(list.last(1), Some(&1));
@@ -595,8 +563,8 @@ impl<T> LinkedList<T> {
         if n == 0 {
             return None;
         }
-        let mut lcur = self.cursor();
-        let mut rcur = self.cursor();
+        let mut lcur = self.cursor_front();
+        let mut rcur = self.cursor_front();
         let mut flag = false;
         while rcur.peek().is_some() {
             if flag {
@@ -615,10 +583,46 @@ impl<T> LinkedList<T> {
     }
 }
 
+impl<'a, T: 'a> SinglyLinkedList<'a, T> for LinkedList<T> {
+    type Cursor = Cursor<'a, T>;
+    type CursorMut = CursorMut<'a, T>;
+
+    fn is_empty(&self) -> bool {
+        self.head.next().is_none()
+    }
+
+    /// 返回一个当前结点为首结点的可变游标.
+    fn cursor_front_mut(&mut self) -> CursorMut<T> {
+        CursorMut {
+            index: 0,
+            prev: Some(self.head.as_mut()),
+        }
+    }
+
+    /// 返回一个当前结点为首结点的只读游标.
+    fn cursor_front(&self) -> Cursor<T> {
+        Cursor {
+            index: 0,
+            prev: Some(self.head.as_ref()),
+        }
+    }
+
+    /// 在链表最前面插入新元素作为新的头结点.
+    fn push_front(&mut self, elem: T) {
+        self.cursor_front_mut().insert_before(elem);
+    }
+
+    /// 弹出链表最前面的元素.
+    /// 若表空则返回`None`.
+    fn pop_front(&mut self) -> Option<T> {
+        self.cursor_front_mut().remove_current()
+    }
+}
+
 impl<T: PartialEq> LinkedList<T> {
     /// 删除所有值等于`x`的元素.
     pub fn delete_all(&mut self, x: &T) {
-        let mut cursor = self.cursor_mut();
+        let mut cursor = self.cursor_front_mut();
         while let Some(current) = cursor.peek() {
             if *current == *x {
                 cursor.remove_current();
@@ -632,7 +636,7 @@ impl<T: PartialEq> LinkedList<T> {
     /// 若单链表是有序的, 这将去除所有重复元素.
     /// # Examples
     /// ```
-    /// use my_algo::ch2::linked_list::single_head::LinkedList;
+    /// use my_algo::ch2::linked_list::shll::LinkedList;
     ///
     /// let mut list = LinkedList::from(vec![1, 2, 2, 3, 2]);
     /// list.dedup();
@@ -640,7 +644,7 @@ impl<T: PartialEq> LinkedList<T> {
     /// ```
     // 习题 2.3.12
     pub fn dedup(&mut self) {
-        let mut cursor = self.cursor_mut();
+        let mut cursor = self.cursor_front_mut();
         let mut pionner = cursor.as_cursor();
         pionner.move_next();
         while let Some(elem) = pionner.peek() {
@@ -663,7 +667,7 @@ impl<T: PartialOrd> LinkedList<T> {
     // 习题 2.3.4
     pub fn pop_min(&mut self) -> Option<T> {
         if !self.is_empty() {
-            let mut cursor = self.cursor_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
+            let mut cursor = self.cursor_front_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
             let mut pionner = cursor.as_cursor(); // 先锋游标.
             pionner.move_next(); // 先锋前进一步.
             while let Some(elem) = pionner.peek() {
@@ -689,8 +693,8 @@ impl<T: PartialOrd> LinkedList<T> {
     fn partition(&mut self) -> (T, Self) {
         let flag = self.pop_front().unwrap();
         let mut rhs = Self::default();
-        let mut rhs_cursor = rhs.cursor_mut();
-        let mut lhs_cursor = self.cursor_mut();
+        let mut rhs_cursor = rhs.cursor_front_mut();
+        let mut lhs_cursor = self.cursor_front_mut();
         while let Some(elem) = lhs_cursor.peek() {
             if *elem >= flag {
                 // 已判空, 故可直接`unwrap`.
@@ -718,7 +722,7 @@ impl<T: PartialOrd> LinkedList<T> {
     // 习题 2.3.7
     pub fn delete_between(&mut self, a: &T, b: &T) {
         if *a < *b {
-            let mut cursor = self.cursor_mut();
+            let mut cursor = self.cursor_front_mut();
             while let Some(elem) = cursor.as_cursor().peek() {
                 if *a <= *elem && *elem < *b {
                     cursor.remove_current();
@@ -734,13 +738,13 @@ impl<T: PartialOrd> LinkedList<T> {
     /// 朴素匹配算法.
     // 习题 2.3.16
     pub fn find(&self, target: &Self) -> Option<Cursor<T>> {
-        let mut cur = self.cursor();
+        let mut cur = self.cursor_front();
         if self.is_empty() && target.is_empty() {
             return Some(cur);
         }
         while cur.peek().is_some() {
             let mut pcur = cur;
-            let mut tcur = target.cursor();
+            let mut tcur = target.cursor_front();
             while let (Some(pe), Some(te)) = (pcur.peek(), tcur.peek()) {
                 if *pe != *te {
                     break;
@@ -845,7 +849,7 @@ mod test {
         fn test_cursor_mut_insert_before(data: Vec<isize>) {
             // 逆序插入
             let mut list = LinkedList::default();
-            let mut cursor = list.cursor_mut();
+            let mut cursor = list.cursor_front_mut();
 
             for v in data.iter().rev() {
                 prop_assert_eq!(cursor.insert_before_as_current(*v), None);
@@ -855,7 +859,7 @@ mod test {
 
             // 通过`insert_before`插入.
             let mut list = LinkedList::default();
-            let mut cursor = list.cursor_mut();
+            let mut cursor = list.cursor_front_mut();
 
             if !data.is_empty() {
                 prop_assert_eq!(cursor.insert_before(data[data.len() - 1]), None);
@@ -874,7 +878,7 @@ mod test {
         fn test_cursor_mut_insert_after(data: Vec<isize>) {
             // 顺序插入(通过`insert_after_as_current`)
             let mut list = LinkedList::default();
-            let mut cursor = list.cursor_mut();
+            let mut cursor = list.cursor_front_mut();
 
             // 不变式: 游标始终指向尾结点的后继. 因此调用`insert_after`将会始终在末尾插入新元素.
             // 开始时表为空, `cursor.prev`为头结点(可看作尾结点), 因此游标指向尾结点的后继`None`.
@@ -891,7 +895,7 @@ mod test {
 
             // 通过`insert_after`插入.
             let mut list = LinkedList::default();
-            let mut cursor = list.cursor_mut();
+            let mut cursor = list.cursor_front_mut();
 
             if !data.is_empty() {
                 prop_assert_eq!(cursor.insert_after(data[0]), None);
@@ -931,20 +935,20 @@ mod test {
     #[test]
     fn test_cursor() {
         let mut list: LinkedList<_> = vec![1, 2, 3, 4, 5].into();
-        let mut cursor = list.cursor_mut();
+        let mut cursor = list.cursor_front_mut();
         cursor.move_next();
         assert_eq!(cursor.as_cursor().peek(), Some(&2));
         let mut c1 = cursor.as_cursor();
         c1.move_next();
         assert_eq!(c1.peek(), Some(&3));
-        let mut c1 = list.cursor();
-        let mut c2 = list.cursor();
+        let mut c1 = list.cursor_front();
+        let mut c2 = list.cursor_front();
         assert_eq!(c2.peek(), Some(&1));
         c1.move_next();
         assert_eq!(c1.peek(), Some(&2));
         c2.move_next();
         assert_eq!(c2.peek(), Some(&2));
-        let mut c3 = list.cursor();
+        let mut c3 = list.cursor_front();
         assert_eq!(c3.peek(), Some(&1));
         c3.move_next();
         assert_eq!(c1.peek(), c3.peek());

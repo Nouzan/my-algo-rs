@@ -10,12 +10,12 @@ use crate::ch2::linked_list::{LinearCursor, LinearCursorMut};
 pub struct Cursor<'a, T: 'a> {
     index: usize,
     current: Option<Link<T>>,
-    list: &'a LinkedList<T>,
+    list: &'a CircularDoublyLinkedList<T>,
 }
 
 impl<'a, T: 'a> Cursor<'a, T> {
     /// 使用一个链表的引用构造一个新的`Cursor`.
-    pub fn new(list: &'a LinkedList<T>) -> Self {
+    pub fn new(list: &'a CircularDoublyLinkedList<T>) -> Self {
         Self {
             index: 0,
             current: list.head,
@@ -80,7 +80,7 @@ impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
 pub struct CursorMut<'a, T: 'a> {
     index: usize,
     current: Option<Link<T>>,
-    list: &'a mut LinkedList<T>,
+    list: &'a mut CircularDoublyLinkedList<T>,
 }
 
 impl<'a, T: 'a> CursorMut<'a, T> {
@@ -166,7 +166,7 @@ impl<'a, T: 'a> CursorMut<'a, T> {
 
 impl<'a, T: 'a> CursorMut<'a, T> {
     /// 使用链表的可变引用创建一个新的`CursorMut`.
-    pub fn new(list: &'a mut LinkedList<T>) -> Self {
+    pub fn new(list: &'a mut CircularDoublyLinkedList<T>) -> Self {
         Self {
             index: 0,
             current: list.head,
@@ -286,5 +286,38 @@ impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
     /// - 如果所指结点是链表中唯一结点, 则操作完后表空且游标指向`None`.
     fn remove_current(&mut self) -> Option<T> {
         self.remove_current_node().map(|node| node.into_elem())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_lifetime() {
+        let mut list = CircularDoublyLinkedList::from(vec![1, 2, 3, 4, 5]);
+        let mut cm = list.cursor_front_mut();
+        cm.move_next();
+        let mut c1 = cm.as_cursor();
+        let mut c2 = cm.as_cursor();
+        c1.move_next();
+        c2.move_next();
+        assert_eq!(c1.peek(), c2.peek());
+        let idx = c1.index();
+        cm.move_next();
+        assert_eq!(idx, cm.index());
+    }
+
+    #[test]
+    fn test_lifetime_2() {
+        let mut list = CircularDoublyLinkedList::from(vec![1, 2, 3, 4, 5]);
+        let mut cm = list.cursor_front_mut();
+        cm.move_next();
+        let mut c1 = list.cursor_front();
+        let mut c2 = list.cursor_front();
+        c1.move_next();
+        c2.move_next();
+        let mut cm = list.cursor_front_mut();
+        cm.move_next();
     }
 }

@@ -1,4 +1,6 @@
-use my_algo::ch2::linked_list::{single_head::LinkedList, LinearCursor, LinearCursorMut};
+use my_algo::ch2::linked_list::{
+    shll::LinkedList, LinearCursor, LinearCursorMut, SinglyLinkedList,
+};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -12,7 +14,7 @@ fn main() {
     println!("inputs: {:?}", opt.input);
 
     let mut list = LinkedList::default();
-    let mut cursor = list.cursor_mut();
+    let mut cursor = list.cursor_front_mut();
     for v in opt.input.iter() {
         cursor.insert_after(*v);
         cursor.move_next();
