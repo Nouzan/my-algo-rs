@@ -35,7 +35,7 @@ impl<T> Node<T> {
 ///
 /// 尾结点的后继是首结点, 首结点的前驱是尾结点.
 /// 每一个结点因此与其前驱`prev`和后继`next`分别共享了一个指针`Link`;
-/// 同时, 首结点还共享了一个指针`head`给链表主体`CircularDoublyLinkedList`.
+/// 同时, 首结点还共享了一个指针`head`给链表主体`LinkedList`.
 /// 我们必须恰当地管理这些共享指针, 以使得所有公共接口符合`Rust`的引用规则(公共接口仅能返回共享的只读引用和互斥的可变引用).
 /// 关键在于以下不变式:
 /// 1. 链表内所有关联指针(若有)都是合法指针(前驱、后继以及头指针).
@@ -43,22 +43,22 @@ impl<T> Node<T> {
 /// 3. 链表内所有结点指针都来源于`Box::leak`.
 /// 4. 链表保持循环双链表的性质.
 #[derive(Debug)]
-pub struct CircularDoublyLinkedList<T> {
+pub struct LinkedList<T> {
     len: usize,
     head: Option<Link<T>>,
 
-    /// 告诉dropck, `CircularDoublyLinkedList<T>`的确拥有一些`Box<Node<T>>`,
+    /// 告诉dropck, `LinkedList<T>`的确拥有一些`Box<Node<T>>`,
     /// 且在它drop的时候, 我们会将它们也一并drop了.
     marker: PhantomData<Box<Node<T>>>,
 }
 
-impl<T> Drop for CircularDoublyLinkedList<T> {
+impl<T> Drop for LinkedList<T> {
     fn drop(&mut self) {
         while self.pop_front_node().is_some() {}
     }
 }
 
-impl<T> CircularDoublyLinkedList<T> {
+impl<T> LinkedList<T> {
     /// 在链表前部插入一个新的结点.
     /// 1. 插入后, 被插入的结点将成为新的首结点, 因此共享其指针给`head`;
     /// 2. 新的首结点的后继是原来的首结点(若有, 若没有则为自己), 前驱是尾结点(若有, 若没有则为自己);
@@ -131,7 +131,7 @@ impl<T> CircularDoublyLinkedList<T> {
     }
 }
 
-impl<T> CircularDoublyLinkedList<T> {
+impl<T> LinkedList<T> {
     /// 创建一个空的链表.
     pub fn new() -> Self {
         Self {
@@ -186,7 +186,7 @@ impl<T> CircularDoublyLinkedList<T> {
     }
 }
 
-impl<'a, T: 'a> SinglyLinkedList<'a, T> for CircularDoublyLinkedList<T> {
+impl<'a, T: 'a> SinglyLinkedList<'a, T> for LinkedList<T> {
     type Cursor = Cursor<'a, T>;
     type CursorMut = CursorMut<'a, T>;
 
@@ -215,13 +215,13 @@ impl<'a, T: 'a> SinglyLinkedList<'a, T> for CircularDoublyLinkedList<T> {
     }
 }
 
-impl<T> Default for CircularDoublyLinkedList<T> {
+impl<T> Default for LinkedList<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> From<Vec<T>> for CircularDoublyLinkedList<T> {
+impl<T> From<Vec<T>> for LinkedList<T> {
     fn from(mut data: Vec<T>) -> Self {
         let mut list = Self::new();
         while let Some(elem) = data.pop() {
@@ -231,7 +231,7 @@ impl<T> From<Vec<T>> for CircularDoublyLinkedList<T> {
     }
 }
 
-impl<T: PartialEq> PartialEq for CircularDoublyLinkedList<T> {
+impl<T: PartialEq> PartialEq for LinkedList<T> {
     fn eq(&self, other: &Self) -> bool {
         let mut q = other.iter();
         for elem in self.iter() {
@@ -243,7 +243,7 @@ impl<T: PartialEq> PartialEq for CircularDoublyLinkedList<T> {
     }
 }
 
-impl<T: PartialEq> PartialEq<Vec<T>> for CircularDoublyLinkedList<T> {
+impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
     fn eq(&self, other: &Vec<T>) -> bool {
         let mut q = other.iter();
         for elem in self.iter() {
@@ -255,13 +255,13 @@ impl<T: PartialEq> PartialEq<Vec<T>> for CircularDoublyLinkedList<T> {
     }
 }
 
-impl<T: PartialEq> PartialEq<CircularDoublyLinkedList<T>> for Vec<T> {
-    fn eq(&self, other: &CircularDoublyLinkedList<T>) -> bool {
+impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
+    fn eq(&self, other: &LinkedList<T>) -> bool {
         other.eq(self)
     }
 }
 
-impl<T: PartialEq> CircularDoublyLinkedList<T> {
+impl<T: PartialEq> LinkedList<T> {
     /// 删除表中最小值, 并返回.
     /// 若表空则返回`None`.
     // 习题 2.3.19

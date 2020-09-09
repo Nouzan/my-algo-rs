@@ -10,12 +10,12 @@ use crate::ch2::linked_list::{LinearCursor, LinearCursorMut};
 pub struct Cursor<'a, T: 'a> {
     index: usize,
     current: Option<Link<T>>,
-    list: &'a CircularDoublyLinkedList<T>,
+    list: &'a LinkedList<T>,
 }
 
 impl<'a, T: 'a> Cursor<'a, T> {
     /// 使用一个链表的引用构造一个新的`Cursor`.
-    pub fn new(list: &'a CircularDoublyLinkedList<T>) -> Self {
+    pub fn new(list: &'a LinkedList<T>) -> Self {
         Self {
             index: 0,
             current: list.head,
@@ -80,7 +80,7 @@ impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
 pub struct CursorMut<'a, T: 'a> {
     index: usize,
     current: Option<Link<T>>,
-    list: &'a mut CircularDoublyLinkedList<T>,
+    list: &'a mut LinkedList<T>,
 }
 
 impl<'a, T: 'a> CursorMut<'a, T> {
@@ -166,7 +166,7 @@ impl<'a, T: 'a> CursorMut<'a, T> {
 
 impl<'a, T: 'a> CursorMut<'a, T> {
     /// 使用链表的可变引用创建一个新的`CursorMut`.
-    pub fn new(list: &'a mut CircularDoublyLinkedList<T>) -> Self {
+    pub fn new(list: &'a mut LinkedList<T>) -> Self {
         Self {
             index: 0,
             current: list.head,
@@ -295,7 +295,7 @@ mod test {
 
     #[test]
     fn test_lifetime() {
-        let mut list = CircularDoublyLinkedList::from(vec![1, 2, 3, 4, 5]);
+        let mut list = LinkedList::from(vec![1, 2, 3, 4, 5]);
         let mut cm = list.cursor_front_mut();
         cm.move_next();
         let mut c1 = cm.as_cursor();
@@ -310,7 +310,7 @@ mod test {
 
     #[test]
     fn test_lifetime_2() {
-        let mut list = CircularDoublyLinkedList::from(vec![1, 2, 3, 4, 5]);
+        let mut list = LinkedList::from(vec![1, 2, 3, 4, 5]);
         let mut cm = list.cursor_front_mut();
         cm.move_next();
         let mut c1 = list.cursor_front();

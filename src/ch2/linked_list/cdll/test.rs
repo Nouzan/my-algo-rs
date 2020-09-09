@@ -11,7 +11,7 @@ fn test_drop() {
         }
     }
 
-    let mut list = CircularDoublyLinkedList::default();
+    let mut list = LinkedList::default();
 
     for _ in 0..10 {
         list.push_front(Foo);
@@ -23,7 +23,7 @@ fn test_drop() {
 #[test]
 fn test_cursor() {
     let data = vec![1, 2, 3, 4, 5];
-    let mut list = CircularDoublyLinkedList::default();
+    let mut list = LinkedList::default();
 
     for elem in data.iter().rev() {
         list.push_front(*elem);
@@ -48,7 +48,7 @@ fn test_cursor() {
 fn test_cursor_mut_remove() {
     let data = vec![1, 2, 3, 4, 5];
 
-    let mut list = CircularDoublyLinkedList::default();
+    let mut list = LinkedList::default();
 
     for elem in data.iter().rev() {
         list.push_front(*elem);
@@ -69,7 +69,7 @@ fn test_cursor_mut_remove() {
 proptest! {
     #[test]
     fn test_iter_mut(mut data: Vec<i64>) {
-        let mut list = CircularDoublyLinkedList::from(data.clone());
+        let mut list = LinkedList::from(data.clone());
         for elem in list.iter_mut() {
             if *elem < i64::MAX {
                 *elem += 1;
@@ -86,8 +86,8 @@ proptest! {
 
     #[test]
     fn test_eq(mut data1: Vec<i64>, mut data2: Vec<i64>) {
-        let mut list1 = CircularDoublyLinkedList::from(data1.clone());
-        let mut list2 = CircularDoublyLinkedList::from(data2.clone());
+        let mut list1 = LinkedList::from(data1.clone());
+        let mut list2 = LinkedList::from(data2.clone());
         prop_assert_eq!(&list1, &data1);
         list1.append(&mut list2);
         if data2.is_empty() {
@@ -99,8 +99,8 @@ proptest! {
 
     #[test]
     fn test_append(mut data1: Vec<i64>, mut data2: Vec<i64>) {
-        let mut list1 = CircularDoublyLinkedList::from(data1.clone());
-        let mut list2 = CircularDoublyLinkedList::from(data2.clone());
+        let mut list1 = LinkedList::from(data1.clone());
+        let mut list2 = LinkedList::from(data2.clone());
         list1.append(&mut list2);
         data1.append(&mut data2);
         prop_assert_eq!(data1, list1);
@@ -108,7 +108,7 @@ proptest! {
 
     #[test]
     fn test_as_queue(mut data: Vec<i64>) {
-        let mut list = CircularDoublyLinkedList::default();
+        let mut list = LinkedList::default();
         for elem in data.iter().rev() {
             list.push_front(*elem);
         }
@@ -121,7 +121,7 @@ proptest! {
 
     #[test]
     fn test_as_queue_opposite(mut data: Vec<i64>) {
-        let mut list = CircularDoublyLinkedList::default();
+        let mut list = LinkedList::default();
         for elem in data.iter().rev() {
             list.push_back(*elem);
         }
@@ -134,7 +134,7 @@ proptest! {
 
     #[test]
     fn test_cursor_mut_insert_before(data: Vec<i64>) {
-        let mut list = CircularDoublyLinkedList::default();
+        let mut list = LinkedList::default();
         let mut cursor = list.cursor_front_mut();
 
         // 逆序插入.
@@ -153,7 +153,7 @@ proptest! {
 
     #[test]
     fn test_cursor_mut_insert_after(data: Vec<i64>) {
-        let mut list = CircularDoublyLinkedList::default();
+        let mut list = LinkedList::default();
         let mut cursor = list.cursor_front_mut();
 
         // 顺序插入.

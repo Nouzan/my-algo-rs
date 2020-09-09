@@ -2,11 +2,11 @@ use super::*;
 
 pub struct Iter<'a, T: 'a> {
     current: Option<Link<T>>,
-    list: &'a CircularDoublyLinkedList<T>,
+    list: &'a LinkedList<T>,
 }
 
 impl<'a, T: 'a> Iter<'a, T> {
-    pub(super) fn new(list: &'a CircularDoublyLinkedList<T>) -> Self {
+    pub(super) fn new(list: &'a LinkedList<T>) -> Self {
         Self {
             current: list.head,
             list,
@@ -31,11 +31,11 @@ impl<'a, T: 'a> Iterator for Iter<'a, T> {
 
 pub struct IterMut<'a, T: 'a> {
     current: Option<Link<T>>,
-    list: &'a mut CircularDoublyLinkedList<T>,
+    list: &'a mut LinkedList<T>,
 }
 
 impl<'a, T: 'a> IterMut<'a, T> {
-    pub(super) fn new(list: &'a mut CircularDoublyLinkedList<T>) -> Self {
+    pub(super) fn new(list: &'a mut LinkedList<T>) -> Self {
         Self {
             current: list.head,
             list,
