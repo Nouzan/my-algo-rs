@@ -1,4 +1,5 @@
 use super::*;
+use crate::ch2::linked_list::{LinearCursor, LinearCursorMut};
 
 // 关于游标, 我们引入一个新的不变式:
 // - `current`(若有)是链表所有权内的合法指针.
@@ -34,9 +35,10 @@ impl<'a, T: 'a> Cursor<'a, T> {
             node.as_ref().prev
         })
     }
+}
 
-    /// `Cursor`向右移动, 指向它的后继.
-    pub fn move_next(&mut self) {
+impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
+    fn move_next(&mut self) {
         // 根据不变式, `node`是合法的.
         // 而根据链表的不变式, `next`也是合法的, 这保持了游标的不变式.
         self.current = self.current.take().map(|node| unsafe {
@@ -46,19 +48,24 @@ impl<'a, T: 'a> Cursor<'a, T> {
         })
     }
 
-    /// 获得所指结点的元素的只读引用.
-    pub fn peek(&self) -> Option<&T> {
+    fn peek(&self) -> Option<&T> {
         // 根据不变式, `node`是合法的, 且生命期限制保证了共享只读引用的合法性.
         self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
     }
 
-    /// 表空或所指结点为首结点时返回`true`.
-    pub fn is_front_or_empty(&self) -> bool {
+    fn is_front_or_empty(&self) -> bool {
         self.list.head == self.current
     }
 
-    /// 所指结点相对与首结点的偏移. 若表空则返回`None`.
-    pub fn index(&self) -> Option<usize> {
+    fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
+
+    fn is_ghost(&self) -> bool {
+        false
+    }
+
+    fn index(&self) -> Option<usize> {
         if self.current.is_some() {
             Some(self.index)
         } else {
@@ -74,104 +81,6 @@ pub struct CursorMut<'a, T: 'a> {
     index: usize,
     current: Option<Link<T>>,
     list: &'a mut LinkedList<T>,
-}
-
-impl<'a, T: 'a> CursorMut<'a, T> {
-    /// 使用链表的可变引用创建一个新的`CursorMut`.
-    pub fn new(list: &'a mut LinkedList<T>) -> Self {
-        Self {
-            index: 0,
-            current: list.head,
-            list,
-        }
-    }
-
-    /// 游标向左移动, 指向当前结点的前驱.
-    pub fn move_prev(&mut self) {
-        // 根据不变式, `node`是合法的.
-        // 而根据链表的不变式, `prev`也是合法的, 这保持了游标的不变式.
-        self.current = self.current.take().map(|node| unsafe {
-            self.index = self
-                .index
-                .checked_sub(1)
-                .unwrap_or_else(|| self.list.len() - 1);
-            node.as_ref().prev
-        })
-    }
-
-    /// 游标向右移动, 指向当前结点的后继.
-    pub fn move_next(&mut self) {
-        // 根据不变式, `node`是合法的.
-        // 而根据链表的不变式, `next`也是合法的, 这保持了游标的不变式.
-        self.current = self.current.take().map(|node| unsafe {
-            self.index += 1;
-            self.index %= self.list.len();
-            node.as_ref().next
-        })
-    }
-
-    /// 转换为一个只读游标.
-    ///
-    /// 这个操作将会冻结可变游标.
-    /// 因为新产生的`Cursor`的生命期与可变游标的只读引用的生命期一样长,
-    /// 所以当我们再一次拿到可变游标的可变引用时, 该`Cursor`将会不可用.
-    pub fn as_cursor(&self) -> Cursor<T> {
-        Cursor {
-            index: self.index,
-            current: self.current,
-            list: self.list,
-        }
-    }
-
-    /// 获取所指结点内容的只读引用. 若表空则返回`None`.
-    ///
-    /// 这个操作将会冻结可变游标.
-    /// 因为返回的只读引用的生命期和可变游标的只读引用的生命期一样长.
-    pub fn peek(&self) -> Option<&T> {
-        // 根据不变式, `node`是合法的. 且
-        self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
-    }
-
-    /// 获取所指结点内容的可变引用. 若表空则返回`None`.
-    /// 返回的可变引用的生命期受限于可变游标的可变引用的生命期, 因此受限于链表的生命期.
-    pub fn peek_mut(&mut self) -> Option<&mut T> {
-        self.current
-            .map(|node| unsafe { &mut (*node.as_ptr()).elem })
-    }
-
-    /// 表空或所指结点为首结点时返回`true`.
-    pub fn is_front_or_empty(&self) -> bool {
-        self.as_cursor().is_front_or_empty()
-    }
-
-    /// 所指结点相对与首结点的偏移. 若表空则返回`None`.
-    pub fn index(&self) -> Option<usize> {
-        if self.current.is_some() {
-            Some(self.index)
-        } else {
-            None
-        }
-    }
-
-    /// 在当前结点前插入新值, 游标所指结点不变. 但注意以下行为:
-    /// - 若表空, 则新值将作为首结点插入, 游标指向首结点.
-    /// - 若所指结点为首结点, 则新指将作为尾结点插入(不改变头指针).
-    pub fn insert_before(&mut self, elem: T) {
-        self.insert_before_node(Box::new(Node::new(elem)));
-    }
-
-    /// 在当前结点后插入新值, 游标所指结点不变.
-    /// 若表空, 则新值将作为首结点插入, 游标指向首结点.
-    pub fn insert_after(&mut self, elem: T) {
-        self.insert_after_node(Box::new(Node::new(elem)));
-    }
-
-    /// 删除当前所指结点并返回其内容, 游标改为指向它的后继. 若表空则返回`None`.
-    /// - 如果所指结点是首结点, 则头指针将会改为指向它的后继.
-    /// - 如果所指结点是链表中唯一结点, 则操作完后表空且游标指向`None`.
-    pub fn remove_current(&mut self) -> Option<T> {
-        self.remove_current_node().map(|node| node.into_elem())
-    }
 }
 
 impl<'a, T: 'a> CursorMut<'a, T> {
@@ -252,5 +161,130 @@ impl<'a, T: 'a> CursorMut<'a, T> {
             }
             Box::from_raw(current.as_ptr())
         })
+    }
+}
+
+impl<'a, T: 'a> CursorMut<'a, T> {
+    /// 使用链表的可变引用创建一个新的`CursorMut`.
+    pub fn new(list: &'a mut LinkedList<T>) -> Self {
+        Self {
+            index: 0,
+            current: list.head,
+            list,
+        }
+    }
+
+    /// 游标向左移动, 指向当前结点的前驱.
+    pub fn move_prev(&mut self) {
+        // 根据不变式, `node`是合法的.
+        // 而根据链表的不变式, `prev`也是合法的, 这保持了游标的不变式.
+        self.current = self.current.take().map(|node| unsafe {
+            self.index = self
+                .index
+                .checked_sub(1)
+                .unwrap_or_else(|| self.list.len() - 1);
+            node.as_ref().prev
+        })
+    }
+}
+
+impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
+    fn move_next(&mut self) {
+        // 根据不变式, `node`是合法的.
+        // 而根据链表的不变式, `next`也是合法的, 这保持了游标的不变式.
+        self.current = self.current.take().map(|node| unsafe {
+            self.index += 1;
+            self.index %= self.list.len();
+            node.as_ref().next
+        })
+    }
+
+    fn peek(&self) -> Option<&T> {
+        // 根据不变式, `node`是合法的.
+        // 这个操作将会冻结可变游标.
+        // 因为返回的只读引用的生命期和可变游标的只读引用的生命期一样长.
+        self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
+    }
+
+    fn is_front_or_empty(&self) -> bool {
+        self.as_cursor().is_front_or_empty()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
+
+    fn is_ghost(&self) -> bool {
+        false
+    }
+
+    fn index(&self) -> Option<usize> {
+        if self.current.is_some() {
+            Some(self.index)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
+    type Cursor = Cursor<'b, T>;
+
+    /// 转换为一个只读游标.
+    ///
+    /// 这个操作将会冻结可变游标.
+    /// 因为新产生的`Cursor`的生命期与可变游标的只读引用的生命期一样长,
+    /// 所以当我们再一次拿到可变游标的可变引用时, 该`Cursor`将会不可用.
+    fn as_cursor(&'b self) -> Self::Cursor {
+        Cursor {
+            index: self.index,
+            current: self.current,
+            list: self.list,
+        }
+    }
+
+    /// 获取所指结点内容的可变引用. 若表空则返回`None`.
+    /// 返回的可变引用的生命期受限于可变游标的可变引用的生命期, 因此受限于链表的生命期.
+    fn peek_mut(&mut self) -> Option<&mut T> {
+        self.current
+            .map(|node| unsafe { &mut (*node.as_ptr()).elem })
+    }
+
+    /// 在当前结点前插入新值, 游标所指结点不变. 但注意以下行为:
+    /// - 若表空, 则新值将作为首结点插入, 游标指向首结点.
+    /// - 若所指结点为首结点, 则新指将作为尾结点插入(不改变头指针).
+    fn insert_before(&mut self, elem: T) -> Option<T> {
+        self.insert_before_node(Box::new(Node::new(elem)));
+        None
+    }
+
+    /// 在当前结点后插入新值, 游标所指结点不变.
+    /// 若表空, 则新值将作为首结点插入, 游标指向首结点.
+    fn insert_after(&mut self, elem: T) -> Option<T> {
+        self.insert_after_node(Box::new(Node::new(elem)));
+        None
+    }
+
+    /// 在当前结点前插入新值, 游标指向新插入的结点, 插入成功时返回`None`.
+    /// 若位置不合法, 则返回被插入的值.
+    fn insert_before_as_current(&mut self, elem: T) -> Option<T> {
+        self.insert_before(elem);
+        self.move_prev();
+        None
+    }
+
+    /// 在当前结点后插入新值, 游标指向新插入的结点, 插入成功时返回`None`.
+    /// 若位置不合法, 则返回被插入的值.
+    fn insert_after_as_current(&mut self, elem: T) -> Option<T> {
+        self.insert_after(elem);
+        self.move_next();
+        None
+    }
+
+    /// 删除当前所指结点并返回其内容, 游标改为指向它的后继. 若表空则返回`None`.
+    /// - 如果所指结点是首结点, 则头指针将会改为指向它的后继.
+    /// - 如果所指结点是链表中唯一结点, 则操作完后表空且游标指向`None`.
+    fn remove_current(&mut self) -> Option<T> {
+        self.remove_current_node().map(|node| node.into_elem())
     }
 }

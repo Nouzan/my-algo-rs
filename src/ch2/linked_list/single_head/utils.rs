@@ -1,4 +1,5 @@
 use super::LinkedList;
+use crate::ch2::linked_list::{LinearCursor, LinearCursorMut};
 
 /// 把链表分解为奇链和偶链.(分别包含原来链表中的奇数位置结点和偶数位置结点)
 // 习题 2.3.10
@@ -10,8 +11,7 @@ pub fn split_odd<T>(list: &mut LinkedList<T>) -> LinkedList<T> {
     while cursor.peek().is_some() {
         idx += 1;
         if idx % 2 == 1 {
-            odd_cursor.insert_after(cursor.remove_current().unwrap());
-            odd_cursor.move_next();
+            odd_cursor.insert_after_as_current(cursor.remove_current().unwrap());
         } else {
             cursor.move_next();
         }
@@ -30,11 +30,10 @@ pub fn merge<T: PartialOrd>(mut lhs: LinkedList<T>, mut rhs: LinkedList<T>) -> L
     let mut rcr = rhs.cursor_mut();
     while let (Some(le), Some(re)) = (lcr.as_cursor().peek(), rcr.as_cursor().peek()) {
         if *le < *re {
-            cursor.insert_after(lcr.remove_current().unwrap());
+            cursor.insert_after_as_current(lcr.remove_current().unwrap());
         } else {
-            cursor.insert_after(rcr.remove_current().unwrap());
+            cursor.insert_after_as_current(rcr.remove_current().unwrap());
         }
-        cursor.move_next();
     }
     merged.append(lhs);
     merged.append(rhs);

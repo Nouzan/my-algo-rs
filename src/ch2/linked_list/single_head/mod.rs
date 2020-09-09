@@ -1,5 +1,6 @@
 pub mod utils;
 
+use super::*;
 use std::cmp::PartialEq;
 
 type Link<T> = Option<Box<Node<T>>>;
@@ -135,8 +136,7 @@ impl<T> From<Vec<T>> for LinkedList<T> {
         let mut list = Self::default();
         let mut cursor = list.cursor_mut();
         for v in data {
-            cursor.insert_after(v);
-            cursor.move_next();
+            cursor.insert_after_as_current(v);
         }
         list
     }
@@ -255,9 +255,47 @@ impl<'a, T> Clone for Cursor<'a, T> {
 impl<'a, T> Copy for Cursor<'a, T> {}
 
 impl<'a, T> Cursor<'a, T> {
+    /// 转换为内容的只读引用.
+    pub fn into_inner(mut self) -> Option<&'a T> {
+        if let Some(prev) = self.prev.take() {
+            prev.next().map(|node| node.elem_unchecked())
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
+    /// 注意: 如果当前结点为`None`或`None`的后继, 则返回`false`.
+    fn is_front_or_empty(&self) -> bool {
+        if let Some(node) = self.prev.as_deref() {
+            match node {
+                Node::Head(_) => true,
+                Node::Item(_) => false,
+            }
+        } else {
+            false
+        }
+    }
+
+    /// 注意: 如果当前结点为`None`或`None`的后继, 则返回`false`.
+    fn is_empty(&self) -> bool {
+        match self.prev.as_deref() {
+            Some(Node::Head(None)) => true,
+            _ => false,
+        }
+    }
+
+    fn is_ghost(&self) -> bool {
+        match self.prev.as_deref() {
+            Some(node) => node.next().is_none(),
+            None => true,
+        }
+    }
+
     /// 当前结点的下标.
     /// 若当前结点为`None`或`None`的后继, 则返回`None`.
-    pub fn index(&self) -> Option<usize> {
+    fn index(&self) -> Option<usize> {
         if self.peek().is_some() {
             Some(self.index)
         } else {
@@ -267,7 +305,7 @@ impl<'a, T> Cursor<'a, T> {
 
     /// 移动游标到当前结点的直接后继.
     /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`).
-    pub fn move_next(&mut self) {
+    fn move_next(&mut self) {
         // # Correctness
         // 如果`prev`的所有后继都是`Option<ItemNode>`,
         // 那么`prev`的后继的所有后继自然也是`Option<ItemNode>`.
@@ -283,20 +321,11 @@ impl<'a, T> Cursor<'a, T> {
 
     /// 获取当前结点内容的只读引用.
     /// 如果游标的当前结点为链表末尾的`None`或`None`的后继, 则返回`None`.
-    pub fn peek(&self) -> Option<&T> {
+    fn peek(&self) -> Option<&T> {
         if let Some(prev) = self.prev.as_ref() {
             prev.next().as_ref().map(|node| {
                 node.elem_unchecked() // `node`是后继, 因此必然是`ItemNode`.
             })
-        } else {
-            None
-        }
-    }
-
-    /// 转换为内容的只读引用.
-    pub fn into_inner(mut self) -> Option<&'a T> {
-        if let Some(prev) = self.prev.take() {
-            prev.next().map(|node| node.elem_unchecked())
         } else {
             None
         }
@@ -318,53 +347,6 @@ pub struct CursorMut<'a, T: 'a> {
 }
 
 impl<'a, T> CursorMut<'a, T> {
-    /// 当前结点的下标.
-    /// 若当前结点为`None`或`None`的后继, 则返回`None`.
-    pub fn index(&self) -> Option<usize> {
-        if self.as_cursor().peek().is_some() {
-            Some(self.index)
-        } else {
-            None
-        }
-    }
-
-    /// 移动游标到当前结点的直接后继.
-    /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`).
-    pub fn move_next(&mut self) {
-        // # Correctness
-        // 如果`prev`的所有后继都是`Option<ItemNode>`,
-        // 那么`prev`的后继的所有后继自然也是`Option<ItemNode>`.
-        // 故依然保持`Correctness`假设.
-        //
-        // 反复调用该方法最终必然会使得`prev`为`None`,
-        // 而当`prev`为`None`时, 该方法是`no-op`.
-        if let Some(prev) = self.prev.take() {
-            self.index += 1;
-            self.prev = prev.next_mut();
-        }
-    }
-
-    /// 获取当前结点内容的可变引用.
-    /// 如果游标的当前结点为链表末尾的`None`或`None`的后继, 则返回`None`.
-    pub fn peek(&mut self) -> Option<&mut T> {
-        if let Some(prev) = self.prev.as_mut() {
-            prev.next_mut().map(|node| {
-                node.elem_mut_unchecked() // `node`是后继, 因此必然是`ItemNode`.
-            })
-        } else {
-            None
-        }
-    }
-
-    /// 移除当前结点并返回它的内容, 当前结点将会变为原来结点的后继.
-    /// - 如果游标的当前结点为尾结点, 那么移除后, 当前结点变为`None`;
-    /// - 如果游标的当前结点为`None`或`None`的后继, 则该方法是`no-op`, 返回值为`None`.
-    pub fn remove_current(&mut self) -> Option<T> {
-        // 当前结点必然是后继, 后继必然是`Option<ItemNode>`.
-        self.remove_current_as_node()
-            .map(|node| node.into_item_node_unchecked().elem)
-    }
-
     /// 移除当前结点并返回, 当前结点将会变为原来结点的后继.
     /// - 如果游标的当前结点为尾结点, 那么移除后, 当前结点变为`None`;
     /// - 如果游标的当前结点为`None`或`None`的后继, 则该方法是`no-op`, 返回值为`None`.
@@ -385,29 +367,12 @@ impl<'a, T> CursorMut<'a, T> {
         }
     }
 
-    /// 在当前结点前面插入一个新的结点作为当前结点的新前驱, 游标的当前结点变为该新前驱.
-    /// 若插入成功则返回`None`, 否则返回`elem`.
-    /// - 若当前结点是`None`(`prev`为末尾结点或头结点), 则将会在末尾结点之后进行插入, 并返回`None`.
-    /// - 若当前结点是`None`的后继(`prev`为`None`), 则不会进行插入(且游标不会发生移动), 同时返回`Some(elem)`.
-    /// - 其它情况均能按照预期进行插入, 并返回`None`.
-    pub fn insert_before(&mut self, elem: T) -> Option<T> {
-        // # Correctness
-        // 新插入结点是一个普通结点, 且作为`prev`的后继进行插入, 因此依然保持`Correctness`的假设.
-        if let Some(prev) = self.prev.as_mut() {
-            let next = prev.link(Some(Node::new(elem)));
-            prev.next_mut().unwrap().link(next); // `next_mut`返回的是刚刚插入的结点的引用, 故必然不为`None`.
-            None
-        } else {
-            Some(elem)
-        }
-    }
-
     /// 在当前结点后面插入一个新的结点作为当前结点的后继, 游标仍然指向当前结点(若在尾结点的后继之后插入, 则游标指向新的尾结点).
     /// 若插入成功则返回`None`, 否则返回`elem`.
     /// - 若当前结点是`None`(即当前结点为尾结点的后继, `prev`为末尾结点或头结点), 则将会在末尾结点之后进行插入, 并返回`None`.
     /// - 若当前结点`None`的后继, 将不会进行插入, 并返回`Some(elem)`.
     /// - 其余情况均能按预期进行插入, 并返回`None`.
-    pub fn insert_after(&mut self, elem: T) -> Option<T> {
+    fn insert_after_naive(&mut self, elem: T) -> Option<T> {
         // # Correctness
         // 新插入结点是一个普通结点, 且作为`prev`的后继的后继插入, 因此依然保持`Correctness`的假设.
         if let Some(prev) = self.prev.as_mut() {
@@ -422,12 +387,123 @@ impl<'a, T> CursorMut<'a, T> {
             Some(elem)
         }
     }
+}
 
-    /// 转换为一个只读游标.
-    pub fn as_cursor(&self) -> Cursor<T> {
+impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
+    /// 当前结点的下标.
+    /// 若当前结点为`None`或`None`的后继, 则返回`None`.
+    fn index(&self) -> Option<usize> {
+        if self.as_cursor().peek().is_some() {
+            Some(self.index)
+        } else {
+            None
+        }
+    }
+
+    /// 移动游标到当前结点的直接后继.
+    /// 逻辑上, 游标可以指向`None`的后继(即`prev`为`None`).
+    fn move_next(&mut self) {
+        // # Correctness
+        // 如果`prev`的所有后继都是`Option<ItemNode>`,
+        // 那么`prev`的后继的所有后继自然也是`Option<ItemNode>`.
+        // 故依然保持`Correctness`假设.
+        //
+        // 反复调用该方法最终必然会使得`prev`为`None`,
+        // 而当`prev`为`None`时, 该方法是`no-op`.
+        if let Some(prev) = self.prev.take() {
+            self.index += 1;
+            self.prev = prev.next_mut();
+        }
+    }
+
+    fn peek(&self) -> Option<&T> {
+        if let Some(prev) = self.prev.as_ref() {
+            prev.next().map(|node| node.elem_unchecked())
+        } else {
+            None
+        }
+    }
+
+    fn is_front_or_empty(&self) -> bool {
+        self.as_cursor().is_front_or_empty()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.as_cursor().is_empty()
+    }
+
+    fn is_ghost(&self) -> bool {
+        self.as_cursor().is_ghost()
+    }
+}
+
+impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
+    type Cursor = Cursor<'b, T>;
+
+    fn as_cursor(&'b self) -> Self::Cursor {
         Cursor {
             index: self.index,
             prev: self.prev.as_deref(),
+        }
+    }
+
+    fn peek_mut(&mut self) -> Option<&mut T> {
+        if let Some(prev) = self.prev.as_mut() {
+            prev.next_mut().map(|node| {
+                node.elem_mut_unchecked() // `node`是后继, 因此必然是`ItemNode`.
+            })
+        } else {
+            None
+        }
+    }
+
+    /// 移除当前结点并返回它的内容, 当前结点将会变为原来结点的后继.
+    /// - 如果游标的当前结点为尾结点, 那么移除后, 当前结点变为`None`;
+    /// - 如果游标的当前结点为`None`或`None`的后继, 则该方法是`no-op`, 返回值为`None`.
+    fn remove_current(&mut self) -> Option<T> {
+        // 当前结点必然是后继, 后继必然是`Option<ItemNode>`.
+        self.remove_current_as_node()
+            .map(|node| node.into_item_node_unchecked().elem)
+    }
+
+    /// 在当前结点前面插入一个新的结点作为当前结点的新前驱, 游标的当前结点变为该新前驱.
+    /// 若插入成功则返回`None`, 否则返回`elem`.
+    /// - 若当前结点是`None`(`prev`为末尾结点或头结点), 则将会在末尾结点之后进行插入, 并返回`None`.
+    /// - 若当前结点是`None`的后继(`prev`为`None`), 则不会进行插入(且游标不会发生移动), 同时返回`Some(elem)`.
+    /// - 其它情况均能按照预期进行插入, 并返回`None`.
+    fn insert_before_as_current(&mut self, elem: T) -> Option<T> {
+        // # Correctness
+        // 新插入结点是一个普通结点, 且作为`prev`的后继进行插入, 因此依然保持`Correctness`的假设.
+        if let Some(prev) = self.prev.as_mut() {
+            let next = prev.link(Some(Node::new(elem)));
+            prev.next_mut().unwrap().link(next); // `next_mut`返回的是刚刚插入的结点的引用, 故必然不为`None`.
+            None
+        } else {
+            Some(elem)
+        }
+    }
+
+    fn insert_before(&mut self, elem: T) -> Option<T> {
+        if self.is_ghost() {
+            self.insert_before_as_current(elem)
+        } else {
+            let res = self.insert_before_as_current(elem);
+            self.move_next();
+            res
+        }
+    }
+
+    fn insert_after(&mut self, elem: T) -> Option<T> {
+        self.insert_after_naive(elem)
+    }
+
+    fn insert_after_as_current(&mut self, elem: T) -> Option<T> {
+        if self.is_ghost() {
+            self.insert_after_naive(elem)
+        } else {
+            self.insert_after_naive(elem);
+            self.move_next();
+            None
         }
     }
 }
@@ -498,7 +574,7 @@ impl<T> LinkedList<T> {
             let mut cursor_right = right.cursor_mut();
             while cursor_right.peek().is_some() {
                 let elem = cursor_right.remove_current().unwrap(); // 已经判过空, 因此可以`unwrap`.
-                cursor_left.insert_before(elem);
+                cursor_left.insert_before_as_current(elem);
             }
         }
     }
@@ -625,11 +701,10 @@ impl<T: PartialOrd> LinkedList<T> {
         let mut rhs = Self::default();
         let mut rhs_cursor = rhs.cursor_mut();
         let mut lhs_cursor = self.cursor_mut();
-        while let Some(elem) = lhs_cursor.as_cursor().peek() {
+        while let Some(elem) = lhs_cursor.peek() {
             if *elem >= flag {
                 // 已判空, 故可直接`unwrap`.
-                rhs_cursor.insert_after(lhs_cursor.remove_current().unwrap());
-                rhs_cursor.move_next();
+                rhs_cursor.insert_after_as_current(lhs_cursor.remove_current().unwrap());
             } else {
                 lhs_cursor.move_next();
             }
@@ -778,36 +853,36 @@ mod test {
 
         #[test]
         fn test_cursor_mut_insert_before(data: Vec<isize>) {
-            // 顺序插入
-            let mut list = LinkedList::default();
-            let mut cursor = list.cursor_mut();
-
-            // 不变式: 游标始终指向尾结点的后继. 因此调用`insert_before`将会始终在末尾插入新元素.
-            // 开始时表为空, `cursor.prev`为头结点(可看作尾结点), 因此游标指向尾结点的后继`None`.
-            for v in data.iter() {
-                prop_assert_eq!(cursor.insert_before(*v), None); // 在尾结点的后继前面插入新的元素, 插入后游标指向新插入的结点(即新的尾结点).
-                cursor.move_next(); // 向后移一步, 此时再次指向尾结点的后继`None`.
-            }
-
-            // 插入到`None`的后继的前面将会失败.
-            cursor.move_next();
-            prop_assert_eq!(cursor.insert_before(1), Some(1));
-            prop_assert_eq!(&list, &data);
-
             // 逆序插入
             let mut list = LinkedList::default();
             let mut cursor = list.cursor_mut();
 
             for v in data.iter().rev() {
-                prop_assert_eq!(cursor.insert_before(*v), None);
+                prop_assert_eq!(cursor.insert_before_as_current(*v), None);
             }
 
-            prop_assert_eq!(list, data);
+            prop_assert_eq!(&list, &data);
+
+            // 通过`insert_before`插入.
+            let mut list = LinkedList::default();
+            let mut cursor = list.cursor_mut();
+
+            if !data.is_empty() {
+                prop_assert_eq!(cursor.insert_before(data[data.len() - 1]), None);
+            }
+
+            if data.len() > 1 {
+                for v in data[0..(data.len() - 1)].iter() {
+                    prop_assert_eq!(cursor.insert_before(*v), None);
+                }
+            }
+
+            prop_assert_eq!(&list, &data);
         }
 
         #[test]
         fn test_cursor_mut_insert_after(data: Vec<isize>) {
-            // 顺序插入
+            // 顺序插入(通过`insert_after_as_current`)
             let mut list = LinkedList::default();
             let mut cursor = list.cursor_mut();
 
@@ -815,16 +890,16 @@ mod test {
             // 开始时表为空, `cursor.prev`为头结点(可看作尾结点), 因此游标指向尾结点的后继`None`.
             for v in data.iter() {
                 // 在尾结点的后继之后插入新的元素(将会直接插入作为尾结点的后继), 插入后游标指向新插入的结点(即新的尾结点).
-                prop_assert_eq!(cursor.insert_after(*v), None);
-                cursor.move_next(); // 向后移一步, 此时再次指向尾结点的后继`None`.
+                prop_assert_eq!(cursor.insert_after_as_current(*v), None);
             }
 
             // 插入到`None`的后继的后面将会失败.
             cursor.move_next();
+            cursor.move_next();
             prop_assert_eq!(cursor.insert_after(1), Some(1));
             prop_assert_eq!(&list, &data);
 
-            // 逆序插入
+            // 通过`insert_after`插入.
             let mut list = LinkedList::default();
             let mut cursor = list.cursor_mut();
 

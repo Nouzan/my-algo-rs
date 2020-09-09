@@ -2,6 +2,7 @@ pub mod algos;
 pub mod cursor;
 pub mod iter;
 
+use super::*;
 pub use cursor::*;
 pub use iter::*;
 use std::cmp::PartialEq;
@@ -51,49 +52,82 @@ pub struct LinkedList<T> {
     marker: PhantomData<Box<Node<T>>>,
 }
 
-impl<T> Default for LinkedList<T> {
-    fn default() -> Self {
-        Self::new()
+impl<T> Drop for LinkedList<T> {
+    fn drop(&mut self) {
+        while self.pop_front_node().is_some() {}
     }
 }
 
-impl<T> From<Vec<T>> for LinkedList<T> {
-    fn from(mut data: Vec<T>) -> Self {
-        let mut list = Self::new();
-        while let Some(elem) = data.pop() {
-            list.push_front(elem);
-        }
-        list
-    }
-}
+impl<T> LinkedList<T> {
+    /// 在链表前部插入一个新的结点.
+    /// 1. 插入后, 被插入的结点将成为新的首结点, 因此共享其指针给`head`;
+    /// 2. 新的首结点的后继是原来的首结点(若有, 若没有则为自己), 前驱是尾结点(若有, 若没有则为自己);
+    /// 3. 原来的首结点的前驱从尾结点改为新的首结点, 后继不变;
+    /// 4. 原来的尾结点的后继从原来的首结点改为新的首结点, 前驱不变.
+    fn push_front_node(&mut self, node: Box<Node<T>>) {
+        // # Safety
+        // 该过程保持了不变式: 链表内所有关联指针(若有)都是合法指针(前驱、后继以及头指针).
+        unsafe {
+            // 泄漏`node`, 以避免它被drop.
+            let node: Link<T> = Box::leak(node).into();
+            match self.head {
+                None => {
+                    // 原来的表为空, 因此实现(2)中的“若没有”部分.
+                    // Safety: 这里解引用指针是安全的, 是因为`node`是刚刚通过`Box::leak`得到的指针.
+                    // 同时这里也保持了不变式.
+                    (*node.as_ptr()).next = node;
+                    (*node.as_ptr()).prev = node;
+                }
+                Some(head) => {
+                    // 这里实现了(2).
+                    (*node.as_ptr()).next = head;
 
-impl<T: PartialEq> PartialEq for LinkedList<T> {
-    fn eq(&self, other: &Self) -> bool {
-        let mut q = other.iter();
-        for elem in self.iter() {
-            if q.next() != Some(elem) {
-                return false;
+                    // 原首结点的前驱是尾结点.
+                    // Safety: 根据不变式, 对`head`解引用指针是安全的.
+                    (*node.as_ptr()).prev = (*head.as_ptr()).prev;
+
+                    // 这里实现了(4).
+                    (*(*head.as_ptr()).prev.as_ptr()).next = node;
+
+                    // 这里实现了(3).
+                    (*head.as_ptr()).prev = node;
+
+                    // 经过上述过程, 我们得到:
+                    // - `node`的前驱和后继分别是`head`和`head->prev`, 根据不变式都是合法的.
+                    // - `head`的后继若不是自己则不变, 前驱变为`node`; 若后继是自己, 则后继也为`node`, 都是合法的.
+                    // - `head->prev`的前驱若不是自己则不变, 后继变为`node`; 若前驱是自己, 则前驱变为`node`, 都是合法的.
+                    // `node`的指针仅共享给了`head`和`head->prev`(它们可以是同一个结点), 且所有其它指针均未丢失.
+                    // 操作不涉及其余结点, 因此上述过程保持不变式.
+                }
             }
+            // 共享其指针给`head`(1). 这保持了头指针的不变式.
+            self.head = Some(node);
+            self.len += 1;
         }
-        q.next().is_none()
     }
-}
 
-impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
-    fn eq(&self, other: &Vec<T>) -> bool {
-        let mut q = other.iter();
-        for elem in self.iter() {
-            if q.next() != Some(elem) {
-                return false;
+    /// 弹出链表的首结点. 若表空则返回`None`.
+    /// 1. 弹出后, 首结点的后继(若有)成为新的首结点;
+    /// 2. 首结点的后继的前驱变为尾结点(首结点的前驱), 尾结点的后继变为首结点的后继.
+    fn pop_front_node(&mut self) -> Option<Box<Node<T>>> {
+        // # Safety
+        // 该过程保持了不变式: 链表内所有关联指针(若有)都是合法指针(前驱、后继以及头指针).
+        self.head.map(|head| unsafe {
+            let next = (*head.as_ptr()).next;
+            if head == next {
+                // 首结点是链表的唯一结点.
+                self.head = None;
+            } else {
+                // Safety: 根据不变式1, 所有解引用都是安全的.
+                // 这里也保持了不变式1、2.
+                (*next.as_ptr()).prev = (*head.as_ptr()).prev;
+                (*(*head.as_ptr()).prev.as_ptr()).next = next;
+                self.head = Some(next);
             }
-        }
-        q.next().is_none()
-    }
-}
-
-impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
-    fn eq(&self, other: &LinkedList<T>) -> bool {
-        other.eq(self)
+            self.len -= 1;
+            // Safety: 根据不变式2、3, 这里是安全的.
+            Box::from_raw(head.as_ptr())
+        })
     }
 }
 
@@ -182,82 +216,58 @@ impl<T> LinkedList<T> {
     }
 }
 
-impl<T> Drop for LinkedList<T> {
-    fn drop(&mut self) {
-        while self.pop_front_node().is_some() {}
+impl<T> Default for LinkedList<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-impl<T> LinkedList<T> {
-    /// 在链表前部插入一个新的结点.
-    /// 1. 插入后, 被插入的结点将成为新的首结点, 因此共享其指针给`head`;
-    /// 2. 新的首结点的后继是原来的首结点(若有, 若没有则为自己), 前驱是尾结点(若有, 若没有则为自己);
-    /// 3. 原来的首结点的前驱从尾结点改为新的首结点, 后继不变;
-    /// 4. 原来的尾结点的后继从原来的首结点改为新的首结点, 前驱不变.
-    fn push_front_node(&mut self, node: Box<Node<T>>) {
-        // # Safety
-        // 该过程保持了不变式: 链表内所有关联指针(若有)都是合法指针(前驱、后继以及头指针).
-        unsafe {
-            // 泄漏`node`, 以避免它被drop.
-            let node: Link<T> = Box::leak(node).into();
-            match self.head {
-                None => {
-                    // 原来的表为空, 因此实现(2)中的“若没有”部分.
-                    // Safety: 这里解引用指针是安全的, 是因为`node`是刚刚通过`Box::leak`得到的指针.
-                    // 同时这里也保持了不变式.
-                    (*node.as_ptr()).next = node;
-                    (*node.as_ptr()).prev = node;
-                }
-                Some(head) => {
-                    // 这里实现了(2).
-                    (*node.as_ptr()).next = head;
-
-                    // 原首结点的前驱是尾结点.
-                    // Safety: 根据不变式, 对`head`解引用指针是安全的.
-                    (*node.as_ptr()).prev = (*head.as_ptr()).prev;
-
-                    // 这里实现了(4).
-                    (*(*head.as_ptr()).prev.as_ptr()).next = node;
-
-                    // 这里实现了(3).
-                    (*head.as_ptr()).prev = node;
-
-                    // 经过上述过程, 我们得到:
-                    // - `node`的前驱和后继分别是`head`和`head->prev`, 根据不变式都是合法的.
-                    // - `head`的后继若不是自己则不变, 前驱变为`node`; 若后继是自己, 则后继也为`node`, 都是合法的.
-                    // - `head->prev`的前驱若不是自己则不变, 后继变为`node`; 若前驱是自己, 则前驱变为`node`, 都是合法的.
-                    // `node`的指针仅共享给了`head`和`head->prev`(它们可以是同一个结点), 且所有其它指针均未丢失.
-                    // 操作不涉及其余结点, 因此上述过程保持不变式.
-                }
-            }
-            // 共享其指针给`head`(1). 这保持了头指针的不变式.
-            self.head = Some(node);
-            self.len += 1;
+impl<T> From<Vec<T>> for LinkedList<T> {
+    fn from(mut data: Vec<T>) -> Self {
+        let mut list = Self::new();
+        while let Some(elem) = data.pop() {
+            list.push_front(elem);
         }
+        list
     }
+}
 
-    /// 弹出链表的首结点. 若表空则返回`None`.
-    /// 1. 弹出后, 首结点的后继(若有)成为新的首结点;
-    /// 2. 首结点的后继的前驱变为尾结点(首结点的前驱), 尾结点的后继变为首结点的后继.
-    fn pop_front_node(&mut self) -> Option<Box<Node<T>>> {
-        // # Safety
-        // 该过程保持了不变式: 链表内所有关联指针(若有)都是合法指针(前驱、后继以及头指针).
-        self.head.map(|head| unsafe {
-            let next = (*head.as_ptr()).next;
-            if head == next {
-                // 首结点是链表的唯一结点.
-                self.head = None;
-            } else {
-                // Safety: 根据不变式1, 所有解引用都是安全的.
-                // 这里也保持了不变式1、2.
-                (*next.as_ptr()).prev = (*head.as_ptr()).prev;
-                (*(*head.as_ptr()).prev.as_ptr()).next = next;
-                self.head = Some(next);
+impl<T: PartialEq> PartialEq for LinkedList<T> {
+    fn eq(&self, other: &Self) -> bool {
+        let mut q = other.iter();
+        for elem in self.iter() {
+            if q.next() != Some(elem) {
+                return false;
             }
-            self.len -= 1;
-            // Safety: 根据不变式2、3, 这里是安全的.
-            Box::from_raw(head.as_ptr())
-        })
+        }
+        q.next().is_none()
+    }
+}
+
+impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
+    fn eq(&self, other: &Vec<T>) -> bool {
+        let mut q = other.iter();
+        for elem in self.iter() {
+            if q.next() != Some(elem) {
+                return false;
+            }
+        }
+        q.next().is_none()
+    }
+}
+
+impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
+    fn eq(&self, other: &LinkedList<T>) -> bool {
+        other.eq(self)
+    }
+}
+
+impl<T: PartialEq> LinkedList<T> {
+    /// 删除表中最小值, 并返回.
+    /// 若表空则返回`None`.
+    // 习题 2.3.19
+    pub fn pop_min(&mut self) -> Option<T> {
+        unimplemented!()
     }
 }
 
