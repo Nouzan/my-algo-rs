@@ -268,22 +268,12 @@ impl<'a, T> Cursor<'a, T> {
 impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
     /// 注意: 如果当前结点为`None`或`None`的后继, 则返回`false`.
     fn is_front_or_empty(&self) -> bool {
-        if let Some(node) = self.prev.as_deref() {
-            match node {
-                Node::Head(_) => true,
-                Node::Item(_) => false,
-            }
-        } else {
-            false
-        }
+        matches!(self.prev.as_deref(), Some(Node::Head(_)))
     }
 
     /// 注意: 如果当前结点为`None`或`None`的后继, 则返回`false`.
     fn is_empty(&self) -> bool {
-        match self.prev.as_deref() {
-            Some(Node::Head(None)) => true,
-            _ => false,
-        }
+        matches!(self.prev.as_deref(), Some(Node::Head(None)))
     }
 
     fn is_ghost(&self) -> bool {
