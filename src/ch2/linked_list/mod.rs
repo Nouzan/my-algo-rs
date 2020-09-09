@@ -6,7 +6,7 @@ pub mod singly;
 pub use singly::*;
 
 /// 只读线性游标接口, 用于实现只读的循位置访问.
-pub trait LinearCursor<T> {
+pub trait LinearCursor<'a, T> {
     /// 游标向右移动, 指向它的后继.
     fn move_next(&mut self);
 
@@ -26,11 +26,14 @@ pub trait LinearCursor<T> {
 
     /// 所指结点相对与首结点的偏移. 若表空则返回`None`.
     fn index(&self) -> Option<usize>;
+
+    /// 消耗游标, 转换为内容的只读引用.
+    fn into_ref(self) -> Option<&'a T>;
 }
 
 /// 可变游标接口, 用于实现可变的循位置访问.
-pub trait LinearCursorMut<T>: LinearCursor<T> {
-    type Cursor<'a, U: 'a>: LinearCursor<U>;
+pub trait LinearCursorMut<'b, T>: LinearCursor<'b, T> {
+    type Cursor<'a, U: 'a>: LinearCursor<'a, U>;
 
     /// 转换为一个只读游标.
     fn as_cursor(&self) -> Self::Cursor<'_, T>;
@@ -62,8 +65,8 @@ pub trait LinearCursorMut<T>: LinearCursor<T> {
 
 /// 单链表接口.
 pub trait SinglyLinkedList<T>: Default {
-    type Cursor<'a, U: 'a>: LinearCursor<U>;
-    type CursorMut<'a, U: 'a>: LinearCursorMut<U>;
+    type Cursor<'a, U: 'a>: LinearCursor<'a, U>;
+    type CursorMut<'a, U: 'a>: LinearCursorMut<'a, U>;
 
     /// 链表是否为空.
     fn is_empty(&self) -> bool;

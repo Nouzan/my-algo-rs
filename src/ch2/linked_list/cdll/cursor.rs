@@ -37,7 +37,7 @@ impl<'a, T: 'a> Cursor<'a, T> {
     }
 }
 
-impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
+impl<'a, T: 'a> LinearCursor<'a, T> for Cursor<'a, T> {
     fn move_next(&mut self) {
         // 根据不变式, `node`是合法的.
         // 而根据链表的不变式, `next`也是合法的, 这保持了游标的不变式.
@@ -71,6 +71,10 @@ impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
         } else {
             None
         }
+    }
+
+    fn into_ref(self) -> Option<&'a T> {
+        self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
     }
 }
 
@@ -188,7 +192,7 @@ impl<'a, T: 'a> CursorMut<'a, T> {
     }
 }
 
-impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
+impl<'a, T: 'a> LinearCursor<'a, T> for CursorMut<'a, T> {
     fn move_next(&mut self) {
         // 根据不变式, `node`是合法的.
         // 而根据链表的不变式, `next`也是合法的, 这保持了游标的不变式.
@@ -225,9 +229,13 @@ impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
             None
         }
     }
+
+    fn into_ref(self) -> Option<&'a T> {
+        self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
+    }
 }
 
-impl<'a, T: 'a> LinearCursorMut<T> for CursorMut<'a, T> {
+impl<'a, T: 'a> LinearCursorMut<'a, T> for CursorMut<'a, T> {
     type Cursor<'b, U: 'b> = Cursor<'b, U>;
 
     /// 转换为一个只读游标.

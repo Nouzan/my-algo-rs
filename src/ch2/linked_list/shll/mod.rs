@@ -254,18 +254,9 @@ impl<'a, T> Clone for Cursor<'a, T> {
 
 impl<'a, T> Copy for Cursor<'a, T> {}
 
-impl<'a, T> Cursor<'a, T> {
-    /// 转换为内容的只读引用.
-    pub fn into_inner(mut self) -> Option<&'a T> {
-        if let Some(prev) = self.prev.take() {
-            prev.next().map(|node| node.elem_unchecked())
-        } else {
-            None
-        }
-    }
-}
+impl<'a, T> Cursor<'a, T> {}
 
-impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
+impl<'a, T: 'a> LinearCursor<'a, T> for Cursor<'a, T> {
     /// 注意: 如果当前结点为`None`或`None`的后继, 则返回`false`.
     fn is_front_or_empty(&self) -> bool {
         matches!(self.prev.as_deref(), Some(Node::Head(_)))
@@ -316,6 +307,14 @@ impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
             prev.next().as_ref().map(|node| {
                 node.elem_unchecked() // `node`是后继, 因此必然是`ItemNode`.
             })
+        } else {
+            None
+        }
+    }
+
+    fn into_ref(mut self) -> Option<&'a T> {
+        if let Some(prev) = self.prev.take() {
+            prev.next().map(|node| node.elem_unchecked())
         } else {
             None
         }
@@ -379,7 +378,7 @@ impl<'a, T> CursorMut<'a, T> {
     }
 }
 
-impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
+impl<'a, T: 'a> LinearCursor<'a, T> for CursorMut<'a, T> {
     /// 当前结点的下标.
     /// 若当前结点为`None`或`None`的后继, 则返回`None`.
     fn index(&self) -> Option<usize> {
@@ -425,9 +424,17 @@ impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
     fn is_ghost(&self) -> bool {
         self.as_cursor().is_ghost()
     }
+
+    fn into_ref(mut self) -> Option<&'a T> {
+        if let Some(prev) = self.prev.take() {
+            prev.next().map(|node| node.elem_unchecked())
+        } else {
+            None
+        }
+    }
 }
 
-impl<'a, T: 'a> LinearCursorMut<T> for CursorMut<'a, T> {
+impl<'a, T: 'a> LinearCursorMut<'a, T> for CursorMut<'a, T> {
     type Cursor<'b, U: 'b> = Cursor<'b, U>;
 
     fn as_cursor(&self) -> Self::Cursor<'_, T> {
@@ -523,42 +530,6 @@ impl<T> LinkedList<T> {
             cursor.move_next()
         }
         cursor.prev.unwrap().link(rhs.head.link(None));
-    }
-
-    /// 获取倒数第n个元素.
-    /// 若表不够长, 则返回`None`.
-    /// # Examples
-    /// ```
-    /// use my_algo::ch2::linked_list::shll::LinkedList;
-    ///
-    /// let list = LinkedList::from(vec![5, 4, 3, 2, 1]);
-    /// assert_eq!(list.last(1), Some(&1));
-    /// assert_eq!(list.last(0), None);
-    /// assert_eq!(list.last(6), None);
-    /// assert_eq!(list.last(5), Some(&5));
-    /// ```
-    // 习题 2.3.21
-    pub fn last(&self, n: usize) -> Option<&T> {
-        if n == 0 {
-            return None;
-        }
-        let mut lcur = self.cursor_front();
-        let mut rcur = self.cursor_front();
-        let mut flag = false;
-        while rcur.peek().is_some() {
-            if flag {
-                lcur.move_next();
-            }
-            if rcur.index().unwrap() - lcur.index().unwrap() >= n - 1 {
-                flag = true;
-            }
-            rcur.move_next();
-        }
-        if flag {
-            lcur.into_inner()
-        } else {
-            None
-        }
     }
 }
 
