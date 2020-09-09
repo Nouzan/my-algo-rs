@@ -516,27 +516,6 @@ impl<T> LinkedList<T> {
         }
     }
 
-    /// 就地逆置.
-    // 习题 2.3.5
-    pub fn reverse(&mut self) {
-        // a -> b -> c
-        // a, b -> c
-        // b -> a, c
-        // c -> b -> a
-        if !self.is_empty() {
-            // a -> b -> c => a, b -> c
-            let mut right = Self::default();
-            let rest = self.head.next_mut().unwrap().link(None); // 已经判过空, 因此可以`unwrap`.
-            right.head.link(rest);
-            let mut cursor_left = self.cursor_front_mut();
-            let mut cursor_right = right.cursor_front_mut();
-            while cursor_right.peek().is_some() {
-                let elem = cursor_right.remove_current().unwrap(); // 已经判过空, 因此可以`unwrap`.
-                cursor_left.insert_before_as_current(elem);
-            }
-        }
-    }
-
     /// 连接两个链表.
     pub fn append(&mut self, mut rhs: Self) {
         let mut cursor = self.cursor_front_mut();

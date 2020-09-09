@@ -61,7 +61,7 @@ pub trait LinearCursorMut<T>: LinearCursor<T> {
 }
 
 /// 单链表接口.
-pub trait SinglyLinkedList<T> {
+pub trait SinglyLinkedList<T>: Default {
     type Cursor<'a, U: 'a>: LinearCursor<U>;
     type CursorMut<'a, U: 'a>: LinearCursorMut<U>;
 
