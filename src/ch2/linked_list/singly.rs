@@ -54,4 +54,50 @@ pub trait SinglyLinkedListExt<T>: SinglyLinkedList<T> {
             None
         }
     }
+
+    /// 删除所有值等于`x`的元素.
+    fn delete_all(&mut self, x: &T)
+    where
+        T: PartialEq,
+    {
+        let mut cursor = self.cursor_front_mut();
+        while let Some(current) = cursor.peek() {
+            if *current == *x {
+                cursor.remove_current();
+            }
+            cursor.move_next();
+        }
+    }
+
+    /// 去除连续重复的元素.
+    ///
+    /// 若单链表是有序的, 这将去除所有重复元素.
+    /// # Examples
+    /// ```
+    /// use my_algo::ch2::linked_list::{shll::LinkedList, SinglyLinkedListExt};
+    ///
+    /// let mut list = LinkedList::from(vec![1, 2, 2, 3, 2]);
+    /// list.dedup();
+    /// assert_eq!(list, vec![1, 2, 3, 2]);
+    /// ```
+    // 习题 2.3.12
+    fn dedup(&mut self)
+    where
+        T: PartialEq,
+    {
+        let mut cursor = self.cursor_front_mut();
+        while let Some(is_dedup) = {
+            let flag = cursor
+                .as_cursor_forward(1)
+                .peek()
+                .map(|elem| *elem == *cursor.as_cursor().peek().unwrap());
+            flag
+        } {
+            if is_dedup {
+                cursor.remove_current();
+            } else {
+                cursor.move_next();
+            }
+        }
+    }
 }

@@ -524,7 +524,7 @@ impl<T> LinkedList<T> {
     }
 
     /// 连接两个链表.
-    pub fn append(&mut self, mut rhs: Self) {
+    pub fn append(&mut self, rhs: &mut Self) {
         let mut cursor = self.cursor_front_mut();
         while cursor.peek().is_some() {
             cursor.move_next()
@@ -566,46 +566,6 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
     /// 若表空则返回`None`.
     fn pop_front(&mut self) -> Option<T> {
         self.cursor_front_mut().remove_current()
-    }
-}
-
-impl<T: PartialEq> LinkedList<T> {
-    /// 删除所有值等于`x`的元素.
-    pub fn delete_all(&mut self, x: &T) {
-        let mut cursor = self.cursor_front_mut();
-        while let Some(current) = cursor.peek() {
-            if *current == *x {
-                cursor.remove_current();
-            }
-            cursor.move_next();
-        }
-    }
-
-    /// 去除连续重复的元素.
-    ///
-    /// 若单链表是有序的, 这将去除所有重复元素.
-    /// # Examples
-    /// ```
-    /// use my_algo::ch2::linked_list::shll::LinkedList;
-    ///
-    /// let mut list = LinkedList::from(vec![1, 2, 2, 3, 2]);
-    /// list.dedup();
-    /// assert_eq!(list, vec![1, 2, 3, 2]);
-    /// ```
-    // 习题 2.3.12
-    pub fn dedup(&mut self) {
-        let mut cursor = self.cursor_front_mut();
-        let mut pionner = cursor.as_cursor();
-        pionner.move_next();
-        while let Some(elem) = pionner.peek() {
-            if *elem == *cursor.as_cursor().peek().unwrap() {
-                cursor.remove_current();
-            } else {
-                cursor.move_next();
-            }
-            pionner = cursor.as_cursor();
-            pionner.move_next();
-        }
     }
 }
 
@@ -664,7 +624,7 @@ impl<T: PartialOrd> LinkedList<T> {
             self.sort();
             rhs.sort();
             rhs.push_front(flag);
-            self.append(rhs);
+            self.append(&mut rhs);
         }
     }
 

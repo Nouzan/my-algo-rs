@@ -38,6 +38,15 @@ pub trait LinearCursorMut<'b, T>: LinearCursor<'b, T> {
     /// 转换为一个只读游标.
     fn as_cursor(&self) -> Self::Cursor<'_, T>;
 
+    /// 转换为一个前进了`n`步的只读游标.
+    fn as_cursor_forward(&self, n: usize) -> Self::Cursor<'_, T> {
+        let mut cursor = self.as_cursor();
+        for _ in 0..n {
+            cursor.move_next();
+        }
+        cursor
+    }
+
     /// 获取所指结点内容的可变引用. 若表空则返回`None`.
     fn peek_mut(&mut self) -> Option<&mut T>;
 

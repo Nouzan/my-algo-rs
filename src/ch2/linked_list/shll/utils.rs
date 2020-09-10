@@ -35,8 +35,8 @@ pub fn merge<T: PartialOrd>(mut lhs: LinkedList<T>, mut rhs: LinkedList<T>) -> L
             cursor.insert_after_as_current(rcr.remove_current().unwrap());
         }
     }
-    merged.append(lhs);
-    merged.append(rhs);
+    merged.append(&mut lhs);
+    merged.append(&mut rhs);
     merged
 }
 
@@ -128,6 +128,7 @@ pub fn dedup_by_abs(list: &mut LinkedList<isize>, n: usize) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::ch2::linked_list::*;
     use proptest::prelude::*;
 
     proptest! {
