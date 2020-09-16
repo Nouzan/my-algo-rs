@@ -157,12 +157,14 @@ impl<T> LinkedList<T> {
     pub fn cursor_back(&self) -> Cursor<T> {
         let mut cursor = self.cursor_front();
         cursor.move_prev();
+        cursor.move_prev();
         cursor
     }
 
     /// 创建指向尾结点(若有)的可变游标.
     pub fn cursor_back_mut(&mut self) -> CursorMut<T> {
         let mut cursor = self.cursor_front_mut();
+        cursor.move_prev();
         cursor.move_prev();
         cursor
     }
