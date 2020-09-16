@@ -36,7 +36,7 @@ fn test_cursor() {
         cursor.move_next();
     }
 
-    assert!(cursor.is_front_or_empty());
+    assert!(cursor.is_ghost());
 
     for elem in data.iter().rev() {
         cursor.move_prev();
@@ -63,6 +63,25 @@ fn test_cursor_mut_remove() {
     while cursor.peek().is_some() {
         assert_eq!(cursor.remove_current(), Some(data[(idx + 3) % 5]));
         idx += 1;
+    }
+}
+
+#[test]
+fn test_cursor_mut_insert_before_failed() {
+    let data = vec![0, 0];
+    let mut list = LinkedList::default();
+    let mut cursor = list.cursor_front_mut();
+
+    // 逆序插入.
+    for elem in data.iter() {
+        cursor.insert_before_as_current(*elem);
+    }
+
+    let mut cursor = list.cursor_front();
+    for (i, elem) in data.iter().rev().enumerate() {
+        assert_eq!(cursor.index(), Some(i));
+        assert_eq!(cursor.peek(), Some(elem));
+        cursor.move_next();
     }
 }
 
@@ -139,8 +158,7 @@ proptest! {
 
         // 逆序插入.
         for elem in data.iter() {
-            cursor.insert_before(*elem);
-            cursor.move_prev();
+            cursor.insert_before_as_current(*elem);
         }
 
         let mut cursor = list.cursor_front();
@@ -158,8 +176,7 @@ proptest! {
 
         // 顺序插入.
         for elem in data.iter() {
-            cursor.insert_after(*elem);
-            cursor.move_next();
+            cursor.insert_after_as_current(*elem);
         }
 
         let mut cursor = list.cursor_front();
