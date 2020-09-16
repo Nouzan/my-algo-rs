@@ -1,4 +1,4 @@
-use my_algo::ch2::linked_list::single_head::{utils::dedup_by_abs, LinkedList};
+use my_algo::ch2::linked_list::shll::{utils::dedup_by_abs, LinkedList};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

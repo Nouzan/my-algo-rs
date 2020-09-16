@@ -1,4 +1,4 @@
-use my_algo::ch2::linked_list::single_head::{utils::split_odd, LinkedList};
+use my_algo::ch2::linked_list::shll::{utils::split_odd, LinkedList};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

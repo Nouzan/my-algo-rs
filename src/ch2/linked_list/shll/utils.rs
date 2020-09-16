@@ -1,17 +1,17 @@
 use super::LinkedList;
+use crate::ch2::linked_list::{LinearCursor, LinearCursorMut, SinglyLinkedList};
 
 /// 把链表分解为奇链和偶链.(分别包含原来链表中的奇数位置结点和偶数位置结点)
 // 习题 2.3.10
 pub fn split_odd<T>(list: &mut LinkedList<T>) -> LinkedList<T> {
-    let mut cursor = list.cursor_mut();
+    let mut cursor = list.cursor_front_mut();
     let mut odd = LinkedList::default();
-    let mut odd_cursor = odd.cursor_mut();
+    let mut odd_cursor = odd.cursor_front_mut();
     let mut idx = 0;
     while cursor.peek().is_some() {
         idx += 1;
         if idx % 2 == 1 {
-            odd_cursor.insert_after(cursor.remove_current().unwrap());
-            odd_cursor.move_next();
+            odd_cursor.insert_after_as_current(cursor.remove_current().unwrap());
         } else {
             cursor.move_next();
         }
@@ -25,16 +25,15 @@ pub fn split_odd<T>(list: &mut LinkedList<T>) -> LinkedList<T> {
 // 习题 2.3.13
 pub fn merge<T: PartialOrd>(mut lhs: LinkedList<T>, mut rhs: LinkedList<T>) -> LinkedList<T> {
     let mut merged = LinkedList::default();
-    let mut cursor = merged.cursor_mut();
-    let mut lcr = lhs.cursor_mut();
-    let mut rcr = rhs.cursor_mut();
+    let mut cursor = merged.cursor_front_mut();
+    let mut lcr = lhs.cursor_front_mut();
+    let mut rcr = rhs.cursor_front_mut();
     while let (Some(le), Some(re)) = (lcr.as_cursor().peek(), rcr.as_cursor().peek()) {
         if *le < *re {
-            cursor.insert_after(lcr.remove_current().unwrap());
+            cursor.insert_after_as_current(lcr.remove_current().unwrap());
         } else {
-            cursor.insert_after(rcr.remove_current().unwrap());
+            cursor.insert_after_as_current(rcr.remove_current().unwrap());
         }
-        cursor.move_next();
     }
     merged.append(lhs);
     merged.append(rhs);
@@ -46,7 +45,7 @@ pub fn merge<T: PartialOrd>(mut lhs: LinkedList<T>, mut rhs: LinkedList<T>) -> L
 /// 要求`lhs`和`rhs`递增有序.
 /// # Examples
 /// ```
-/// use my_algo::ch2::linked_list::single_head::{LinkedList, utils::common};
+/// use my_algo::ch2::linked_list::shll::{LinkedList, utils::common};
 ///
 /// let lhs = LinkedList::from(vec![1, 2, 2, 3, 4]);
 /// let rhs = LinkedList::from(vec![1, 2, 2, 3, 3, 4]);
@@ -55,9 +54,9 @@ pub fn merge<T: PartialOrd>(mut lhs: LinkedList<T>, mut rhs: LinkedList<T>) -> L
 // 习题 2.3.14
 pub fn common<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -> LinkedList<T> {
     let mut common = LinkedList::default();
-    let mut curosr = common.cursor_mut();
-    let mut lcur = lhs.cursor();
-    let mut rcur = rhs.cursor();
+    let mut curosr = common.cursor_front_mut();
+    let mut lcur = lhs.cursor_front();
+    let mut rcur = rhs.cursor_front();
     while let (Some(le), Some(re)) = (lcur.peek(), rcur.peek()) {
         if *le == *re {
             curosr.insert_after(le.clone());
@@ -78,7 +77,7 @@ pub fn common<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -
 /// 要求`lhs`和`rhs`递增有序.
 /// # Examples
 /// ```
-/// use my_algo::ch2::linked_list::single_head::{LinkedList, utils::intersect};
+/// use my_algo::ch2::linked_list::shll::{LinkedList, utils::intersect};
 ///
 /// let mut lhs = LinkedList::from(vec![1, 2, 2, 3, 4]);
 /// let rhs = LinkedList::from(vec![1, 2, 2, 3, 3, 4]);
@@ -87,8 +86,8 @@ pub fn common<T: PartialOrd + Clone>(lhs: &LinkedList<T>, rhs: &LinkedList<T>) -
 /// ```
 // 习题 2.3.15
 pub fn intersect<T: PartialOrd>(lhs: &mut LinkedList<T>, rhs: &LinkedList<T>) {
-    let mut lcur = lhs.cursor_mut();
-    let mut rcur = rhs.cursor();
+    let mut lcur = lhs.cursor_front_mut();
+    let mut rcur = rhs.cursor_front();
     while let (Some(le), Some(re)) = (lcur.as_cursor().peek(), rcur.peek()) {
         if *le == *re {
             lcur.move_next();
@@ -113,7 +112,7 @@ pub fn intersect<T: PartialOrd>(lhs: &mut LinkedList<T>, rhs: &LinkedList<T>) {
 // 习题 2.3.23
 pub fn dedup_by_abs(list: &mut LinkedList<isize>, n: usize) {
     let mut bitmap = vec![false; n + 1];
-    let mut cursor = list.cursor_mut();
+    let mut cursor = list.cursor_front_mut();
 
     while let Some(elem) = cursor.as_cursor().peek() {
         let k = elem.abs() as usize;
@@ -169,7 +168,7 @@ mod test {
             lhs.sort();
             rhs.sort();
             let common = common(&lhs, &rhs);
-            let mut cursor = common.cursor();
+            let mut cursor = common.cursor_front();
             let mut j = 0;
             data1.sort_unstable();
             data2.sort_unstable();
@@ -205,8 +204,8 @@ mod test {
         fn test_split_odd(data: Vec<i64>) {
             let mut list = LinkedList::from(data.clone());
             let odd = split_odd(&mut list);
-            let mut even_cursor = list.cursor();
-            let mut odd_cursor = odd.cursor();
+            let mut even_cursor = list.cursor_front();
+            let mut odd_cursor = odd.cursor_front();
             for (idx, elem) in data.iter().enumerate() {
                 if idx % 2 == 0 {
                     prop_assert_eq!(odd_cursor.peek(), Some(elem));
