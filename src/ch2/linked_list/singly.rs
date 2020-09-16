@@ -74,7 +74,7 @@ pub trait SinglyLinkedListExt<T>: SinglyLinkedList<T> {
     /// 若单链表是有序的, 这将去除所有重复元素.
     /// # Examples
     /// ```
-    /// use my_algo::ch2::linked_list::{shll::LinkedList, SinglyLinkedListExt};
+    /// use my_algo::ch2::linked_list::{cdll::LinkedList, SinglyLinkedListExt};
     ///
     /// let mut list = LinkedList::from(vec![1, 2, 2, 3, 2]);
     /// list.dedup();

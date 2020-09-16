@@ -11,6 +11,7 @@ pub trait LinearCursor<'a, T> {
     fn move_next(&mut self);
 
     /// 获得所指结点的元素的只读引用.
+    /// 表空或指向幽灵结点时返回`None`.
     fn peek(&self) -> Option<&T>;
 
     /// 表空或所指结点为首结点时返回`true`.
