@@ -254,8 +254,6 @@ impl<'a, T> Clone for Cursor<'a, T> {
 
 impl<'a, T> Copy for Cursor<'a, T> {}
 
-impl<'a, T> Cursor<'a, T> {}
-
 impl<'a, T: 'a> LinearCursor<'a, T> for Cursor<'a, T> {
     /// 注意: 如果当前结点为`None`或`None`的后继, 则返回`false`.
     fn is_front_or_empty(&self) -> bool {
@@ -571,34 +569,7 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
 
 use std::cmp::PartialOrd;
 
-impl<T: PartialOrd> LinkedList<T> {
-    /// 串匹配. 若匹配, 则返回最近匹配的位置; 否则返回`None`.
-    /// # 目前的实现
-    /// 朴素匹配算法.
-    // 习题 2.3.16
-    pub fn find(&self, target: &Self) -> Option<Cursor<T>> {
-        let mut cur = self.cursor_front();
-        if self.is_empty() && target.is_empty() {
-            return Some(cur);
-        }
-        while cur.peek().is_some() {
-            let mut pcur = cur;
-            let mut tcur = target.cursor_front();
-            while let (Some(pe), Some(te)) = (pcur.peek(), tcur.peek()) {
-                if *pe != *te {
-                    break;
-                }
-                pcur.move_next();
-                tcur.move_next();
-            }
-            if tcur.peek().is_none() {
-                return Some(cur);
-            }
-            cur.move_next();
-        }
-        None
-    }
-}
+impl<T: PartialOrd> LinkedList<T> {}
 
 #[cfg(test)]
 mod test {

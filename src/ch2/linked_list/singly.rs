@@ -188,4 +188,34 @@ pub trait SinglyLinkedListExt<T>: SinglyLinkedList<T> {
             }
         }
     }
+
+    /// 串匹配. 若匹配, 则返回最近匹配的位置; 否则返回`None`.
+    /// # 目前的实现
+    /// 朴素匹配算法.
+    // 习题 2.3.16
+    fn find<'a>(&'a self, target: &Self) -> Option<Self::Cursor<'a, T>>
+    where
+        T: PartialEq,
+    {
+        let mut cur = self.cursor_front();
+        if self.is_empty() && target.is_empty() {
+            return Some(cur);
+        }
+        while cur.peek().is_some() {
+            let mut pcur = cur;
+            let mut tcur = target.cursor_front();
+            while let (Some(pe), Some(te)) = (pcur.peek(), tcur.peek()) {
+                if *pe != *te {
+                    break;
+                }
+                pcur.move_next();
+                tcur.move_next();
+            }
+            if tcur.peek().is_none() {
+                return Some(cur);
+            }
+            cur.move_next();
+        }
+        None
+    }
 }

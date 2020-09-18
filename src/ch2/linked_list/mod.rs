@@ -75,7 +75,7 @@ pub trait LinearCursorMut<'b, T>: LinearCursor<'b, T> {
 
 /// 单链表接口.
 pub trait SinglyLinkedList<T>: Default {
-    type Cursor<'a, U: 'a>: LinearCursor<'a, U>;
+    type Cursor<'a, U: 'a>: LinearCursor<'a, U> + Copy;
     type CursorMut<'a, U: 'a>: LinearCursorMut<'a, U>;
 
     /// 链表是否为空.
