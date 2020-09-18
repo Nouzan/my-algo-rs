@@ -1,7 +1,7 @@
 pub mod cdll;
 pub mod shll;
-pub mod single;
 pub mod singly;
+pub mod sll;
 
 pub use singly::*;
 
