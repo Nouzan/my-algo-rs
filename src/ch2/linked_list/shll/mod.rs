@@ -572,21 +572,6 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
 use std::cmp::PartialOrd;
 
 impl<T: PartialOrd> LinkedList<T> {
-    /// 删除内容在[a, b)之间的结点.
-    // 习题 2.3.7
-    pub fn delete_between(&mut self, a: &T, b: &T) {
-        if *a < *b {
-            let mut cursor = self.cursor_front_mut();
-            while let Some(elem) = cursor.as_cursor().peek() {
-                if *a <= *elem && *elem < *b {
-                    cursor.remove_current();
-                } else {
-                    cursor.move_next();
-                }
-            }
-        }
-    }
-
     /// 串匹配. 若匹配, 则返回最近匹配的位置; 否则返回`None`.
     /// # 目前的实现
     /// 朴素匹配算法.

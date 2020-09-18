@@ -170,4 +170,22 @@ pub trait SinglyLinkedListExt<T>: SinglyLinkedList<T> {
             self.append(&mut rhs);
         }
     }
+
+    /// 删除内容在[a, b)之间的结点.
+    // 习题 2.3.7
+    fn delete_between(&mut self, a: &T, b: &T)
+    where
+        T: PartialOrd,
+    {
+        if *a < *b {
+            let mut cursor = self.cursor_front_mut();
+            while let Some(elem) = cursor.peek() {
+                if *a <= *elem && *elem < *b {
+                    cursor.remove_current();
+                } else {
+                    cursor.move_next();
+                }
+            }
+        }
+    }
 }
