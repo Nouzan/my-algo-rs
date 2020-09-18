@@ -66,4 +66,4 @@ fn main() -> Result<(), IndexError> {
 - 整数顺序表上的一些算法: `ch2::ISizeListExt`.
 - 不带头结点的单链表和带头结点的单链表的实现及其上的一些算法: `ch2::linked_list::{single::LinkedList, shll::LinkedList}`.
 - 不带头结点的循环双链表的实现及其上的一些算法: `ch2::linked_list::cdll::LinkedList`.
-- 单链表特质：`ch2::linked_list::SinglyLinkedList`.
+- 单链表特质：`ch2::linked_list::{SinglyLinkedList, SinglyLinkedListExt}`.
