@@ -1,4 +1,4 @@
-use my_algo::ch1::fib_recurrence;
+use my_algo::fib_recurrence;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

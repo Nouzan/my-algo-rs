@@ -1,7 +1,4 @@
-use my_algo::{
-    ch2::{IndexError, List, ListExt},
-    vec::MyVec,
-};
+use my_algo::{vec::MyVec, IndexError, List, ListExt};
 
 fn main() -> Result<(), IndexError> {
     let mut list = MyVec::new();
