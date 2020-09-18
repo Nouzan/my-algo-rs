@@ -100,4 +100,36 @@ pub trait SinglyLinkedListExt<T>: SinglyLinkedList<T> {
             }
         }
     }
+
+    /// 删除第一次出现的最小值结点.
+    /// 若表空, 则返回`None`.
+    // 习题 2.3.4
+    fn pop_min(&mut self) -> Option<T>
+    where
+        T: PartialOrd,
+    {
+        if !self.is_empty() {
+            let mut cursor = self.cursor_front_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
+            while let Some(next) = {
+                let mut pionner = cursor.as_cursor_forward(1);
+                while let Some(elem) = pionner.peek() {
+                    // 既然先锋作为后继不为空, `cursor`也必然不为空.
+                    if *elem < *cursor.peek().unwrap() {
+                        // 找到了下一个最小值
+                        break;
+                    }
+                    pionner.move_next();
+                }
+                pionner.index()
+            } {
+                // 追上先锋.
+                while cursor.index().unwrap() != next {
+                    cursor.move_next();
+                }
+            }
+            cursor.remove_current()
+        } else {
+            None
+        }
+    }
 }

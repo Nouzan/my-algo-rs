@@ -572,31 +572,6 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
 use std::cmp::PartialOrd;
 
 impl<T: PartialOrd> LinkedList<T> {
-    /// 删除第一次出现的最小值结点.
-    /// 若表空, 则返回`None`.
-    // 习题 2.3.4
-    pub fn pop_min(&mut self) -> Option<T> {
-        if !self.is_empty() {
-            let mut cursor = self.cursor_front_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
-            let mut pionner = cursor.as_cursor(); // 先锋游标.
-            pionner.move_next(); // 先锋前进一步.
-            while let Some(elem) = pionner.peek() {
-                if *elem < *cursor.as_cursor().peek().unwrap() {
-                    let idx = pionner.index().unwrap(); // 已经经过判空, 这里可以直接`unwrap`.
-                    while cursor.index().unwrap() != idx {
-                        // 追上先锋.
-                        cursor.move_next();
-                    }
-                    pionner = cursor.as_cursor();
-                }
-                pionner.move_next();
-            }
-            cursor.remove_current()
-        } else {
-            None
-        }
-    }
-
     /// 快速排序中的helper.
     /// # Panics
     /// 如果表为空则报错.
