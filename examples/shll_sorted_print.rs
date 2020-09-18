@@ -1,4 +1,4 @@
-use my_algo::ch2::linked_list::shll::LinkedList;
+use my_algo::ch2::linked_list::{shll::LinkedList, SinglyLinkedListExt};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

@@ -157,6 +157,7 @@ impl<T> LinkedList<T> {
     pub fn cursor_back(&self) -> Cursor<T> {
         let mut cursor = self.cursor_front();
         cursor.move_prev();
+        cursor.move_prev();
         cursor
     }
 
@@ -164,15 +165,8 @@ impl<T> LinkedList<T> {
     pub fn cursor_back_mut(&mut self) -> CursorMut<T> {
         let mut cursor = self.cursor_front_mut();
         cursor.move_prev();
+        cursor.move_prev();
         cursor
-    }
-
-    /// 连接两个链表.
-    /// `other`将会变为空表.
-    pub fn append(&mut self, other: &mut Self) {
-        while let Some(elem) = other.pop_front() {
-            self.push_back(elem)
-        }
     }
 
     /// 获得一个从首结点到尾结点的只读迭代器.
@@ -213,6 +207,14 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
     fn pop_front(&mut self) -> Option<T> {
         self.pop_front_node().map(|node| node.into_elem())
     }
+
+    /// 连接两个链表.
+    /// `other`将会变为空表.
+    fn append(&mut self, other: &mut Self) {
+        while let Some(elem) = other.pop_front() {
+            self.push_back(elem)
+        }
+    }
 }
 
 impl<T> Default for LinkedList<T> {
@@ -228,6 +230,16 @@ impl<T> From<Vec<T>> for LinkedList<T> {
             list.push_front(elem);
         }
         list
+    }
+}
+
+impl<T> From<LinkedList<T>> for Vec<T> {
+    fn from(mut list: LinkedList<T>) -> Self {
+        let mut vec = Vec::new();
+        while let Some(elem) = list.pop_front() {
+            vec.push(elem);
+        }
+        vec
     }
 }
 
@@ -258,15 +270,6 @@ impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
 impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
     fn eq(&self, other: &LinkedList<T>) -> bool {
         other.eq(self)
-    }
-}
-
-impl<T: PartialEq> LinkedList<T> {
-    /// 删除表中最小值, 并返回.
-    /// 若表空则返回`None`.
-    // 习题 2.3.19
-    pub fn pop_min(&mut self) -> Option<T> {
-        unimplemented!()
     }
 }
 
