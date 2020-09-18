@@ -132,4 +132,42 @@ pub trait SinglyLinkedListExt<T>: SinglyLinkedList<T> {
             None
         }
     }
+
+    /// 快速排序中的helper.
+    /// # Panics
+    /// 如果表为空则报错.
+    fn partition(&mut self) -> (T, Self)
+    where
+        T: PartialOrd,
+    {
+        let flag = self.pop_front().unwrap();
+        let mut rhs = Self::default();
+        let mut rhs_cursor = rhs.cursor_front_mut();
+        let mut lhs_cursor = self.cursor_front_mut();
+        while let Some(elem) = lhs_cursor.peek() {
+            if *elem >= flag {
+                // 已判空, 故可直接`unwrap`.
+                rhs_cursor.insert_after_as_current(lhs_cursor.remove_current().unwrap());
+            } else {
+                lhs_cursor.move_next();
+            }
+        }
+        drop(rhs_cursor); // drop earlier.
+        (flag, rhs)
+    }
+
+    /// (按递增序)排序.
+    // 习题 2.3.6
+    fn sort(&mut self)
+    where
+        T: PartialOrd,
+    {
+        if !self.is_empty() {
+            let (flag, mut rhs) = self.partition();
+            self.sort();
+            rhs.sort();
+            rhs.push_front(flag);
+            self.append(&mut rhs);
+        }
+    }
 }

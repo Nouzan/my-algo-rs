@@ -108,4 +108,7 @@ pub trait SinglyLinkedList<T>: Default {
 
     /// 创建指向首结点(若有)的可变游标.
     fn cursor_front_mut(&mut self) -> Self::CursorMut<'_, T>;
+
+    /// 连接两个链表. 操作后`rhs`将会变为空表.
+    fn append(&mut self, rhs: &mut Self);
 }

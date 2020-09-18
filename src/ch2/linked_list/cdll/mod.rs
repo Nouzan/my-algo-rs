@@ -169,14 +169,6 @@ impl<T> LinkedList<T> {
         cursor
     }
 
-    /// 连接两个链表.
-    /// `other`将会变为空表.
-    pub fn append(&mut self, other: &mut Self) {
-        while let Some(elem) = other.pop_front() {
-            self.push_back(elem)
-        }
-    }
-
     /// 获得一个从首结点到尾结点的只读迭代器.
     pub fn iter(&self) -> Iter<T> {
         Iter::new(self)
@@ -214,6 +206,14 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
 
     fn pop_front(&mut self) -> Option<T> {
         self.pop_front_node().map(|node| node.into_elem())
+    }
+
+    /// 连接两个链表.
+    /// `other`将会变为空表.
+    fn append(&mut self, other: &mut Self) {
+        while let Some(elem) = other.pop_front() {
+            self.push_back(elem)
+        }
     }
 }
 
@@ -260,15 +260,6 @@ impl<T: PartialEq> PartialEq<Vec<T>> for LinkedList<T> {
 impl<T: PartialEq> PartialEq<LinkedList<T>> for Vec<T> {
     fn eq(&self, other: &LinkedList<T>) -> bool {
         other.eq(self)
-    }
-}
-
-impl<T: PartialEq> LinkedList<T> {
-    /// 删除表中最小值, 并返回.
-    /// 若表空则返回`None`.
-    // 习题 2.3.19
-    pub fn pop_min(&mut self) -> Option<T> {
-        unimplemented!()
     }
 }
 

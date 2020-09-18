@@ -522,15 +522,6 @@ impl<T> LinkedList<T> {
                 .map(|node| node.as_item_node_mut_unchecked()),
         }
     }
-
-    /// 连接两个链表.
-    pub fn append(&mut self, rhs: &mut Self) {
-        let mut cursor = self.cursor_front_mut();
-        while cursor.peek().is_some() {
-            cursor.move_next()
-        }
-        cursor.prev.unwrap().link(rhs.head.link(None));
-    }
 }
 
 impl<T> SinglyLinkedList<T> for LinkedList<T> {
@@ -567,42 +558,20 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
     fn pop_front(&mut self) -> Option<T> {
         self.cursor_front_mut().remove_current()
     }
+
+    /// 连接两个链表.
+    fn append(&mut self, rhs: &mut Self) {
+        let mut cursor = self.cursor_front_mut();
+        while cursor.peek().is_some() {
+            cursor.move_next()
+        }
+        cursor.prev.unwrap().link(rhs.head.link(None));
+    }
 }
 
 use std::cmp::PartialOrd;
 
 impl<T: PartialOrd> LinkedList<T> {
-    /// 快速排序中的helper.
-    /// # Panics
-    /// 如果表为空则报错.
-    fn partition(&mut self) -> (T, Self) {
-        let flag = self.pop_front().unwrap();
-        let mut rhs = Self::default();
-        let mut rhs_cursor = rhs.cursor_front_mut();
-        let mut lhs_cursor = self.cursor_front_mut();
-        while let Some(elem) = lhs_cursor.peek() {
-            if *elem >= flag {
-                // 已判空, 故可直接`unwrap`.
-                rhs_cursor.insert_after_as_current(lhs_cursor.remove_current().unwrap());
-            } else {
-                lhs_cursor.move_next();
-            }
-        }
-        (flag, rhs)
-    }
-
-    /// (按递增序)排序.
-    // 习题 2.3.6
-    pub fn sort(&mut self) {
-        if !self.is_empty() {
-            let (flag, mut rhs) = self.partition();
-            self.sort();
-            rhs.sort();
-            rhs.push_front(flag);
-            self.append(&mut rhs);
-        }
-    }
-
     /// 删除内容在[a, b)之间的结点.
     // 习题 2.3.7
     pub fn delete_between(&mut self, a: &T, b: &T) {
