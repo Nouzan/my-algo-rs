@@ -567,10 +567,6 @@ impl<T> SinglyLinkedList<T> for LinkedList<T> {
     }
 }
 
-use std::cmp::PartialOrd;
-
-impl<T: PartialOrd> LinkedList<T> {}
-
 #[cfg(test)]
 mod test {
     use super::*;

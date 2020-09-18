@@ -233,6 +233,16 @@ impl<T> From<Vec<T>> for LinkedList<T> {
     }
 }
 
+impl<T> From<LinkedList<T>> for Vec<T> {
+    fn from(mut list: LinkedList<T>) -> Self {
+        let mut vec = Vec::new();
+        while let Some(elem) = list.pop_front() {
+            vec.push(elem);
+        }
+        vec
+    }
+}
+
 impl<T: PartialEq> PartialEq for LinkedList<T> {
     fn eq(&self, other: &Self) -> bool {
         let mut q = other.iter();
