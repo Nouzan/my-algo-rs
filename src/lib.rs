@@ -1,3 +1,5 @@
+//! 算法与数据结构的`Rust`实现.
+
 pub mod ch1;
 pub mod ch2;
 pub mod ch3;
