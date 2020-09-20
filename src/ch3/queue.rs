@@ -4,14 +4,16 @@ use crate::ch2::linked_list::{cdll, SinglyLinkedList};
 
 /// 队列特质.
 /// 具有`FIFO`性质.
-pub trait Queue<T> {
+pub trait Queue {
+    type Elem;
+
     /// 入队.
     /// 若入队成功则返回`None`, 否则返回`item`.
-    fn enque(&mut self, item: T) -> Option<T>;
+    fn enque(&mut self, item: Self::Elem) -> Option<Self::Elem>;
 
     /// 出队.
     /// 若队空则返回`None`, 否则返回队首元素.
-    fn deque(&mut self) -> Option<T>;
+    fn deque(&mut self) -> Option<Self::Elem>;
 
     /// 队是否为空.
     fn is_empty(&self) -> bool;
@@ -20,7 +22,9 @@ pub trait Queue<T> {
     fn is_full(&self) -> bool;
 }
 
-impl<T> Queue<T> for cdll::LinkedList<T> {
+impl<T> Queue for cdll::LinkedList<T> {
+    type Elem = T;
+
     fn is_full(&self) -> bool {
         false
     }
@@ -42,6 +46,12 @@ impl<T> Queue<T> for cdll::LinkedList<T> {
         }
     }
 }
+
+impl<S: Queue> QueueExt for S {}
+
+/// 队列扩展特质.
+/// 实现了一些队列算法.
+pub trait QueueExt: Queue {}
 
 #[cfg(test)]
 mod test {
