@@ -166,17 +166,20 @@ impl<T> Stack for shll::LinkedList<T> {
     }
 }
 
-/// 切片栈.
+/// (复制)切片栈.
 pub struct SliceStack<'a, T> {
     top: usize,
     slice: &'a mut [T],
 }
 
-impl<'a, T> From<&'a mut [T]> for SliceStack<'a, T> {
+impl<'a, T: Clone> From<&'a mut [T]> for SliceStack<'a, T> {
     fn from(slice: &'a mut [T]) -> Self {
         Self { top: 0, slice }
     }
 }
+
+/// (默认)切片栈.
+pub struct DefaultSliceStack<'a, T>(SliceStack<'a, T>);
 
 impl<'a, T: Clone> Stack for SliceStack<'a, T> {
     type Elem = T;
@@ -205,6 +208,45 @@ impl<'a, T: Clone> Stack for SliceStack<'a, T> {
         } else {
             self.top -= 1;
             Some(self.slice[self.top].clone())
+        }
+    }
+}
+
+impl<'a, T: Default> From<&'a mut [T]> for DefaultSliceStack<'a, T> {
+    fn from(slice: &'a mut [T]) -> Self {
+        Self(SliceStack { top: 0, slice })
+    }
+}
+
+impl<'a, T: Default> Stack for DefaultSliceStack<'a, T> {
+    type Elem = T;
+
+    fn cap(&self) -> Option<usize> {
+        Some(self.0.slice.len())
+    }
+
+    fn len(&self) -> usize {
+        self.0.top
+    }
+
+    fn push(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+        if self.is_full() {
+            Some(elem)
+        } else {
+            self.0.slice[self.0.top] = elem;
+            self.0.top += 1;
+            None
+        }
+    }
+
+    fn pop(&mut self) -> Option<Self::Elem> {
+        if self.is_empty() {
+            None
+        } else {
+            self.0.top -= 1;
+            let mut poped = T::default();
+            std::mem::swap(&mut poped, &mut self.0.slice[self.0.top]);
+            Some(poped)
         }
     }
 }
@@ -351,8 +393,21 @@ mod test {
 
         #[test]
         fn test_stack_basic_slice_stack(data: Vec<i64>) {
-            let mut v = vec![0;data.len()];
+            let mut v = vec![0; data.len()];
             let mut stack = SliceStack::from(v.as_mut_slice());
+            for elem in data.iter() {
+                stack.push(*elem);
+            }
+            for elem in data.iter().rev() {
+                assert_eq!(stack.pop(), Some(*elem));
+            }
+            assert_eq!(stack.pop(), None);
+        }
+
+        #[test]
+        fn test_stack_basic_default_slice_stack(data: Vec<i64>) {
+            let mut v = vec![0; data.len()];
+            let mut stack = DefaultSliceStack::from(v.as_mut_slice());
             for elem in data.iter() {
                 stack.push(*elem);
             }
