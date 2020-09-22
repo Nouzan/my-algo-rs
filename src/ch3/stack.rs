@@ -485,15 +485,14 @@ mod test {
             let n = n as u64;
             let mut handles = Vec::new();
             for _ in 0..n {
-                let handle = std::thread::spawn(move || {
+                handles.push(std::thread::spawn(move || {
                     let permutor: Vec<_> = Permutor::new(n).map(|num| num as usize).collect();
                     prop_assert_eq!(
                         cdll::LinkedList::is_valid_pop_sequence(&permutor),
                         cdll::LinkedList::is_valid_pop_sequence_recurrence(0, &permutor)
                     );
                     Ok(())
-                });
-                handles.push(handle);
+                }));
             }
             for handle in handles {
                 handle.join().unwrap().unwrap();
