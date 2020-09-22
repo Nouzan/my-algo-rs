@@ -46,6 +46,11 @@ impl<'a, T: 'a> Cursor<'a, T> {
             }
         }
     }
+
+    /// 消耗游标, 转换为所指结点的引用.
+    pub fn into_inner(self) -> Option<&'a T> {
+        self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
+    }
 }
 
 impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
