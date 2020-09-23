@@ -1,4 +1,4 @@
-use my_algo::ch1::fib;
+use my_algo::fib;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

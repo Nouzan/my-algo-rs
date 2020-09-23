@@ -1,3 +1,5 @@
+//! 实现了线性表相关算法.
+
 pub mod integer;
 pub mod linked_list;
 pub mod list;
