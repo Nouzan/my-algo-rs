@@ -416,6 +416,37 @@ pub trait StackExt: Stack {
             false
         }
     }
+
+    fn is_centrosymmetric<'a, 'b: 'a, T: 'a + PartialEq, L: SinglyLinkedList<T>>(
+        list: &'b L,
+    ) -> bool
+    where
+        Self: Stack<Elem = &'a T> + Default,
+    {
+        let center = if list.len() % 2 == 0 {
+            None
+        } else {
+            Some(list.len() / 2)
+        };
+        let mid = list.len() / 2;
+        let mut stack = Self::default();
+        let mut cursor = list.cursor_front();
+        while let Some(idx) = cursor.index() {
+            if Some(idx) != center {
+                if idx < mid {
+                    let elem = cursor.into_ref().unwrap();
+                    stack.push(elem);
+                } else {
+                    let elem = stack.pop().unwrap();
+                    if elem != cursor.peek().unwrap() {
+                        return false;
+                    }
+                }
+            }
+            cursor.move_next();
+        }
+        true
+    }
 }
 
 #[cfg(test)]
@@ -480,6 +511,32 @@ mod test {
     }
 
     proptest! {
+        #[test]
+        fn test_is_centrosymmetric_rand(data: Vec<usize>) {
+            let list = shll::LinkedList::from(data.clone());
+            let ans = data
+                .iter()
+                .zip(data.iter().rev())
+                .map(|(a, b)| a == b)
+                .all(|cmp| cmp);
+            prop_assert_eq!(shll::LinkedList::is_centrosymmetric(&list), ans);
+        }
+
+        #[test]
+        fn test_is_centrosymmetric(mut data: Vec<usize>, center: Option<usize>) {
+            let mut right: Vec<_> = data
+                .iter()
+                .rev()
+                .copied()
+                .collect();
+            if let Some(elem) = center {
+                data.push(elem);
+            }
+            data.append(&mut right);
+            let list = shll::LinkedList::from(data);
+            prop_assert_eq!(shll::LinkedList::is_centrosymmetric(&list), true);
+        }
+
         #[test]
         fn test_pop_sequence_all(n in 0..40) {
             let n = n as u64;
