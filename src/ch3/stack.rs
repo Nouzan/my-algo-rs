@@ -417,6 +417,22 @@ pub trait StackExt: Stack {
         }
     }
 
+    /// 判断一个单链表是否为中心对称的.
+    /// # Examples
+    /// ```
+    /// use my_algo::ch2::linked_list::shll::LinkedList;
+    /// use my_algo::ch3::StackExt;
+    ///
+    /// let list = LinkedList::from(vec![1, 2, 1, 2, 1]);
+    /// assert!(LinkedList::is_centrosymmetric(&list));
+    ///
+    /// let list = LinkedList::from(vec![1, 2, 2, 1]);
+    /// assert!(LinkedList::is_centrosymmetric(&list));
+    ///
+    /// let list = LinkedList::from(vec![1, 2, 3, 1]);
+    /// assert!(!LinkedList::is_centrosymmetric(&list));
+    ///
+    /// ```
     fn is_centrosymmetric<'a, 'b: 'a, T: 'a + PartialEq, L: SinglyLinkedList<T>>(
         list: &'b L,
     ) -> bool
@@ -534,7 +550,7 @@ mod test {
             }
             data.append(&mut right);
             let list = shll::LinkedList::from(data);
-            prop_assert_eq!(shll::LinkedList::is_centrosymmetric(&list), true);
+            prop_assert!(shll::LinkedList::is_centrosymmetric(&list));
         }
 
         #[test]
