@@ -1,3 +1,5 @@
+//! 自定义的向量实现(参考`Rustnomicorn`).
+
 use crate::ch2::{IndexError, List};
 use std::alloc::{alloc, dealloc, realloc, Layout};
 use std::marker::PhantomData;
