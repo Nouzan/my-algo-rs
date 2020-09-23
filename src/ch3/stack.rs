@@ -21,7 +21,7 @@
 
 use super::Queue;
 use crate::ch2::{
-    linked_list::{cdll, shll, SinglyLinkedList},
+    linked_list::{cdll, shll, LinearCursor, SinglyLinkedList},
     List,
 };
 use crate::vec::MyVec;
@@ -163,7 +163,7 @@ impl<T> Stack for cdll::LinkedList<T> {
     }
 
     fn top(&self) -> Option<&Self::Elem> {
-        self.cursor_front().into_inner()
+        self.cursor_front().into_ref()
     }
 }
 
@@ -200,7 +200,7 @@ impl<T> Stack for shll::LinkedList<T> {
     }
 
     fn top(&self) -> Option<&Self::Elem> {
-        self.cursor_front().into_inner()
+        self.cursor_front().into_ref()
     }
 }
 
