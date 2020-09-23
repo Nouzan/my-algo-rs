@@ -1,3 +1,5 @@
+//! 一些简单算法: 斐波那契数列算法、幂算法.
+
 use num_traits::One;
 use std::ops::Mul;
 
