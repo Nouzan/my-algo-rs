@@ -1,13 +1,17 @@
 pub mod cdll;
 pub mod shll;
+pub mod singly;
 pub mod sll;
 
+pub use singly::*;
+
 /// 只读线性游标接口, 用于实现只读的循位置访问.
-pub trait LinearCursor<T> {
+pub trait LinearCursor<'a, T> {
     /// 游标向右移动, 指向它的后继.
     fn move_next(&mut self);
 
     /// 获得所指结点的元素的只读引用.
+    /// 表空或指向幽灵结点时返回`None`.
     fn peek(&self) -> Option<&T>;
 
     /// 表空或所指结点为首结点时返回`true`.
@@ -23,14 +27,26 @@ pub trait LinearCursor<T> {
 
     /// 所指结点相对与首结点的偏移. 若表空则返回`None`.
     fn index(&self) -> Option<usize>;
+
+    /// 消耗游标, 转换为内容的只读引用.
+    fn into_ref(self) -> Option<&'a T>;
 }
 
 /// 可变游标接口, 用于实现可变的循位置访问.
-pub trait LinearCursorMut<'b, T>: LinearCursor<T> {
-    type Cursor: LinearCursor<T>;
+pub trait LinearCursorMut<'b, T>: LinearCursor<'b, T> {
+    type Cursor<'a, U: 'a>: LinearCursor<'a, U>;
 
     /// 转换为一个只读游标.
-    fn as_cursor(&'b self) -> Self::Cursor;
+    fn as_cursor(&self) -> Self::Cursor<'_, T>;
+
+    /// 转换为一个前进了`n`步的只读游标.
+    fn as_cursor_forward(&self, n: usize) -> Self::Cursor<'_, T> {
+        let mut cursor = self.as_cursor();
+        for _ in 0..n {
+            cursor.move_next();
+        }
+        cursor
+    }
 
     /// 获取所指结点内容的可变引用. 若表空则返回`None`.
     fn peek_mut(&mut self) -> Option<&mut T>;
@@ -58,15 +74,15 @@ pub trait LinearCursorMut<'b, T>: LinearCursor<T> {
 }
 
 /// 单链表接口.
-pub trait SinglyLinkedList<'a, T> {
-    type Cursor: LinearCursor<T>;
-    type CursorMut: LinearCursorMut<'a, T>;
+pub trait SinglyLinkedList<T>: Default {
+    type Cursor<'a, U: 'a>: LinearCursor<'a, U> + Copy;
+    type CursorMut<'a, U: 'a>: LinearCursorMut<'a, U>;
 
     /// 链表是否为空.
     fn is_empty(&self) -> bool;
 
     /// 获取表的长度.
-    fn len(&'a self) -> usize {
+    fn len(&self) -> usize {
         if self.is_empty() {
             0
         } else {
@@ -88,8 +104,11 @@ pub trait SinglyLinkedList<'a, T> {
     fn pop_front(&mut self) -> Option<T>;
 
     /// 冻结链表, 创建指向首结点(若有)的只读游标.
-    fn cursor_front(&'a self) -> Self::Cursor;
+    fn cursor_front(&self) -> Self::Cursor<'_, T>;
 
     /// 创建指向首结点(若有)的可变游标.
-    fn cursor_front_mut(&'a mut self) -> Self::CursorMut;
+    fn cursor_front_mut(&mut self) -> Self::CursorMut<'_, T>;
+
+    /// 连接两个链表. 操作后`rhs`将会变为空表.
+    fn append(&mut self, rhs: &mut Self);
 }

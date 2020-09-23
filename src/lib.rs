@@ -1,4 +1,5 @@
-//! 算法与数据结构的`Rust`实现.
+#![allow(incomplete_features)]
+#![feature(generic_associated_types)]
 
 pub mod ch1;
 pub mod ch2;

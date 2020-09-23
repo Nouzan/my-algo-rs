@@ -254,18 +254,7 @@ impl<'a, T> Clone for Cursor<'a, T> {
 
 impl<'a, T> Copy for Cursor<'a, T> {}
 
-impl<'a, T> Cursor<'a, T> {
-    /// 转换为内容的只读引用.
-    pub fn into_inner(mut self) -> Option<&'a T> {
-        if let Some(prev) = self.prev.take() {
-            prev.next().map(|node| node.elem_unchecked())
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
+impl<'a, T: 'a> LinearCursor<'a, T> for Cursor<'a, T> {
     /// 注意: 如果当前结点为`None`或`None`的后继, 则返回`false`.
     fn is_front_or_empty(&self) -> bool {
         matches!(self.prev.as_deref(), Some(Node::Head(_)))
@@ -316,6 +305,14 @@ impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
             prev.next().as_ref().map(|node| {
                 node.elem_unchecked() // `node`是后继, 因此必然是`ItemNode`.
             })
+        } else {
+            None
+        }
+    }
+
+    fn into_ref(mut self) -> Option<&'a T> {
+        if let Some(prev) = self.prev.take() {
+            prev.next().map(|node| node.elem_unchecked())
         } else {
             None
         }
@@ -379,7 +376,7 @@ impl<'a, T> CursorMut<'a, T> {
     }
 }
 
-impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
+impl<'a, T: 'a> LinearCursor<'a, T> for CursorMut<'a, T> {
     /// 当前结点的下标.
     /// 若当前结点为`None`或`None`的后继, 则返回`None`.
     fn index(&self) -> Option<usize> {
@@ -425,12 +422,20 @@ impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
     fn is_ghost(&self) -> bool {
         self.as_cursor().is_ghost()
     }
+
+    fn into_ref(mut self) -> Option<&'a T> {
+        if let Some(prev) = self.prev.take() {
+            prev.next().map(|node| node.elem_unchecked())
+        } else {
+            None
+        }
+    }
 }
 
-impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
-    type Cursor = Cursor<'b, T>;
+impl<'a, T: 'a> LinearCursorMut<'a, T> for CursorMut<'a, T> {
+    type Cursor<'b, U: 'b> = Cursor<'b, U>;
 
-    fn as_cursor(&'b self) -> Self::Cursor {
+    fn as_cursor(&self) -> Self::Cursor<'_, T> {
         Cursor {
             index: self.index,
             prev: self.prev.as_deref(),
@@ -515,77 +520,11 @@ impl<T> LinkedList<T> {
                 .map(|node| node.as_item_node_mut_unchecked()),
         }
     }
-
-    /// 就地逆置.
-    // 习题 2.3.5
-    pub fn reverse(&mut self) {
-        // a -> b -> c
-        // a, b -> c
-        // b -> a, c
-        // c -> b -> a
-        if !self.is_empty() {
-            // a -> b -> c => a, b -> c
-            let mut right = Self::default();
-            let rest = self.head.next_mut().unwrap().link(None); // 已经判过空, 因此可以`unwrap`.
-            right.head.link(rest);
-            let mut cursor_left = self.cursor_front_mut();
-            let mut cursor_right = right.cursor_front_mut();
-            while cursor_right.peek().is_some() {
-                let elem = cursor_right.remove_current().unwrap(); // 已经判过空, 因此可以`unwrap`.
-                cursor_left.insert_before_as_current(elem);
-            }
-        }
-    }
-
-    /// 连接两个链表.
-    pub fn append(&mut self, mut rhs: Self) {
-        let mut cursor = self.cursor_front_mut();
-        while cursor.peek().is_some() {
-            cursor.move_next()
-        }
-        cursor.prev.unwrap().link(rhs.head.link(None));
-    }
-
-    /// 获取倒数第n个元素.
-    /// 若表不够长, 则返回`None`.
-    /// # Examples
-    /// ```
-    /// use my_algo::ch2::linked_list::shll::LinkedList;
-    ///
-    /// let list = LinkedList::from(vec![5, 4, 3, 2, 1]);
-    /// assert_eq!(list.last(1), Some(&1));
-    /// assert_eq!(list.last(0), None);
-    /// assert_eq!(list.last(6), None);
-    /// assert_eq!(list.last(5), Some(&5));
-    /// ```
-    // 习题 2.3.21
-    pub fn last(&self, n: usize) -> Option<&T> {
-        if n == 0 {
-            return None;
-        }
-        let mut lcur = self.cursor_front();
-        let mut rcur = self.cursor_front();
-        let mut flag = false;
-        while rcur.peek().is_some() {
-            if flag {
-                lcur.move_next();
-            }
-            if rcur.index().unwrap() - lcur.index().unwrap() >= n - 1 {
-                flag = true;
-            }
-            rcur.move_next();
-        }
-        if flag {
-            lcur.into_inner()
-        } else {
-            None
-        }
-    }
 }
 
-impl<'a, T: 'a> SinglyLinkedList<'a, T> for LinkedList<T> {
-    type Cursor = Cursor<'a, T>;
-    type CursorMut = CursorMut<'a, T>;
+impl<T> SinglyLinkedList<T> for LinkedList<T> {
+    type Cursor<'a, U: 'a> = Cursor<'a, U>;
+    type CursorMut<'a, U: 'a> = CursorMut<'a, U>;
 
     fn is_empty(&self) -> bool {
         self.head.next().is_none()
@@ -617,147 +556,14 @@ impl<'a, T: 'a> SinglyLinkedList<'a, T> for LinkedList<T> {
     fn pop_front(&mut self) -> Option<T> {
         self.cursor_front_mut().remove_current()
     }
-}
 
-impl<T: PartialEq> LinkedList<T> {
-    /// 删除所有值等于`x`的元素.
-    pub fn delete_all(&mut self, x: &T) {
+    /// 连接两个链表.
+    fn append(&mut self, rhs: &mut Self) {
         let mut cursor = self.cursor_front_mut();
-        while let Some(current) = cursor.peek() {
-            if *current == *x {
-                cursor.remove_current();
-            }
-            cursor.move_next();
+        while cursor.peek().is_some() {
+            cursor.move_next()
         }
-    }
-
-    /// 去除连续重复的元素.
-    ///
-    /// 若单链表是有序的, 这将去除所有重复元素.
-    /// # Examples
-    /// ```
-    /// use my_algo::ch2::linked_list::shll::LinkedList;
-    ///
-    /// let mut list = LinkedList::from(vec![1, 2, 2, 3, 2]);
-    /// list.dedup();
-    /// assert_eq!(list, vec![1, 2, 3, 2]);
-    /// ```
-    // 习题 2.3.12
-    pub fn dedup(&mut self) {
-        let mut cursor = self.cursor_front_mut();
-        let mut pionner = cursor.as_cursor();
-        pionner.move_next();
-        while let Some(elem) = pionner.peek() {
-            if *elem == *cursor.as_cursor().peek().unwrap() {
-                cursor.remove_current();
-            } else {
-                cursor.move_next();
-            }
-            pionner = cursor.as_cursor();
-            pionner.move_next();
-        }
-    }
-}
-
-use std::cmp::PartialOrd;
-
-impl<T: PartialOrd> LinkedList<T> {
-    /// 删除第一次出现的最小值结点.
-    /// 若表空, 则返回`None`.
-    // 习题 2.3.4
-    pub fn pop_min(&mut self) -> Option<T> {
-        if !self.is_empty() {
-            let mut cursor = self.cursor_front_mut(); // 指向已知最小值的游标, 由于表非空, 开始时指向首结点.
-            let mut pionner = cursor.as_cursor(); // 先锋游标.
-            pionner.move_next(); // 先锋前进一步.
-            while let Some(elem) = pionner.peek() {
-                if *elem < *cursor.as_cursor().peek().unwrap() {
-                    let idx = pionner.index().unwrap(); // 已经经过判空, 这里可以直接`unwrap`.
-                    while cursor.index().unwrap() != idx {
-                        // 追上先锋.
-                        cursor.move_next();
-                    }
-                    pionner = cursor.as_cursor();
-                }
-                pionner.move_next();
-            }
-            cursor.remove_current()
-        } else {
-            None
-        }
-    }
-
-    /// 快速排序中的helper.
-    /// # Panics
-    /// 如果表为空则报错.
-    fn partition(&mut self) -> (T, Self) {
-        let flag = self.pop_front().unwrap();
-        let mut rhs = Self::default();
-        let mut rhs_cursor = rhs.cursor_front_mut();
-        let mut lhs_cursor = self.cursor_front_mut();
-        while let Some(elem) = lhs_cursor.peek() {
-            if *elem >= flag {
-                // 已判空, 故可直接`unwrap`.
-                rhs_cursor.insert_after_as_current(lhs_cursor.remove_current().unwrap());
-            } else {
-                lhs_cursor.move_next();
-            }
-        }
-        (flag, rhs)
-    }
-
-    /// (按递增序)排序.
-    // 习题 2.3.6
-    pub fn sort(&mut self) {
-        if !self.is_empty() {
-            let (flag, mut rhs) = self.partition();
-            self.sort();
-            rhs.sort();
-            rhs.push_front(flag);
-            self.append(rhs);
-        }
-    }
-
-    /// 删除内容在[a, b)之间的结点.
-    // 习题 2.3.7
-    pub fn delete_between(&mut self, a: &T, b: &T) {
-        if *a < *b {
-            let mut cursor = self.cursor_front_mut();
-            while let Some(elem) = cursor.as_cursor().peek() {
-                if *a <= *elem && *elem < *b {
-                    cursor.remove_current();
-                } else {
-                    cursor.move_next();
-                }
-            }
-        }
-    }
-
-    /// 串匹配. 若匹配, 则返回最近匹配的位置; 否则返回`None`.
-    /// # 目前的实现
-    /// 朴素匹配算法.
-    // 习题 2.3.16
-    pub fn find(&self, target: &Self) -> Option<Cursor<T>> {
-        let mut cur = self.cursor_front();
-        if self.is_empty() && target.is_empty() {
-            return Some(cur);
-        }
-        while cur.peek().is_some() {
-            let mut pcur = cur;
-            let mut tcur = target.cursor_front();
-            while let (Some(pe), Some(te)) = (pcur.peek(), tcur.peek()) {
-                if *pe != *te {
-                    break;
-                }
-                pcur.move_next();
-                tcur.move_next();
-            }
-            if tcur.peek().is_none() {
-                return Some(cur);
-            }
-            cur.move_next();
-        }
-        None
+        cursor.prev.unwrap().link(rhs.head.link(None));
     }
 }
 

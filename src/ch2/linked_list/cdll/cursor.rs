@@ -10,6 +10,7 @@ use crate::ch2::linked_list::{LinearCursor, LinearCursorMut};
 /// 特别地, 我们形式地插入一个幽灵结点, 作为首结点的前驱、尾结点的后继.
 /// 幽灵结点的意义是标记一轮遍历的完成.
 /// `Cursor`的生命期与它所对应的链表只读引用的生命期是一致的, 这保证了共享只读引用的合法性.
+#[derive(Debug)]
 pub struct Cursor<'a, T: 'a> {
     index: usize,
 
@@ -53,7 +54,19 @@ impl<'a, T: 'a> Cursor<'a, T> {
     }
 }
 
-impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
+impl<'a, T> Clone for Cursor<'a, T> {
+    fn clone(&self) -> Self {
+        Self {
+            index: self.index,
+            current: self.current,
+            list: self.list,
+        }
+    }
+}
+
+impl<'a, T> Copy for Cursor<'a, T> {}
+
+impl<'a, T: 'a> LinearCursor<'a, T> for Cursor<'a, T> {
     fn move_next(&mut self) {
         // 根据不变式, `node`是合法的.
         // 而根据链表的不变式, `next`也是合法的, 这保持了游标的不变式.
@@ -96,6 +109,10 @@ impl<'a, T: 'a> LinearCursor<T> for Cursor<'a, T> {
         } else {
             None
         }
+    }
+
+    fn into_ref(self) -> Option<&'a T> {
+        self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
     }
 }
 
@@ -242,7 +259,7 @@ impl<'a, T: 'a> CursorMut<'a, T> {
     }
 }
 
-impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
+impl<'a, T: 'a> LinearCursor<'a, T> for CursorMut<'a, T> {
     fn move_next(&mut self) {
         // 根据不变式, `node`是合法的.
         // 而根据链表的不变式, `next`也是合法的, 这保持了游标的不变式.
@@ -288,17 +305,21 @@ impl<'a, T: 'a> LinearCursor<T> for CursorMut<'a, T> {
             None
         }
     }
+
+    fn into_ref(self) -> Option<&'a T> {
+        self.current.map(|node| unsafe { &(*node.as_ptr()).elem })
+    }
 }
 
-impl<'a, 'b, T: 'a + 'b> LinearCursorMut<'b, T> for CursorMut<'a, T> {
-    type Cursor = Cursor<'b, T>;
+impl<'a, T: 'a> LinearCursorMut<'a, T> for CursorMut<'a, T> {
+    type Cursor<'b, U: 'b> = Cursor<'b, U>;
 
     /// 转换为一个只读游标.
     ///
     /// 这个操作将会冻结可变游标.
     /// 因为新产生的`Cursor`的生命期与可变游标的只读引用的生命期一样长,
     /// 所以当我们再一次拿到可变游标的可变引用时, 该`Cursor`将会不可用.
-    fn as_cursor(&'b self) -> Self::Cursor {
+    fn as_cursor(&self) -> Self::Cursor<'_, T> {
         Cursor {
             index: self.index,
             current: self.current,

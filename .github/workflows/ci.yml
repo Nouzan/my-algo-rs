@@ -1,13 +1,13 @@
 name: Build
 
-# Run this on pushes to `master`, or when a pull request is opened against `master`
+# Run this on pushes to `nightly`, or when a pull request is opened against `nightly`
 on:
   push:
     branches:
-    - master
+    - nightly
   pull_request:
     branches:
-    - master
+    - nightly
 
 jobs:
   test:
@@ -17,10 +17,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - stable
-          - beta
           - nightly
-          - 1.45.2 # MSRV
 
     steps:
       - name: Checkout
