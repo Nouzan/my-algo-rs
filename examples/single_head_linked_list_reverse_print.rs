@@ -1,6 +1,4 @@
-use my_algo::ch2::linked_list::{
-    shll::LinkedList, LinearCursor, LinearCursorMut, SinglyLinkedList,
-};
+use my_algo::linked_list::{shll::LinkedList, LinearCursor, LinearCursorMut, SinglyLinkedList};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

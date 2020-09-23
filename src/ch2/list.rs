@@ -11,6 +11,11 @@ pub trait List<Item> {
         self.len() == 0
     }
 
+    /// 判断线性表是否满.
+    fn is_full(&self) -> bool {
+        false
+    }
+
     /// 判断下标是否越界(访问时).
     fn is_index_read_valid(&self, index: usize) -> bool {
         index < self.len()
