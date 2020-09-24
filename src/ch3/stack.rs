@@ -204,6 +204,244 @@ impl<T> Stack for shll::LinkedList<T> {
     }
 }
 
+/// 共享栈.
+pub struct SharedStack<T> {
+    ltop: usize,
+    rtop: usize,
+    /// 数据容器
+    slice: Vec<Option<T>>,
+}
+
+impl<T> SharedStack<T> {
+    /// 创建一个容量为`size`的共享栈.
+    pub fn new(size: usize) -> Self {
+        let mut slice = Vec::with_capacity(size);
+        for _ in 0..size {
+            slice.push(None);
+        }
+        Self {
+            ltop: 0,
+            rtop: size,
+            slice,
+        }
+    }
+
+    /// 获取共享栈的总容量.
+    pub fn cap(&self) -> usize {
+        self.slice.len()
+    }
+
+    /// 左栈大小.
+    pub fn left_len(&self) -> usize {
+        self.ltop
+    }
+
+    /// 左栈容量.
+    pub fn left_cap(&self) -> usize {
+        self.rtop
+    }
+
+    /// 左栈是否为空.
+    pub fn is_left_empty(&self) -> bool {
+        self.left_len() == 0
+    }
+
+    /// 左栈是否满.
+    pub fn is_left_full(&self) -> bool {
+        self.left_len() == self.left_cap()
+    }
+
+    /// 右栈大小.
+    pub fn right_len(&self) -> usize {
+        self.cap() - self.rtop
+    }
+
+    /// 右栈容量.
+    pub fn right_cap(&self) -> usize {
+        self.cap() - self.ltop
+    }
+
+    /// 右栈是否为空.
+    pub fn is_right_empty(&self) -> bool {
+        self.right_len() == 0
+    }
+
+    /// 左栈是否满.
+    pub fn is_right_full(&self) -> bool {
+        self.right_len() == self.right_cap()
+    }
+
+    /// 获取左栈.
+    pub fn as_left_stack(&mut self) -> LeftStack<T> {
+        LeftStack { shared: self }
+    }
+
+    /// 获取右栈.
+    pub fn as_right_stack(&mut self) -> RightStack<T> {
+        RightStack { shared: self }
+    }
+}
+
+impl<T> Stack for SharedStack<T> {
+    type Elem = T;
+
+    fn len(&self) -> usize {
+        self.left_len()
+    }
+
+    fn cap(&self) -> Option<usize> {
+        Some(self.left_cap())
+    }
+
+    fn top(&self) -> Option<&Self::Elem> {
+        if Stack::is_empty(self) {
+            None
+        } else {
+            self.slice[self.ltop - 1].as_ref()
+        }
+    }
+
+    fn push(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+        self.as_left_stack().push(elem)
+    }
+
+    fn pop(&mut self) -> Option<Self::Elem> {
+        self.as_left_stack().pop()
+    }
+}
+
+impl<T> Queue for SharedStack<T> {
+    type Elem = T;
+
+    fn is_empty(&self) -> bool {
+        self.is_left_empty() && self.is_right_empty()
+    }
+
+    fn is_full(&self) -> bool {
+        if self.is_right_empty() {
+            self.is_right_full() || self.left_cap() == 0
+        } else {
+            self.left_len() == self.left_cap().min(self.right_cap())
+        }
+    }
+
+    fn enque(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+        if Queue::is_full(self) {
+            Some(elem)
+        } else {
+            let cap = self.as_right_stack().cap();
+            if full_or_cap(&self.as_left_stack(), cap) && self.as_right_stack().is_empty() {
+                while let Some(elem) = self.as_left_stack().pop() {
+                    self.as_right_stack().push(elem);
+                }
+            }
+            self.as_left_stack().push(elem)
+        }
+    }
+
+    fn deque(&mut self) -> Option<Self::Elem> {
+        if self.as_right_stack().is_empty() {
+            while let Some(elem) = self.as_left_stack().pop() {
+                self.as_right_stack().push(elem);
+            }
+        }
+        if self.as_right_stack().is_empty() {
+            None
+        } else {
+            self.as_right_stack().pop()
+        }
+    }
+}
+
+/// 共享栈中的左栈.
+pub struct LeftStack<'a, T> {
+    shared: &'a mut SharedStack<T>,
+}
+
+impl<'a, T> Stack for LeftStack<'a, T> {
+    type Elem = T;
+
+    fn len(&self) -> usize {
+        self.shared.left_len()
+    }
+
+    fn cap(&self) -> Option<usize> {
+        Some(self.shared.left_cap())
+    }
+
+    fn push(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+        if self.is_full() {
+            Some(elem)
+        } else {
+            self.shared.slice[self.shared.ltop] = Some(elem);
+            self.shared.ltop += 1;
+            None
+        }
+    }
+
+    fn pop(&mut self) -> Option<Self::Elem> {
+        if self.is_empty() {
+            None
+        } else {
+            self.shared.ltop -= 1;
+            self.shared.slice[self.shared.ltop].take()
+        }
+    }
+
+    fn top(&self) -> Option<&Self::Elem> {
+        if self.is_empty() {
+            None
+        } else {
+            self.shared.slice[self.shared.ltop - 1].as_ref()
+        }
+    }
+}
+
+/// 共享栈中的右栈.
+pub struct RightStack<'a, T> {
+    shared: &'a mut SharedStack<T>,
+}
+
+impl<'a, T> Stack for RightStack<'a, T> {
+    type Elem = T;
+
+    fn len(&self) -> usize {
+        self.shared.right_len()
+    }
+
+    fn cap(&self) -> Option<usize> {
+        Some(self.shared.right_cap())
+    }
+
+    fn push(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+        if self.is_full() {
+            Some(elem)
+        } else {
+            self.shared.rtop -= 1;
+            self.shared.slice[self.shared.rtop] = Some(elem);
+            None
+        }
+    }
+
+    fn pop(&mut self) -> Option<Self::Elem> {
+        if self.is_empty() {
+            None
+        } else {
+            let poped = self.shared.slice[self.shared.rtop].take();
+            self.shared.rtop += 1;
+            poped
+        }
+    }
+
+    fn top(&self) -> Option<&Self::Elem> {
+        if self.is_empty() {
+            None
+        } else {
+            self.shared.slice[self.shared.rtop].as_ref()
+        }
+    }
+}
+
 /// (复制)切片栈.
 pub struct SliceStack<'a, T> {
     top: usize,
@@ -433,6 +671,7 @@ pub trait StackExt: Stack {
     /// assert!(!LinkedList::is_centrosymmetric(&list));
     ///
     /// ```
+    // 习题 3.1.4
     fn is_centrosymmetric<'a, 'b: 'a, T: 'a + PartialEq, L: SinglyLinkedList<T>>(
         list: &'b L,
     ) -> bool
@@ -470,6 +709,35 @@ mod test {
     use super::*;
     use permutation_iterator::Permutor;
     use proptest::prelude::*;
+
+    #[test]
+    fn test_shared_stack() {
+        let data = vec![1, 2, 3, 4, 5];
+        let mut stack = SharedStack::new(5);
+        stack.as_left_stack().push(data[0]);
+        stack.as_left_stack().push(data[1]);
+        for idx in 2..data.len() {
+            assert_eq!(stack.as_right_stack().push(data[idx]), None)
+        }
+        assert_eq!(stack.slice, [Some(1), Some(2), Some(5), Some(4), Some(3)]);
+
+        assert_eq!(stack.as_right_stack().push(2), Some(2));
+        assert_eq!(stack.as_left_stack().pop(), Some(2));
+        assert_eq!(stack.as_right_stack().push(2), None);
+        assert_eq!(stack.as_left_stack().push(2), Some(2));
+        assert_eq!(stack.as_right_stack().pop(), Some(2));
+        assert_eq!(stack.as_left_stack().push(2), None);
+        assert_eq!(stack.slice, [Some(1), Some(2), Some(5), Some(4), Some(3)]);
+
+        assert_eq!(stack.as_left_stack().pop(), Some(2));
+        assert_eq!(stack.as_left_stack().pop(), Some(1));
+        assert_eq!(stack.as_left_stack().pop(), None);
+
+        assert_eq!(stack.as_right_stack().pop(), Some(5));
+        assert_eq!(stack.as_right_stack().pop(), Some(4));
+        assert_eq!(stack.as_right_stack().pop(), Some(3));
+        assert_eq!(stack.as_right_stack().pop(), None);
+    }
 
     #[test]
     fn test_queue_basic_double_stack() {
@@ -527,6 +795,18 @@ mod test {
     }
 
     proptest! {
+        #[test]
+        fn test_queue_basic_shared_stack(data: Vec<usize>) {
+            let mut queue = SharedStack::new(data.len());
+            for elem in data.iter() {
+                assert_eq!(queue.enque(*elem), None);
+            }
+            for elem in data.iter() {
+                assert_eq!(queue.deque(), Some(*elem));
+            }
+            assert_eq!(queue.deque(), None);
+        }
+
         #[test]
         fn test_is_centrosymmetric_rand(data: Vec<usize>) {
             let list = shll::LinkedList::from(data.clone());
@@ -637,6 +917,42 @@ mod test {
         fn test_stack_basic_default_slice_stack(data: Vec<i64>) {
             let mut v = vec![0; data.len()];
             let mut stack = DefaultSliceStack::from(v.as_mut_slice());
+            for elem in data.iter() {
+                stack.push(*elem);
+            }
+            for elem in data.iter().rev() {
+                prop_assert_eq!(stack.pop(), Some(*elem));
+            }
+            prop_assert_eq!(stack.pop(), None);
+        }
+
+        #[test]
+        fn test_stack_basic_shared_stack_left(data: Vec<i64>) {
+            let mut stack = SharedStack::new(data.len());
+            for elem in data.iter() {
+                stack.as_left_stack().push(*elem);
+            }
+            for elem in data.iter().rev() {
+                prop_assert_eq!(stack.as_left_stack().pop(), Some(*elem));
+            }
+            prop_assert_eq!(stack.as_left_stack().pop(), None);
+        }
+
+        #[test]
+        fn test_stack_basic_shared_stack_right(data: Vec<i64>) {
+            let mut stack = SharedStack::new(data.len());
+            for elem in data.iter() {
+                stack.as_right_stack().push(*elem);
+            }
+            for elem in data.iter().rev() {
+                prop_assert_eq!(stack.as_right_stack().pop(), Some(*elem));
+            }
+            prop_assert_eq!(stack.as_right_stack().pop(), None);
+        }
+
+        #[test]
+        fn test_stack_basic_shared_stack(data: Vec<i64>) {
+            let mut stack = SharedStack::new(data.len());
             for elem in data.iter() {
                 stack.push(*elem);
             }
