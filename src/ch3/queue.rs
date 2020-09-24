@@ -9,11 +9,11 @@ pub trait Queue {
 
     /// 入队.
     /// 若入队成功则返回`None`, 否则返回`item`.
-    fn enque(&mut self, item: Self::Elem) -> Option<Self::Elem>;
+    fn enqueue(&mut self, item: Self::Elem) -> Option<Self::Elem>;
 
     /// 出队.
     /// 若队空则返回`None`, 否则返回队首元素.
-    fn deque(&mut self) -> Option<Self::Elem>;
+    fn dequeue(&mut self) -> Option<Self::Elem>;
 
     /// 队是否为空.
     fn is_empty(&self) -> bool;
@@ -33,12 +33,12 @@ impl<T> Queue for cdll::LinkedList<T> {
         SinglyLinkedList::is_empty(self)
     }
 
-    fn enque(&mut self, item: T) -> Option<T> {
+    fn enqueue(&mut self, item: T) -> Option<T> {
         self.push_front(item);
         None
     }
 
-    fn deque(&mut self) -> Option<T> {
+    fn dequeue(&mut self) -> Option<T> {
         if SinglyLinkedList::is_empty(self) {
             None
         } else {
@@ -63,12 +63,12 @@ mod test {
         fn test_queue_basic_cdll(data: Vec<i64>) {
             let mut queue = cdll::LinkedList::default();
             for elem in data.iter() {
-                queue.enque(*elem);
+                queue.enqueue(*elem);
             }
             for elem in data.iter() {
-                assert_eq!(queue.deque(), Some(*elem));
+                assert_eq!(queue.dequeue(), Some(*elem));
             }
-            assert_eq!(queue.deque(), None);
+            assert_eq!(queue.dequeue(), None);
         }
     }
 }

@@ -325,7 +325,7 @@ impl<T> Queue for SharedStack<T> {
         }
     }
 
-    fn enque(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+    fn enqueue(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
         if Queue::is_full(self) {
             Some(elem)
         } else {
@@ -339,7 +339,7 @@ impl<T> Queue for SharedStack<T> {
         }
     }
 
-    fn deque(&mut self) -> Option<Self::Elem> {
+    fn dequeue(&mut self) -> Option<Self::Elem> {
         if self.as_right_stack().is_empty() {
             while let Some(elem) = self.as_left_stack().pop() {
                 self.as_right_stack().push(elem);
@@ -579,7 +579,7 @@ impl<S: Stack> Queue for DoubleStack<S> {
         }
     }
 
-    fn enque(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+    fn enqueue(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
         if self.is_full() {
             Some(elem)
         } else {
@@ -592,7 +592,7 @@ impl<S: Stack> Queue for DoubleStack<S> {
         }
     }
 
-    fn deque(&mut self) -> Option<Self::Elem> {
+    fn dequeue(&mut self) -> Option<Self::Elem> {
         if self.1.is_empty() {
             while let Some(elem) = self.0.pop() {
                 self.1.push(elem);
@@ -748,12 +748,12 @@ mod test {
         let s2 = SliceStack::from(v2.as_mut_slice());
         let mut queue = DoubleStack(s1, s2);
         for elem in data.iter() {
-            assert_eq!(queue.enque(*elem), None);
+            assert_eq!(queue.enqueue(*elem), None);
         }
         for elem in data.iter() {
-            assert_eq!(queue.deque(), Some(*elem));
+            assert_eq!(queue.dequeue(), Some(*elem));
         }
-        assert_eq!(queue.deque(), None);
+        assert_eq!(queue.dequeue(), None);
     }
 
     #[test]
@@ -799,12 +799,12 @@ mod test {
         fn test_queue_basic_shared_stack(data: Vec<usize>) {
             let mut queue = SharedStack::new(data.len());
             for elem in data.iter() {
-                assert_eq!(queue.enque(*elem), None);
+                assert_eq!(queue.enqueue(*elem), None);
             }
             for elem in data.iter() {
-                assert_eq!(queue.deque(), Some(*elem));
+                assert_eq!(queue.dequeue(), Some(*elem));
             }
-            assert_eq!(queue.deque(), None);
+            assert_eq!(queue.dequeue(), None);
         }
 
         #[test]
