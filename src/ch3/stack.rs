@@ -716,8 +716,8 @@ mod test {
         let mut stack = SharedStack::new(5);
         stack.as_left_stack().push(data[0]);
         stack.as_left_stack().push(data[1]);
-        for idx in 2..data.len() {
-            assert_eq!(stack.as_right_stack().push(data[idx]), None)
+        for elem in data.iter().skip(2) {
+            assert_eq!(stack.as_right_stack().push(*elem), None)
         }
         assert_eq!(stack.slice, [Some(1), Some(2), Some(5), Some(4), Some(3)]);
 
