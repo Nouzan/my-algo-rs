@@ -329,8 +329,9 @@ impl<T> Queue for SharedStack<T> {
         if Queue::is_full(self) {
             Some(elem)
         } else {
-            let cap = self.as_right_stack().cap();
-            if full_or_cap(&self.as_left_stack(), cap) && self.as_right_stack().is_empty() {
+            if self.left_len() == self.left_cap().min(self.right_cap())
+                && self.as_right_stack().is_empty()
+            {
                 while let Some(elem) = self.as_left_stack().pop() {
                     self.as_right_stack().push(elem);
                 }
