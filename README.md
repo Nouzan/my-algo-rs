@@ -67,3 +67,9 @@ fn main() -> Result<(), IndexError> {
 - 不带头结点的单链表和带头结点的单链表的实现及其上的一些算法: `ch2::linked_list::{sll::LinkedList, shll::LinkedList}`.
 - 不带头结点的循环双链表的实现及其上的一些算法: `ch2::linked_list::cdll::LinkedList`.
 - 单链表特质：`ch2::linked_list::{SinglyLinkedList, SinglyLinkedListExt}`.
+
+### 栈与队列(`ch3`)
+- 栈特质: `ch3::{Stack, StackExt}`.
+- 队列特质: `ch3::{Queue, QueueExt}`.
+- 共享栈、双栈: `ch3::{SharedStack, DoubleStack}`, 并用共享栈、双栈实现`Queue`(TODO: 有一些情况下判满算法会出错, 后面发一个issue描述一下情况).
+- 循环队列: `ch3::CircularQueue`.
