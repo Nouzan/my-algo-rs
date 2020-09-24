@@ -1,5 +1,6 @@
 //! 队列特质与队列算法.
 
+use super::Stack;
 use crate::ch2::linked_list::{cdll, SinglyLinkedList};
 
 /// 队列特质.
@@ -114,7 +115,23 @@ impl<S: Queue> QueueExt for S {}
 
 /// 队列扩展特质.
 /// 实现了一些队列算法.
-pub trait QueueExt: Queue {}
+pub trait QueueExt: Queue {
+    /// 使用指定栈翻转队列元素.
+    /// # Panics
+    /// 算法假设栈不会发生上溢, 否则报错, 且队列元素将有可能丢失.
+    fn reverse_by<S: Stack<Elem = Self::Elem> + Default>(&mut self) {
+        let mut stack = S::default();
+        while let Some(elem) = self.dequeue() {
+            if stack.push(elem).is_some() {
+                panic!("栈上溢.");
+            }
+        }
+
+        while let Some(elem) = stack.pop() {
+            self.enqueue(elem);
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -145,6 +162,20 @@ mod test {
     }
 
     proptest! {
+        #[test]
+        fn test_reverse_by(mut data: Vec<usize>) {
+            let mut queue = cdll::LinkedList::default();
+            for elem in data.iter() {
+                queue.enqueue(*elem);
+            }
+            queue.reverse_by::<Vec<_>>();
+            data.reverse();
+            for elem in data.iter() {
+                assert_eq!(Some(*elem), queue.dequeue())
+            }
+            assert!(Queue::is_empty(&queue));
+        }
+
         #[test]
         fn test_queue_basic_cdll(data: Vec<i64>) {
             let mut queue = cdll::LinkedList::default();
