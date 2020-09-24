@@ -121,6 +121,29 @@ mod test {
     use super::*;
     use proptest::prelude::*;
 
+    #[test]
+    fn test_circular_queue() {
+        let mut queue = CircularQueue::new(5);
+        assert_eq!(queue.enqueue(1), None);
+        assert_eq!(queue.enqueue(2), None);
+        assert_eq!(queue.dequeue(), Some(1));
+        assert_eq!(queue.enqueue(3), None);
+        assert_eq!(queue.dequeue(), Some(2));
+        assert_eq!(queue.enqueue(4), None);
+        assert_eq!(queue.enqueue(5), None);
+        assert_eq!(queue.enqueue(6), None);
+        assert_eq!(queue.enqueue(7), None);
+        assert_eq!(queue.enqueue(8), Some(8));
+        assert_eq!(queue.dequeue(), Some(3));
+        assert_eq!(queue.enqueue(8), None);
+        assert_eq!(queue.dequeue(), Some(4));
+        assert_eq!(queue.dequeue(), Some(5));
+        assert_eq!(queue.dequeue(), Some(6));
+        assert_eq!(queue.dequeue(), Some(7));
+        assert_eq!(queue.dequeue(), Some(8));
+        assert_eq!(queue.dequeue(), None);
+    }
+
     proptest! {
         #[test]
         fn test_queue_basic_cdll(data: Vec<i64>) {
