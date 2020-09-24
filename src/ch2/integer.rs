@@ -11,7 +11,7 @@ pub trait ISizeListExt: List<isize> {
     /// 大小为`len`的bitmap来表示已出现的正整数集合, 只需扫描一遍
     /// 并分析bitmap即可找到最小未出现的正整数.(第一个不在集合中的
     /// 正整数, 若全都在, 则答案必为`len + 1`).
-    // 习题2.13
+    // 习题 2.13
     fn smallest_missing_positive_integer(&self) -> isize {
         if self.is_empty() {
             1

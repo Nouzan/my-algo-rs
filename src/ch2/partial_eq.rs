@@ -36,7 +36,7 @@ pub trait PartialEqListExt<Item: PartialEq>: List<Item> {
     /// 若与`x`相同则`c+=1`, 若不同则`c-=1`, 若`c`归0则重新初始化为1, 并
     /// 将x改为当前元素, 直到扫描完毕. 则`x`为主元素的唯一候选, 此时只需要再扫描
     /// 一遍, 检验`x`是否为主元素即可.
-    // 习题2.12
+    // 习题 2.12
     fn primary(&self) -> Option<&Item> {
         if self.is_empty() {
             None
