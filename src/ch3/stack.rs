@@ -325,12 +325,13 @@ impl<T> Queue for SharedStack<T> {
         }
     }
 
-    fn enque(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+    fn enqueue(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
         if Queue::is_full(self) {
             Some(elem)
         } else {
-            let cap = self.as_right_stack().cap();
-            if full_or_cap(&self.as_left_stack(), cap) && self.as_right_stack().is_empty() {
+            if self.left_len() == self.left_cap().min(self.right_cap())
+                && self.as_right_stack().is_empty()
+            {
                 while let Some(elem) = self.as_left_stack().pop() {
                     self.as_right_stack().push(elem);
                 }
@@ -339,7 +340,7 @@ impl<T> Queue for SharedStack<T> {
         }
     }
 
-    fn deque(&mut self) -> Option<Self::Elem> {
+    fn dequeue(&mut self) -> Option<Self::Elem> {
         if self.as_right_stack().is_empty() {
             while let Some(elem) = self.as_left_stack().pop() {
                 self.as_right_stack().push(elem);
@@ -579,7 +580,7 @@ impl<S: Stack> Queue for DoubleStack<S> {
         }
     }
 
-    fn enque(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+    fn enqueue(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
         if self.is_full() {
             Some(elem)
         } else {
@@ -592,7 +593,7 @@ impl<S: Stack> Queue for DoubleStack<S> {
         }
     }
 
-    fn deque(&mut self) -> Option<Self::Elem> {
+    fn dequeue(&mut self) -> Option<Self::Elem> {
         if self.1.is_empty() {
             while let Some(elem) = self.0.pop() {
                 self.1.push(elem);
@@ -716,8 +717,8 @@ mod test {
         let mut stack = SharedStack::new(5);
         stack.as_left_stack().push(data[0]);
         stack.as_left_stack().push(data[1]);
-        for idx in 2..data.len() {
-            assert_eq!(stack.as_right_stack().push(data[idx]), None)
+        for elem in data.iter().skip(2) {
+            assert_eq!(stack.as_right_stack().push(*elem), None)
         }
         assert_eq!(stack.slice, [Some(1), Some(2), Some(5), Some(4), Some(3)]);
 
@@ -748,12 +749,12 @@ mod test {
         let s2 = SliceStack::from(v2.as_mut_slice());
         let mut queue = DoubleStack(s1, s2);
         for elem in data.iter() {
-            assert_eq!(queue.enque(*elem), None);
+            assert_eq!(queue.enqueue(*elem), None);
         }
         for elem in data.iter() {
-            assert_eq!(queue.deque(), Some(*elem));
+            assert_eq!(queue.dequeue(), Some(*elem));
         }
-        assert_eq!(queue.deque(), None);
+        assert_eq!(queue.dequeue(), None);
     }
 
     #[test]
@@ -799,12 +800,12 @@ mod test {
         fn test_queue_basic_shared_stack(data: Vec<usize>) {
             let mut queue = SharedStack::new(data.len());
             for elem in data.iter() {
-                assert_eq!(queue.enque(*elem), None);
+                assert_eq!(queue.enqueue(*elem), None);
             }
             for elem in data.iter() {
-                assert_eq!(queue.deque(), Some(*elem));
+                assert_eq!(queue.dequeue(), Some(*elem));
             }
-            assert_eq!(queue.deque(), None);
+            assert_eq!(queue.dequeue(), None);
         }
 
         #[test]
