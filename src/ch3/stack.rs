@@ -565,6 +565,7 @@ fn full_or_cap<S: Stack>(s: &S, maybe_cap: Option<usize>) -> bool {
 
 /// 使用双栈结构实现队列.
 // 习题 3.2.3
+// TODO: 更仔细地分析判满算法.
 impl<S: Stack> Queue for DoubleStack<S> {
     type Elem = S::Elem;
 
