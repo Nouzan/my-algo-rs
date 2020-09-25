@@ -731,6 +731,43 @@ pub trait StackExt: Stack {
         }
         res
     }
+
+    /// 判断一个表达式中的括号是否匹配.
+    /// 仅支持`(`, `)`, `[`, `]`, `{`, `}`, 三种括号的匹配.
+    /// # Panics
+    /// 栈上溢时报错.
+    fn is_brackets_match(expression: &str) -> bool
+    where
+        Self: Stack<Elem = char> + Default,
+    {
+        let mut stack = Self::default();
+        for ch in expression.chars() {
+            match ch {
+                '(' | '[' | '{' => {
+                    if stack.push(ch).is_some() {
+                        panic!("stack overflow.");
+                    }
+                }
+                ')' => {
+                    if stack.pop() != Some('(') {
+                        return false;
+                    }
+                }
+                ']' => {
+                    if stack.pop() != Some('[') {
+                        return false;
+                    }
+                }
+                '}' => {
+                    if stack.pop() != Some('{') {
+                        return false;
+                    }
+                }
+                _ => (),
+            };
+        }
+        stack.is_empty()
+    }
 }
 
 #[cfg(test)]
@@ -821,6 +858,24 @@ mod test {
         assert!(cdll::LinkedList::is_valid_pop_sequence(&[1, 0, 2]));
         assert!(cdll::LinkedList::is_valid_pop_sequence(&[1, 2, 0]));
         assert!(cdll::LinkedList::is_valid_pop_sequence(&[2, 1, 0]));
+    }
+
+    #[test]
+    fn test_is_brackets_match() {
+        let expression = "(1 + 2) * 3 - [4 / (5 - 6)] * 7 + {8 - [9 * (10 + 11)] * 12}";
+        assert!(cdll::LinkedList::is_brackets_match(expression));
+
+        let expression = "(1 + 2) * 3 - [4 / (5 - 6)] * 7 + {8 - [9 * (10 + 11)] * 12";
+        assert!(!cdll::LinkedList::is_brackets_match(expression));
+
+        let expression = "(1 + 2) * 3 - [4 / (5 - 6)] * 7 + {{8 - [9 * (10 + 11)] * 12}";
+        assert!(!cdll::LinkedList::is_brackets_match(expression));
+
+        let expression = "(1 + 2) * 3 - [4 / ()5 - 6)] * 7 + {8 - [9 * (10 + 11)] * 12}";
+        assert!(!cdll::LinkedList::is_brackets_match(expression));
+
+        let expression = "1 + 2) * 3 - [4 / (5 - 6)] * 7 + {8 - [9 * (10 + 11) * 12}";
+        assert!(!cdll::LinkedList::is_brackets_match(expression));
     }
 
     proptest! {
