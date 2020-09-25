@@ -19,13 +19,18 @@
 //! * 推论: 对于长度为`n`的输入序列, `S`和`X`数目分别为`n`的合法操作序列与可能的输出序列一一对应.
 //! 因此, 不同的输出序列总数为`C(n) = C(2n, n) / (n + 1)`(*Catalan数*, 也有递推形式: `C(0) = 1, C(n) = C(0)C(n-1) + C(1)C(n-2) + ... + C(n-1)C(0)`)
 
+use super::operators::Operator;
+use super::Error;
 use super::Queue;
 use crate::ch2::{
     linked_list::{cdll, shll, LinearCursor, SinglyLinkedList},
     List,
 };
 use crate::vec::MyVec;
+use anyhow::{anyhow, bail, Result};
 use std::char;
+use std::ops::{Add, Div, Mul, Sub};
+use std::str::FromStr;
 
 /// 栈特质.
 /// 具有`LIFO`性质.
@@ -768,6 +773,113 @@ pub trait StackExt: Stack {
         }
         stack.is_empty()
     }
+
+    /// 将中缀表达式转换为后缀表达式(逆波兰表达式, rpn).
+    /// # Errors
+    /// 表达式不合法或栈上溢时返回错误.
+    fn to_rpn(expression: &str) -> Result<String>
+    where
+        Self: Stack<Elem = Operator> + Default,
+    {
+        let mut operators = Self::default();
+        let mut operands: usize = 0;
+        let mut result = String::new();
+        let mut operand = String::new();
+        operators.push(Operator::End);
+        for ch in expression.trim().chars().chain("\0".chars()) {
+            match ch {
+                ' ' => (),
+                '(' | ')' | '*' | '/' | '+' | '-' | '\0' => {
+                    if !operand.is_empty() {
+                        result.push_str(&operand.clone());
+                        result.push(' ');
+                        operands += 1;
+                        operand.clear();
+                    } else if ch == '-' {
+                        // 负号
+                        operand.push('-');
+                        continue;
+                    }
+
+                    let incoming = match ch {
+                        '(' => Operator::LeftParenthese,
+                        ')' => Operator::RightParenthese,
+                        '*' => Operator::Mul,
+                        '/' => Operator::Div,
+                        '+' => Operator::Add,
+                        '-' => Operator::Sub,
+                        '\0' => Operator::End,
+                        _ => panic!("unreachable!"),
+                    };
+                    while let Some(op) = operators.top() {
+                        if op.lt(&incoming) {
+                            if operators.push(incoming).is_some() {
+                                bail!(Error::StackOverflow)
+                            }
+                            break;
+                        } else if op.eq(&incoming) {
+                            operators.pop().unwrap();
+                            break;
+                        } else if op.gt(&incoming) {
+                            let op = operators.pop().unwrap();
+                            // 现在所有的运算符都是二目运算符.
+                            if operands >= 2 {
+                                operands -= 1;
+                                result.push_str(&op.to_string());
+                                result.push(' ');
+                            } else {
+                                bail!(Error::ExpressionNotValid);
+                            }
+                        } else {
+                            bail!(Error::ExpressionNotValid);
+                        }
+                    }
+                }
+                ch => {
+                    operand.push(ch);
+                }
+            }
+        }
+        Ok(result.trim().to_string())
+    }
+
+    /// 计算逆波兰表达式.
+    /// # Errors
+    /// 若传入的字符串不是合法的逆波兰表达式, 则返回错误.
+    fn eval_rpn<T>(expression: &str) -> Result<T>
+    where
+        Self: Stack<Elem = T> + Default,
+        T: FromStr + Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T>,
+    {
+        let mut operands = Self::default();
+        for item in expression.trim().split(' ') {
+            match item {
+                "+" | "-" | "*" | "/" => {
+                    if let (Some(right), Some(left)) = (operands.pop(), operands.pop()) {
+                        let ans = match item {
+                            "+" => left + right,
+                            "-" => left - right,
+                            "*" => left * right,
+                            "/" => left / right,
+                            _ => panic!("unreachable!"),
+                        };
+                        operands.push(ans);
+                    } else {
+                        bail!(Error::ExpressionNotValid);
+                    }
+                }
+                operand => {
+                    if let Ok(operand) = operand.parse() {
+                        operands.push(operand);
+                    } else {
+                        bail!(Error::ExpressionNotValid);
+                    }
+                }
+            }
+        }
+
+        operands.pop().ok_or(anyhow!(Error::ExpressionNotValid))
+    }
 }
 
 #[cfg(test)]
@@ -876,6 +988,16 @@ mod test {
 
         let expression = "1 + 2) * 3 - [4 / (5 - 6)] * 7 + {8 - [9 * (10 + 11) * 12}";
         assert!(!cdll::LinkedList::is_brackets_match(expression));
+    }
+
+    #[test]
+    fn test_rpn() {
+        let expression = "1 + 2 - 3 * (-4 - 5   * 100)";
+        // ((1 + 2) - (3 * (-4 - (5 * 100))))
+        // 1 2 + 3 -4 5 100 * - * -
+        let rpn = Vec::to_rpn(expression).unwrap();
+        assert_eq!(&rpn, "1 2 + 3 -4 5 100 * - * -");
+        assert_eq!(Vec::eval_rpn::<i64>(&rpn).unwrap(), 1515);
     }
 
     proptest! {
