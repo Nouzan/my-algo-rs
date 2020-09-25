@@ -25,6 +25,7 @@ use crate::ch2::{
     List,
 };
 use crate::vec::MyVec;
+use std::char;
 
 /// 栈特质.
 /// 具有`LIFO`性质.
@@ -704,6 +705,32 @@ pub trait StackExt: Stack {
         }
         true
     }
+
+    /// (不超过16进制)进制输出.
+    /// # Panics
+    /// `base`小于`2`或大于`36`时报错.
+    /// 栈上溢时报错.
+    fn express_in(mut n: u64, base: u32) -> String
+    where
+        Self: Stack<Elem = u64> + Default,
+    {
+        if base < 2 || base > 36 {
+            panic!(format!("base {} is not supported", base));
+        }
+        let mut stack = Self::default();
+        while n > 0 {
+            let rem = n % (base as u64);
+            if stack.push(rem).is_some() {
+                panic!("stack overflow.");
+            }
+            n /= base as u64;
+        }
+        let mut res = String::new();
+        while let Some(digit) = stack.pop() {
+            res.push(char::from_digit(digit as u32, base).unwrap());
+        }
+        res
+    }
 }
 
 #[cfg(test)]
@@ -797,6 +824,11 @@ mod test {
     }
 
     proptest! {
+        #[test]
+        fn test_express_in(num: u64) {
+            assert_eq!(cdll::LinkedList::express_in(num, 16), format!("{:x}", num));
+        }
+
         #[test]
         fn test_queue_basic_shared_stack(data: Vec<usize>) {
             let mut queue = SharedStack::new(data.len());
