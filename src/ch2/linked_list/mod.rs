@@ -5,7 +5,7 @@ pub mod sll;
 
 pub use singly::*;
 
-/// 只读线性游标接口, 用于实现只读的循位置访问.
+/// 只读线性游标特质, 用于实现只读的循位置访问.
 pub trait LinearCursor<'a, T> {
     /// 游标向右移动, 指向它的后继.
     fn move_next(&mut self);
@@ -32,7 +32,7 @@ pub trait LinearCursor<'a, T> {
     fn into_ref(self) -> Option<&'a T>;
 }
 
-/// 可变游标接口, 用于实现可变的循位置访问.
+/// 可变游标特质, 用于实现可变的循位置访问.
 pub trait LinearCursorMut<'b, T>: LinearCursor<'b, T> {
     type Cursor<'a, U: 'a>: LinearCursor<'a, U>;
 
@@ -73,7 +73,7 @@ pub trait LinearCursorMut<'b, T>: LinearCursor<'b, T> {
     fn remove_current(&mut self) -> Option<T>;
 }
 
-/// 单链表接口.
+/// 单链表特质.
 pub trait SinglyLinkedList<T>: Default {
     type Cursor<'a, U: 'a>: LinearCursor<'a, U> + Copy;
     type CursorMut<'a, U: 'a>: LinearCursorMut<'a, U>;
