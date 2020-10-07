@@ -9,7 +9,7 @@
 
 # 动机
 
-为了支持树结构算法(ch4)，我们需要引入一些描述树结构的定义. 作为树系列的第一份RFC，它的目的是描述*二叉树及其算法*.
+为了支持树结构算法(ch4)，我们需要引入一些描述树结构的定义. 作为树系列的第一份RFC，它的目的是描述*二叉树*.
 
 # 指南级别描述
 
@@ -31,9 +31,11 @@
 
 对于二叉树而言，每个结点的**孩子度**只可能是`0`，`1`或`2`，内部结点的孩子度为`1`或`2`，叶子的孩子度为`0`.
 
-**子树**
+**子树与有序性**
 
 一个结点的所有**后代**及相关联的边构成的子图也是一棵树，子树的根通常选为该结点. 我们把它称为以该结点为根的子树.
+
+如果我们规定每个结点的孩子的顺序，那么我们可以分别将它们称作二叉树的**左孩子**和**右孩子**(若有).
 
 **深度与高度**
 
@@ -53,29 +55,75 @@
 
 **不可变的二叉树**
 ```rust
+/// 不可变的二叉树特质.
 pub trait BinTree {
+    /// 内容类型.
     type Elem;
+
+    /// 若为空树则返回`None`，否则返回当前结点(根)的内容的引用.
     fn as_ref(&self) -> Option<&Self::Elem>;
+
+    /// 若为空树或不含左孩子则返回`None`，否则返回左孩子的内容的引用.
     fn left(&self) -> Option<&Self::Elem>;
+
+    /// 若为空树或不含右孩子则返回`None`，否则返回右孩子的内容的引用.
     fn right(&self) -> Option<&Self::Elem>;
+
+    /// 若为空树则`no-op`，否则变为左子树.
     fn move_left(&mut self);
+
+    /// 若为空树则`no-op`，否则变为右子树.
     fn move_right(&mut self);
 }
 ```
 
 **可变的二叉树**
 ```rust
+/// 可变的二叉树特质.
 pub trait BinTreeMut: BinTree {
+    /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
     fn as_mut(&mut self) -> Option<&mut Self::Elem>;
+
+    /// 若为空树或不含左孩子则返回`None`，否则返回左孩子的内容的可变引用.
     fn left_mut(&mut self) -> Option<&mut Self::Elem>;
+
+    /// 若为空树或不含右孩子则返回`None`，否则返回右孩子的内容的可变引用.
     fn right_mut(&mut self) -> Option<&mut Self::Elem>;
+
+    /// 插入一个元素作为根. 若不为空树，则是`no-op`并返回被插入的元素，
+    /// 否则将元素作为根插入树中，并返回`None`.
+    fn insert_as_root(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
+
+    /// 插入一个元素作为左孩子. 
+    /// - 若为空树或左孩子不为空则为`no-op`，并返回被插入的元素.
+    /// - 否则元素将作为左孩子插入树中，并返回`None`.
     fn insert_as_left(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
+
+    /// 插入一个元素作为右孩子. 
+    /// - 若为空树或右孩子不为空则为`no-op`，并返回被插入的元素.
+    /// - 否则元素将作为右孩子插入树中，并返回`None`.
     fn insert_as_right(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
+
+    /// 摘取左子树并返回. 若左子树为空，则返回`None`.
     fn take_left(&mut self) -> Option<Self>;
+
+    /// 摘取右子树并返回. 若右子树为空，则返回`None`.
     fn take_right(&mut self) -> Option<Self>;
+
+    /// 消耗整棵树返回根的内容. 若为空树，则返回`None`.
     fn into_inner(self) -> Option<Self::Elem>;
 }
 ```
+
+**例子**
+
+实现的例子请参考**文档级别描述**中的`VecBinaryTree`。
+
+# 文档级别描述
+
+## 实现
+
+特质的实现参考**指南级别描述**.
 
 ## 例子与验证
 
@@ -83,11 +131,7 @@ pub trait BinTreeMut: BinTree {
 
 // TODO
 
-### 二叉树测试
-
-// TODO
-
-# 文档级别描述
+### 测试二叉树
 
 // TODO
 
@@ -97,8 +141,8 @@ pub trait BinTreeMut: BinTree {
 
 # 待解决的问题
 
-// TODO
+暂无
 
-# 其它替代方案
+# 替代方案
 
-// TODO
+暂无
