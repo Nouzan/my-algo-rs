@@ -1,6 +1,6 @@
 - 特性名称: `binary_tree`
 - 提案创建日期: 2020-10-07
-- RFC PR: [#0000](https://github.com/Nouzan/my-algo-rs/pull/0000)
+- RFC PR: [#0043](https://github.com/Nouzan/my-algo-rs/pull/0043)
 - 关联 Issue: [#0000](https://github.com/Nouzan/my-algo-rs/issues/0000)
 
 # 概述
