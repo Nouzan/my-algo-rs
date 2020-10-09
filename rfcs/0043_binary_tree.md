@@ -195,6 +195,144 @@ pub trait BinTreeNodeMut: BinTreeNode + BinTreeMut {
 
 ### 顺序二叉树：`VecBinaryTree` struct
 
+#### 顺序二叉树主体
+
+**定义**
+
+*顺序二叉树*实际是一个*顺序表*，因此我们采用`Vec`作为`VecBinaryTree`的底层结构.
+
+我们的实现思路是在底层上将`VecBinaryTree`组织成一棵*完全二叉树*，使得树上每一个合法的位置与顺序表中的下标一一对应，我们把它称之为**位置树**.
+而真实的树结构则通过**位置树**上每一个结点是否存在来表示(即**位置树**的内容类型为`Option<T>`，在给定位置上的确有树结点时为`Some(T)`否则为`None`).
+于是`VecBinaryTree`结构可以定义为：
+```rust
+pub struct VecBinaryTree<T> {
+    inner: Vec<Option<T>>,
+}
+```
+
+**工具函数**
+
+于是，树根位置在`inner`中的下标为`0`，对于每一个结点位置(下标记为`x`)，它的左孩子位置下标为`2*x+1`，右孩子位置下标为`2*x+2`. 我们定义了两个工具函数来计算给定下标结点的左孩子下标和右孩子下标：
+```rust
+pub(super) const fn left_index(index: usize) -> usize {
+    2 * index + 1
+}
+
+pub(super) const fn right_index(index: usize) -> usize {
+    2 * index + 2
+}
+```
+
+最后，为了访问给定位置的结点，我们定义了两个工具方法：
+```rust
+impl<T> VecBinaryTree<T> {
+    fn get(&self, index: usize) -> Option<&T> {
+        self.inner.get(index).map_or(None, |elem| elem.as_ref())
+    }
+
+    fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.inner.get_mut(index).map_or(None, |elem| elem.as_mut())
+    }
+
+    // ...
+}
+```
+若给定位置还不存在(即`inner`还未对该位置进行初始化)或位置存在但该位置上不存在结点(即值为`None`)，则都返回`None`；否则用`Some`包裹着该位置结点内容的引用并返回.
+
+为了实现`BinTree`和`BinTreeMut`特质，我们还需要为`VecBinaryTree`定义相应的游标类型.
+
+#### 游标
+
+**定义**
+
+实际上，**位置树**上的一个位置可以由它的下标来唯一确定，因此游标直接定义为下标再加上对树的相应级别的引用即可. 下面的定义直接反映了这一点：
+```rust
+pub struct Cursor<'a, T> {
+    pub(super) current: usize,
+    pub(super) tree: &'a VecBinaryTree<T>,
+}
+
+pub struct CursorMut<'a, T> {
+    pub(super) current: usize,
+    pub(super) tree: &'a mut VecBinaryTree<T>,
+}
+```
+
+`Cursor`用于定义`VecBinaryTree::Node`(为`Cursor`实现`Clone`是容易的)，`CursorMut`用于定义`VecBinaryTree::NodeMut`.
+
+**实现`BinTreeNode`**
+
+则内容访问和位置的相对移动的实现可以简单地使用`VecBinaryTree`中定义的工具函数来实现. 下面仅给出`Cursor`的例子：
+```rust
+impl<'a, T> BinTreeNode for Cursor<'a, T> {
+    fn as_ref(&self) -> Option<&Self::Elem> {
+        self.tree.get(self.current)
+    }
+
+    fn left(&self) -> Option<&Self::Elem> {
+        self.tree.get(left_index(self.current))
+    }
+
+    fn right(&self) -> Option<&Self::Elem> {
+        self.tree.get(right_index(self.current))
+    }
+
+    fn move_left(&mut self) {
+        if !self.is_empty() {
+            let idx = left_index(self.current);
+            self.current = idx;
+        }
+    }
+
+    fn move_right(&mut self) {
+        if !self.is_empty() {
+            let idx = right_index(self.current);
+            self.current = idx;
+        }
+    }
+}
+```
+
+**实现`BinTree`和`BinTreeMut`**
+
+`BinTreeNode`和`BinTreeNodeMut`要求分别递归实现`BinTree`和`BinTreeMut`，我们只需要简单地将关联类型定义为游标自身，并且游标创建方法定义为自身的复制即可. 需要注意的是，我们要将`CursorMut::Node`定义为`Cursor`，以满足`Node`对`Clone`的要求.
+
+**实现`BinTreeNodeMut`**
+
+对于关联元素的插入，我们首先需要确保`inner`已经完成对关联位置的初始化，对于一个已初始化好的位置，我们直接将它的值修改为要插入的元素即可. 这里我们使用`Vec::resize_with`方法来进行初始化. 下面是`insert_as_left`的例子：
+```rust
+impl<'a, T> BinTreeNodeMut for CursorMut<'a, T> {
+    // ...
+    fn insert_as_left(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
+        if self.left().is_none() && !self.is_empty() {
+            let idx = self.get_left_index_and_resize();
+            let left = self.tree.inner.get_mut(idx).unwrap();
+            *left = Some(elem);
+            None
+        } else {
+            Some(elem)
+        }
+    }
+    // ...
+}
+```
+
+其中`CursorMut::get_left_index_and_resize`方法在获取左孩子位置的同时确保到左孩子位置为止的位置都经过了初始化：
+```rust
+impl<'a, T> CursorMut<'a, T> {
+    fn get_left_index_and_resize(&mut self) -> usize {
+        let idx = left_index(self.current);
+        if idx >= self.tree.inner.len() {
+            self.tree.inner.resize_with(idx + 1, || None);
+        }
+        idx
+    }
+    // ...
+}
+```
+
+为了实现*结构操作*(如`take_left`和`append_left`)，我们必须理解**位置树**的子树是如何存储在`Vec`中的.
+
 // TODO
 
 ### 测试二叉树
