@@ -183,7 +183,7 @@ pub trait BinTreeNodeMut: BinTreeNode + BinTreeMut {
 
 **例子**
 
-实现的例子请参考**文档级别描述**中的`VecBinaryTree`。
+实现的例子请参考**文档级别描述**中的`VecBinaryTree`.
 
 # 文档级别描述
 
@@ -191,11 +191,9 @@ pub trait BinTreeNodeMut: BinTreeNode + BinTreeMut {
 
 特质的实现参考**指南级别描述**.
 
-## 例子与验证
+## 顺序二叉树：`VecBinaryTree` struct
 
-### 顺序二叉树：`VecBinaryTree` struct
-
-#### 顺序二叉树主体
+### 顺序二叉树主体
 
 **定义**
 
@@ -241,7 +239,7 @@ impl<T> VecBinaryTree<T> {
 
 为了实现`BinTree`和`BinTreeMut`特质，我们还需要为`VecBinaryTree`定义相应的游标类型.
 
-#### 游标
+### 游标
 
 **定义**
 
@@ -335,7 +333,7 @@ impl<'a, T> CursorMut<'a, T> {
 
 // TODO
 
-### 测试二叉树
+## 测试二叉树
 
 // TODO
 
