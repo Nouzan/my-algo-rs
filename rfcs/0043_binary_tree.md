@@ -1,7 +1,7 @@
 - 特性名称: `binary_tree`
 - 提案创建日期: 2020-10-07
 - RFC PR: [#0043](https://github.com/Nouzan/my-algo-rs/pull/0043)
-- 关联 Issue: [#0000](https://github.com/Nouzan/my-algo-rs/issues/0000)
+- 关联 Issue: [#0044](https://github.com/Nouzan/my-algo-rs/issues/0044)
 
 # 概述
 
@@ -330,21 +330,90 @@ impl<'a, T> CursorMut<'a, T> {
 ```
 
 为了实现*结构操作*(如`take_left`和`append_left`)，我们必须理解**位置树**的子树是如何存储在`Vec`中的.
+事实上我们有如下结果：
 
-// TODO
+- 设一结点在原树中的下标为`x in 0..`，则以它为根的子树中每个结点，若它在子树中的相对下标为`n in 0..`，`n + 1 == 2.pow(m) + l` 且 `l in 0..(2.pow(m))`，则它在原树中的下标为`n + x * 2.pow(m)` (实际上，`2.pow(m)`即为不超过`n+1`的最大的`2`的幂). 我们把这个公式称为**下标公式**.
+
+因此，要遍历一棵**位置子树**，我们只需要根据上述结果，直接给出每个**位置结点**的下标，然后在`Vec`中访问它即可. 下面给出了`CursorMut::take_left`的实现：
+```rust
+impl<'a, T> BinTreeNodeMut for CursorMut<'a, T> {
+    // ...
+    fn take_left(&mut self) -> Option<Self::Tree>
+        where
+            Self::Tree: Sized,
+        {
+            if self.is_empty() {
+                None
+            } else {
+                let mut tree = VecBinaryTree::new();
+                let mut cursor = tree.cursor_mut();
+                let iter = InOrderIndexIter::new(left_index(self.current), self.tree.inner.len());
+                for (dst, src) in iter.enumerate() {
+                    if src < self.tree.inner.len() {
+                        let src_node = self.get_node_and_resize(src);
+                        let dst_node = cursor.get_node_and_resize(dst);
+                        *dst_node = src_node.take();
+                    } else {
+                        break;
+                    }
+                }
+                Some(tree)
+            }
+        }
+    // ...
+}
+```
+其中`InOrderIndexIter`是根据**下标公式**实现的迭代器. `CursorMut::get_node_and_resize`是确保给定下标以被初始化并返回结点的可变引用的工具方法，它的实现为：
+```rust
+impl<'a, T> CursorMut<'a, T> {
+    fn get_node_and_resize(&mut self, index: usize) -> &mut Option<T> {
+        if index >= self.tree.inner.len() {
+            self.tree.inner.resize_with(index + 1, || None);
+        }
+        self.tree.inner.get_mut(index).unwrap()
+    }
+}
+```
+
+最后，我们便可以使用`Cursor`和`CursorMut`为`VecBinaryTree`实现`BinTree`和`BinTreeMut`了：
+```rust
+impl<T> BinTree for VecBinaryTree<T> {
+    type Elem = T;
+    type Node<'a, E: 'a> = Cursor<'a, E>;
+
+    fn cursor<'a>(&'a self) -> Self::Node<'a, Self::Elem> {
+        Cursor {
+            current: 0,
+            tree: self,
+        }
+    }
+}
+
+impl<T> BinTreeMut for VecBinaryTree<T> {
+    type NodeMut<'a, E: 'a> = CursorMut<'a, E>;
+
+    fn cursor_mut<'a>(&'a mut self) -> Self::NodeMut<'a, Self::Elem> {
+        CursorMut {
+            current: 0,
+            tree: self,
+        }
+    }
+}
+```
 
 ## 测试二叉树
 
-// TODO
+利用通用的前序、中序、后序以及层序遍历算法，然后用待测试的二叉树结构去实现一些标准二叉树样例，最后只需检验每种遍历结果都与标准遍历结果一致即可.
 
 # 缺点
 
-// TODO
+- 游标把*位置*抽象与*内容访问权*抽象紧密地耦合在了一起，使得我们不容易使用游标去实现一些*保结构的算法*，比如实现`map`方法.
+- 实现中使用了`#![feature(generic_associated_types)]`它是一个未完成的feature([rust-lang/rust#44265](https://github.com/rust-lang/rust/issues/44265)).
 
 # 待解决的问题
 
-暂无
+- 为`BinTreeNode`和`BinTreeNodeMut`递归地实现`BinTree`和`BinTreeMut`.
 
 # 替代方案
 
-暂无
+征集中...
