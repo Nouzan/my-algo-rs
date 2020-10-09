@@ -51,15 +51,67 @@
 
 ## 二叉树特质：`BinTree` trait和`BinTreeMut` trait
 
-我们的设计原则是充分利用树的递归性质：树的结点也可以看作是以该结点为根的子树. 因此，树既有作为一个树结点(容器)的性质，又有作为树的性质.
+我们的设计原则是充分利用**树的递归性质**：树的结点也可以看作是以该结点为根的子树. 因此，树既有作为一个树结点(容器)的性质，又有作为树的性质.
 
-**不可变的二叉树**
+**二叉树特质**
+
+二叉树特质规定了一棵二叉树的*内容*类型为`BinTree::Elem`. 一棵二叉树的结构性特征由*游标*类型`Node`和`NodeMut`规定，它们分别实现了结点特质`BinTreeNode`和`BinTreeNodeMut`(见下方)，这里我们要求**不可变游标**还是一个`Clone`，以利用其共享访问权的性质.
+
+对于不可变的二叉树，我们可以利用其**不可变游标**来实现各类*遍历迭代器*. 如目前实现了的层序遍历迭代器`InOrderIter`：它充分利用**不可变游标**的`Clone`特质，利用`VecDeque`作为队列实现了通用的*非递归版的二叉树层序遍历算法*.
+
 ```rust
-/// 不可变的二叉树特质.
+/// 不可变二叉树特质.
 pub trait BinTree {
     /// 内容类型.
     type Elem;
 
+    /// 不可变结点类型
+    type Node<'a, T: 'a>: BinTreeNode<Elem = T> + Clone;
+
+    /// 是否为空树.
+    fn is_empty(&self) -> bool {
+        self.cursor().as_ref().is_none()
+    }
+
+    /// 创建一个只读结点游标.
+    fn cursor<'a>(&'a self) -> Self::Node<'a, Self::Elem>;
+
+    /// 层序遍历迭代器.
+    fn in_order_iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a Self::Elem> + 'a> {
+        let mut queue = VecDeque::new();
+        if self.cursor().as_ref().is_some() {
+            queue.push_back(self.cursor())
+        }
+        Box::new(InOrderIter {
+            queue,
+            marker: PhantomData::default(),
+        })
+    }
+}
+
+/// 可变二叉树特质.
+pub trait BinTreeMut: BinTree {
+    /// 可变结点类型
+    type NodeMut<'a, T: 'a>: BinTreeNodeMut<Elem = T>;
+
+    /// 创建一个可变结点游标.
+    fn cursor_mut<'a>(&'a mut self) -> Self::NodeMut<'a, Self::Elem>;
+}
+```
+
+**二叉树结点特质**
+
+结点特质是对二叉树*位置*以及该位置上的*内容访问权*的抽象，我们也把这种抽象称作*游标*.
+
+作为*内容访问权*的抽象，我们能获得结点所指元素内容的只读引用(`BinTreeNode::as_ref`)或可变引用(`BinTreeNodeMut::as_mut`)，同时能获得与该结点直接关联的结点(左孩子和右孩子)的内容的只读引用(`BinTreeNode::left/right`)和可变引用(`BinTreeNodeMut::left_mut/right_mut`).
+
+而作为*位置*的抽象，我们可以通过`BinTreeNode::move_left`和`BinTreeNode::move_right`在树上进行*相对地移动*(或称为*循位置访问*)，同时我们可以对直接关联的结点位置进行插入(`BinTreeNodeMut::insert_as_*`, `BinTreeNodeMut::append_*`)和删除(`BinTreeNodeMut::take_*`, `BinTreeNodeMut::into_inner`).
+
+**树的递归性质**集中体现在了`BinTreeNode`以及`BinTreeNodeMut`这两个特质中：它们要求自身同时分别是一个`BinTree`和`BinTreeMut`(在实际使用过程中，我们会递归地将`BinTree::Node`和`BinTree::NodeMut`实现为结点类型自身).
+
+```rust
+/// 不可变二叉树结点特质.
+pub trait BinTreeNode: BinTree {
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的引用.
     fn as_ref(&self) -> Option<&Self::Elem>;
 
@@ -75,12 +127,11 @@ pub trait BinTree {
     /// 若为空树则`no-op`，否则变为右子树.
     fn move_right(&mut self);
 }
-```
 
-**可变的二叉树**
-```rust
-/// 可变的二叉树特质.
-pub trait BinTreeMut: BinTree {
+/// 可变二叉树结点特质.
+pub trait BinTreeNodeMut: BinTreeNode + BinTreeMut {
+    type Tree: BinTree;
+
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
     fn as_mut(&mut self) -> Option<&mut Self::Elem>;
 
@@ -90,25 +141,40 @@ pub trait BinTreeMut: BinTree {
     /// 若为空树或不含右孩子则返回`None`，否则返回右孩子的内容的可变引用.
     fn right_mut(&mut self) -> Option<&mut Self::Elem>;
 
-    /// 插入一个元素作为根. 若不为空树，则是`no-op`并返回被插入的元素，
+    /// 插入一个元素作为根.
+    /// 若不为空树，则是`no-op`并返回被插入的元素，
     /// 否则将元素作为根插入树中，并返回`None`.
     fn insert_as_root(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
 
-    /// 插入一个元素作为左孩子. 
+    /// 插入一个元素作为左孩子.
     /// - 若为空树或左孩子不为空则为`no-op`，并返回被插入的元素.
     /// - 否则元素将作为左孩子插入树中，并返回`None`.
     fn insert_as_left(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
 
-    /// 插入一个元素作为右孩子. 
+    /// 插入一个元素作为右孩子.
     /// - 若为空树或右孩子不为空则为`no-op`，并返回被插入的元素.
     /// - 否则元素将作为右孩子插入树中，并返回`None`.
     fn insert_as_right(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
 
-    /// 摘取左子树并返回. 若左子树为空，则返回`None`.
-    fn take_left(&mut self) -> Option<Self>;
+    /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
+    fn take_left(&mut self) -> Option<Self::Tree>
+    where
+        Self::Tree: Sized;
 
-    /// 摘取右子树并返回. 若右子树为空，则返回`None`.
-    fn take_right(&mut self) -> Option<Self>;
+    /// 摘取右子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
+    fn take_right(&mut self) -> Option<Self::Tree>
+    where
+        Self::Tree: Sized;
+
+    /// 把一棵树作为左子树接入. 操作后`other`变为空树.
+    /// # Panics
+    /// 若左子树不为空则报错.
+    fn append_left(&mut self, other: &mut Self);
+
+    /// 把一棵树作为右子树接入. 操作后`other`变为空树.
+    /// # Panics
+    /// 若右子树不为空则报错.
+    fn append_right(&mut self, other: &mut Self);
 
     /// 消耗整棵树返回根的内容. 若为空树，则返回`None`.
     fn into_inner(self) -> Option<Self::Elem>;
