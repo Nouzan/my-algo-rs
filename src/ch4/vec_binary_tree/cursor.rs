@@ -284,3 +284,23 @@ impl<'a, T> BinTree for CursorMut<'a, T> {
         }
     }
 }
+
+impl<'a, T> BinTreeMut for CursorMut<'a, T> {
+    type NodeMut<'b, U: 'b> = CursorMut<'b, U>;
+
+    fn cursor_mut(&mut self) -> Self::NodeMut<'_, Self::Elem> {
+        CursorMut {
+            current: self.current,
+            tree: self.tree,
+        }
+    }
+}
+
+// impl<'a, T> FrozenNodeMut<'a> for CursorMut<'a, T> {
+//     fn frozen<'b>(&'b self) -> CursorMut<'b, T> {
+//         Self {
+//             current: self.current,
+//             tree: self.tree,
+//         }
+//     }
+// }

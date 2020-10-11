@@ -1,5 +1,6 @@
 use super::iter::{InOrderIter, MidOrderIter, PostOrderIter, PreOrderIter};
-use super::node::BinTreeNode;
+use super::node::{BinTreeNode, BinTreeNodeMut};
+use super::BinTreeMut;
 
 impl<'a, T: BinTreeNode<'a>> BinTreeNodeExt<'a> for T {}
 
@@ -44,5 +45,34 @@ pub trait BinTreeNodeExt<'a>: BinTreeNode<'a> {
         Self: Sized + Clone,
     {
         PostOrderIter::new(self.clone())
+    }
+}
+
+impl<'a, E, C: BinTreeNodeMut<'a, Elem = E> + BinTreeMut<Elem = E>> FrozenNodeMutExt<'a, E> for C {}
+
+fn pre_order_for_each_inner<E, C1, F>(cursor: &mut C1, f: &mut F)
+where
+    F: FnMut(&mut E),
+    C1: for<'b> BinTreeNodeMut<'b, Elem = E> + BinTreeMut<Elem = E, NodeMut = C1>,
+{
+    if let Some(elem) = cursor.as_mut() {
+        f(elem);
+        let mut left = cursor.cursor_mut();
+        left.move_left();
+        pre_order_for_each_inner(&mut left, f);
+        let mut right = cursor.cursor_mut();
+        right.move_right();
+        pre_order_for_each_inner(&mut right, f);
+    }
+}
+
+pub trait FrozenNodeMutExt<'a, T>: BinTreeNodeMut<'a, Elem = T> + BinTreeMut<Elem = T> {
+    fn pre_order_for_each<F, C1>(&mut self, mut f: F)
+    where
+        F: FnMut(&mut T),
+        Self: BinTreeMut<NodeMut = C1>,
+        C1: for<'b> BinTreeNodeMut<'b, Elem = T> + BinTreeMut<Elem = T, NodeMut = C1>,
+    {
+        pre_order_for_each_inner(&mut self.cursor_mut(), &mut f);
     }
 }

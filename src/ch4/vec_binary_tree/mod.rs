@@ -53,7 +53,7 @@ impl<T> BinTreeMut for VecBinaryTree<T> {
 
 #[cfg(test)]
 mod test {
-    use super::super::{BinTree, BinTreeNode, BinTreeNodeExt, BinTreeNodeMut};
+    use super::super::{BinTree, BinTreeNode, BinTreeNodeExt, BinTreeNodeMut, FrozenNodeMutExt};
     use super::*;
 
     #[test]
@@ -109,5 +109,6 @@ mod test {
             print!("{} ", elem);
         }
         println!();
+        // tree.cursor_mut().pre_order_for_each(|elem| *elem = *elem + 1);
     }
 }

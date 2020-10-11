@@ -1,6 +1,6 @@
 use super::BinTree;
 
-/// 不可变二叉树结点特质.
+/// 不可变二叉树游标特质.
 pub trait BinTreeNode<'a> {
     /// 内容类型.
     type Elem;
@@ -57,7 +57,7 @@ pub trait BinTreeNode<'a> {
         Self: Sized;
 }
 
-/// 可变二叉树结点特质.
+/// 可变二叉树游标特质.
 pub trait BinTreeNodeMut<'a>: BinTreeNode<'a> {
     type Tree: BinTree;
 
@@ -108,3 +108,12 @@ pub trait BinTreeNodeMut<'a>: BinTreeNode<'a> {
     /// 消耗整棵树返回根的内容. 若为空树，则返回`None`.
     fn into_inner(self) -> Option<Self::Elem>;
 }
+
+// /// 可冻结的可变二叉树游标特质.
+// pub trait FrozenNodeMut<'a>: BinTreeNodeMut<'a> {
+//     /// 冻结可变结点，并创建一个它的复制.
+//     /// # Correctness
+//     /// 冻结后应保证被冻结游标在树中的*结构特征*不变，
+//     /// 即解除冻结后所指结点不变.
+//     fn frozen(&self) -> Self;
+// }
