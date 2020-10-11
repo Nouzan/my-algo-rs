@@ -36,7 +36,7 @@ impl<'a, T> BinTreeMut<Cursor<'a, T>, CursorMut<'a, T>> for VecBinaryTree<T> {}
 
 #[cfg(test)]
 mod test {
-    use super::super::{BaseNode, BaseNodeExt, BinTree, BinTreeNodeMut};
+    use super::super::{BaseNode, BaseNodeExt, BaseNodeMut, BinTree, BinTreeNodeMut};
     use super::*;
 
     #[test]

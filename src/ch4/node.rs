@@ -61,10 +61,7 @@ pub trait BinTreeNode<'a, Tree>: BaseNode<'a> {
     fn new(tree: &'a Tree) -> Self;
 }
 
-/// 可变二叉树结点特质.
-pub trait BinTreeNodeMut<'a, Tree>: BaseNode<'a> {
-    fn new(tree: &'a mut Tree) -> Self;
-
+pub trait BaseNodeMut<'a>: BaseNode<'a> {
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
     fn as_mut(&mut self) -> Option<&mut Self::Elem>;
 
@@ -89,15 +86,8 @@ pub trait BinTreeNodeMut<'a, Tree>: BaseNode<'a> {
     /// - 否则元素将作为右孩子插入树中，并返回`None`.
     fn insert_as_right(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
 
-    /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
-    fn take_left(&mut self) -> Option<Tree>
-    where
-        Tree: Sized;
-
-    /// 摘取右子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
-    fn take_right(&mut self) -> Option<Tree>
-    where
-        Tree: Sized;
+    /// 消耗整棵树返回根的内容. 若为空树，则返回`None`.
+    fn into_inner(self) -> Option<Self::Elem>;
 
     /// 把一棵树作为左子树接入. 操作后`other`变为空树.
     /// # Panics
@@ -108,7 +98,19 @@ pub trait BinTreeNodeMut<'a, Tree>: BaseNode<'a> {
     /// # Panics
     /// 若右子树不为空则报错.
     fn append_right(&mut self, other: &mut Self);
+}
 
-    /// 消耗整棵树返回根的内容. 若为空树，则返回`None`.
-    fn into_inner(self) -> Option<Self::Elem>;
+/// 可变二叉树结点特质.
+pub trait BinTreeNodeMut<'a, Tree>: BaseNodeMut<'a> {
+    fn new(tree: &'a mut Tree) -> Self;
+
+    /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
+    fn take_left(&mut self) -> Option<Tree>
+    where
+        Tree: Sized;
+
+    /// 摘取右子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
+    fn take_right(&mut self) -> Option<Tree>
+    where
+        Tree: Sized;
 }
