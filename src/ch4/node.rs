@@ -1,3 +1,5 @@
+use super::BinTree;
+
 pub trait BaseNode<'a> {
     type Elem;
 
@@ -62,6 +64,9 @@ pub trait BinTreeNode<'a, Tree>: BaseNode<'a> {
 }
 
 pub trait BaseNodeMut<'a>: BaseNode<'a> {
+    /// 子树.
+    type SubTree;
+
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
     fn as_mut(&mut self) -> Option<&mut Self::Elem>;
 
@@ -98,19 +103,19 @@ pub trait BaseNodeMut<'a>: BaseNode<'a> {
     /// # Panics
     /// 若右子树不为空则报错.
     fn append_right(&mut self, other: &mut Self);
+
+    /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
+    fn take_left(&mut self) -> Option<Self::SubTree>
+    where
+        Self::SubTree: Sized;
+
+    /// 摘取右子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
+    fn take_right(&mut self) -> Option<Self::SubTree>
+    where
+        Self::SubTree: Sized;
 }
 
 /// 可变二叉树结点特质.
 pub trait BinTreeNodeMut<'a, Tree>: BaseNodeMut<'a> {
     fn new(tree: &'a mut Tree) -> Self;
-
-    /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
-    fn take_left(&mut self) -> Option<Tree>
-    where
-        Tree: Sized;
-
-    /// 摘取右子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
-    fn take_right(&mut self) -> Option<Tree>
-    where
-        Tree: Sized;
 }

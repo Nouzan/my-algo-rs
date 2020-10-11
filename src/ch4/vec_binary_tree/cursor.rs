@@ -154,6 +154,8 @@ impl<'a, T> BaseNode<'a> for CursorMut<'a, T> {
 }
 
 impl<'a, T> BaseNodeMut<'a> for CursorMut<'a, T> {
+    type SubTree = VecBinaryTree<T>;
+
     fn as_mut(&mut self) -> Option<&mut Self::Elem> {
         self.tree.get_mut(self.current)
     }
@@ -231,20 +233,6 @@ impl<'a, T> BaseNodeMut<'a> for CursorMut<'a, T> {
         }
     }
 
-    fn into_inner(self) -> Option<Self::Elem> {
-        if self.is_empty_subtree() {
-            None
-        } else {
-            self.tree.inner.get_mut(self.current).unwrap().take()
-        }
-    }
-}
-
-impl<'a, T> BinTreeNodeMut<'a, VecBinaryTree<T>> for CursorMut<'a, T> {
-    fn new(tree: &'a mut VecBinaryTree<T>) -> Self {
-        Self { current: 0, tree }
-    }
-
     fn take_left(&mut self) -> Option<VecBinaryTree<T>> {
         if self.is_empty_subtree() {
             None
@@ -283,6 +271,20 @@ impl<'a, T> BinTreeNodeMut<'a, VecBinaryTree<T>> for CursorMut<'a, T> {
             }
             Some(tree)
         }
+    }
+
+    fn into_inner(self) -> Option<Self::Elem> {
+        if self.is_empty_subtree() {
+            None
+        } else {
+            self.tree.inner.get_mut(self.current).unwrap().take()
+        }
+    }
+}
+
+impl<'a, T> BinTreeNodeMut<'a, VecBinaryTree<T>> for CursorMut<'a, T> {
+    fn new(tree: &'a mut VecBinaryTree<T>) -> Self {
+        Self { current: 0, tree }
     }
 }
 
