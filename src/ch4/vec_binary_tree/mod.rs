@@ -40,16 +40,7 @@ impl<T> BinTree for VecBinaryTree<T> {
     }
 }
 
-impl<T> BinTreeMut for VecBinaryTree<T> {
-    type NodeMut<'a, E: 'a> = CursorMut<'a, E>;
-
-    fn cursor_mut(&mut self) -> Self::NodeMut<'_, Self::Elem> {
-        CursorMut {
-            current: 0,
-            tree: self,
-        }
-    }
-}
+impl<'a, T> BinTreeMut<CursorMut<'a, T>> for VecBinaryTree<T> {}
 
 #[cfg(test)]
 mod test {
@@ -90,7 +81,8 @@ mod test {
             print!("{} ", elem);
         }
         println!();
-        tree.cursor_mut().insert_as_right(6);
+        let mut cursor = tree.cursor_mut();
+        cursor.insert_as_right(6);
         let cursor = tree.cursor();
         // cursor.move_left();
         for elem in cursor.in_order_iter() {

@@ -1,6 +1,5 @@
 #![allow(incomplete_features)]
 #![feature(generic_associated_types)]
-#![feature(associated_type_defaults)]
 
 pub mod ch1;
 pub mod ch2;

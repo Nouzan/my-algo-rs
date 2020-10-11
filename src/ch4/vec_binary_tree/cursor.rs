@@ -141,6 +141,10 @@ impl<'a, T> BinTreeNode<'a> for CursorMut<'a, T> {
 impl<'a, T> BinTreeNodeMut<'a> for CursorMut<'a, T> {
     type Tree = VecBinaryTree<T>;
 
+    fn cursor_mut(tree: &'a mut Self::Tree) -> Self {
+        Self { current: 0, tree }
+    }
+
     fn as_mut(&mut self) -> Option<&mut Self::Elem> {
         self.tree.get_mut(self.current)
     }
@@ -198,7 +202,7 @@ impl<'a, T> BinTreeNodeMut<'a> for CursorMut<'a, T> {
             None
         } else {
             let mut tree = VecBinaryTree::new();
-            let mut cursor = tree.cursor_mut();
+            let mut cursor: CursorMut<_> = tree.cursor_mut();
             let iter = InOrderIndexIter::new(left_index(self.current), self.tree.inner.len());
             for (dst, src) in iter.enumerate() {
                 if src < self.tree.inner.len() {
@@ -221,7 +225,7 @@ impl<'a, T> BinTreeNodeMut<'a> for CursorMut<'a, T> {
             None
         } else {
             let mut tree = VecBinaryTree::new();
-            let mut cursor = tree.cursor_mut();
+            let mut cursor: CursorMut<_> = tree.cursor_mut();
             let iter = InOrderIndexIter::new(right_index(self.current), self.tree.inner.len());
             for (dst, src) in iter.enumerate() {
                 if src < self.tree.inner.len() {

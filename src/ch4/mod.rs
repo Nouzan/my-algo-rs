@@ -24,10 +24,12 @@ pub trait BinTree {
 }
 
 /// 可变二叉树特质.
-pub trait BinTreeMut: BinTree {
-    /// 可变结点类型
-    type NodeMut<'a, T: 'a>: BinTreeNodeMut<'a, Elem = T>;
-
+pub trait BinTreeMut<C>: BinTree {
     /// 创建一个可变结点游标.
-    fn cursor_mut(&mut self) -> Self::NodeMut<'_, Self::Elem>;
+    fn cursor_mut<'a>(&'a mut self) -> C
+    where
+        C: BinTreeNodeMut<'a, Tree = Self>,
+    {
+        C::cursor_mut(self)
+    }
 }

@@ -59,7 +59,9 @@ pub trait BinTreeNode<'a> {
 
 /// 可变二叉树结点特质.
 pub trait BinTreeNodeMut<'a>: BinTreeNode<'a> {
-    type Tree: BinTree;
+    type Tree: BinTree<Elem = Self::Elem>;
+
+    fn cursor_mut(tree: &'a mut Self::Tree) -> Self;
 
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
     fn as_mut(&mut self) -> Option<&mut Self::Elem>;
