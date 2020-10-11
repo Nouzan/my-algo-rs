@@ -1,8 +1,4 @@
-use super::BinTree;
-
-/// 不可变二叉树结点特质.
-pub trait BinTreeNode<'a> {
-    /// 内容类型.
+pub trait BaseNode {
     type Elem;
 
     /// 是否为空树.
@@ -24,6 +20,14 @@ pub trait BinTreeNode<'a> {
 
     /// 若为空树则`no-op`，否则变为右子树.
     fn move_right(&mut self);
+}
+
+/// 不可变二叉树结点特质.
+pub trait BinTreeNode<'a, Tree>: BaseNode {
+    // /// 关联树类型;
+    // type Tree: BinTree<Self, Elem=Self::Elem>;
+
+    fn new(tree: &'a Tree) -> Self;
 
     /// 创建指向左右子树的游标. 若为空树，则返回`None`.
     fn split(&self) -> (Option<Self>, Option<Self>)
@@ -58,10 +62,8 @@ pub trait BinTreeNode<'a> {
 }
 
 /// 可变二叉树结点特质.
-pub trait BinTreeNodeMut<'a>: BinTreeNode<'a> {
-    type Tree: BinTree<Elem = Self::Elem>;
-
-    fn cursor_mut(tree: &'a mut Self::Tree) -> Self;
+pub trait BinTreeNodeMut<'a, Tree>: BaseNode {
+    fn new(tree: &'a mut Tree) -> Self;
 
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
     fn as_mut(&mut self) -> Option<&mut Self::Elem>;
@@ -88,14 +90,14 @@ pub trait BinTreeNodeMut<'a>: BinTreeNode<'a> {
     fn insert_as_right(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
 
     /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
-    fn take_left(&mut self) -> Option<Self::Tree>
+    fn take_left(&mut self) -> Option<Tree>
     where
-        Self::Tree: Sized;
+        Tree: Sized;
 
     /// 摘取右子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
-    fn take_right(&mut self) -> Option<Self::Tree>
+    fn take_right(&mut self) -> Option<Tree>
     where
-        Self::Tree: Sized;
+        Tree: Sized;
 
     /// 把一棵树作为左子树接入. 操作后`other`变为空树.
     /// # Panics

@@ -1,15 +1,15 @@
-use super::BinTreeNode;
+use super::{BinTree, BinTreeNode};
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 
 /// 层序遍历迭代器结构.
-pub struct InOrderIter<'a, T> {
-    queue: VecDeque<T>,
-    marker: PhantomData<&'a T>,
+pub struct InOrderIter<'a, Cursor, Tree> {
+    queue: VecDeque<Cursor>,
+    marker: PhantomData<&'a Tree>,
 }
 
-impl<'a, T> InOrderIter<'a, T> {
-    pub fn new(root: Option<T>) -> Self {
+impl<'a, Cursor, Tree> InOrderIter<'a, Cursor, Tree> {
+    pub fn new(root: Option<Cursor>) -> Self {
         let mut queue = VecDeque::new();
         if let Some(root) = root {
             queue.push_back(root);
@@ -21,8 +21,10 @@ impl<'a, T> InOrderIter<'a, T> {
     }
 }
 
-impl<'a, T: BinTreeNode<'a> + Clone> Iterator for InOrderIter<'a, T> {
-    type Item = &'a T::Elem;
+impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
+    for InOrderIter<'a, Cursor, Tree>
+{
+    type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(cursor) = self.queue.pop_front() {
@@ -41,14 +43,14 @@ impl<'a, T: BinTreeNode<'a> + Clone> Iterator for InOrderIter<'a, T> {
 }
 
 /// 前序遍历迭代器结构.
-pub struct PreOrderIter<'a, T> {
-    current: Option<T>,
-    stack: Vec<T>,
-    marker: PhantomData<&'a T>,
+pub struct PreOrderIter<'a, Cursor, Tree> {
+    current: Option<Cursor>,
+    stack: Vec<Cursor>,
+    marker: PhantomData<&'a Tree>,
 }
 
-impl<'a, T> PreOrderIter<'a, T> {
-    pub fn new(root: Option<T>) -> Self {
+impl<'a, Cursor, Tree> PreOrderIter<'a, Cursor, Tree> {
+    pub fn new(root: Option<Cursor>) -> Self {
         Self {
             current: root,
             stack: Vec::new(),
@@ -57,8 +59,10 @@ impl<'a, T> PreOrderIter<'a, T> {
     }
 }
 
-impl<'a, T: BinTreeNode<'a> + Clone> Iterator for PreOrderIter<'a, T> {
-    type Item = &'a T::Elem;
+impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
+    for PreOrderIter<'a, Cursor, Tree>
+{
+    type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(current) = self.current.take() {
@@ -84,21 +88,21 @@ impl<'a, T: BinTreeNode<'a> + Clone> Iterator for PreOrderIter<'a, T> {
 }
 
 /// 中序遍历迭代器结构.
-pub struct MidOrderIter<'a, T> {
-    current: Option<T>,
-    stack: Vec<T>,
-    marker: PhantomData<&'a T>,
+pub struct MidOrderIter<'a, Cursor, Tree> {
+    current: Option<Cursor>,
+    stack: Vec<Cursor>,
+    marker: PhantomData<&'a Tree>,
 }
 
-impl<'a, T: BinTreeNode<'a> + Clone> MidOrderIter<'a, T> {
-    fn push_left_chain(&mut self, current: &mut T) {
+impl<'a, Tree, Cursor: BinTreeNode<'a, Tree> + Clone> MidOrderIter<'a, Cursor, Tree> {
+    fn push_left_chain(&mut self, current: &mut Cursor) {
         while !current.is_empty_subtree() {
             self.stack.push(current.clone());
             current.move_left();
         }
     }
 
-    pub fn new(mut root: T) -> Self {
+    pub fn new(mut root: Cursor) -> Self {
         let mut iter = Self {
             current: None,
             stack: Vec::new(),
@@ -110,8 +114,10 @@ impl<'a, T: BinTreeNode<'a> + Clone> MidOrderIter<'a, T> {
     }
 }
 
-impl<'a, T: BinTreeNode<'a> + Clone> Iterator for MidOrderIter<'a, T> {
-    type Item = &'a T::Elem;
+impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
+    for MidOrderIter<'a, Cursor, Tree>
+{
+    type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(current) = self.current.take() {
@@ -127,14 +133,14 @@ impl<'a, T: BinTreeNode<'a> + Clone> Iterator for MidOrderIter<'a, T> {
 }
 
 /// 后序遍历迭代器.
-pub struct PostOrderIter<'a, T> {
-    left_stack: Vec<T>,
-    right_stack: Vec<T>,
-    marker: PhantomData<&'a T>,
+pub struct PostOrderIter<'a, Cursor, Tree> {
+    left_stack: Vec<Cursor>,
+    right_stack: Vec<Cursor>,
+    marker: PhantomData<&'a Tree>,
 }
 
-impl<'a, T: BinTreeNode<'a> + Clone> PostOrderIter<'a, T> {
-    fn push_deep_most_chain(&mut self, current: &mut T) {
+impl<'a, Tree, Cursor: BinTreeNode<'a, Tree> + Clone> PostOrderIter<'a, Cursor, Tree> {
+    fn push_deep_most_chain(&mut self, current: &mut Cursor) {
         while !current.is_empty_subtree() {
             if current.left().is_some() {
                 self.left_stack.push(current.clone());
@@ -149,7 +155,7 @@ impl<'a, T: BinTreeNode<'a> + Clone> PostOrderIter<'a, T> {
         }
     }
 
-    pub fn new(mut root: T) -> Self {
+    pub fn new(mut root: Cursor) -> Self {
         let mut iter = Self {
             left_stack: Vec::new(),
             right_stack: Vec::new(),
@@ -160,8 +166,10 @@ impl<'a, T: BinTreeNode<'a> + Clone> PostOrderIter<'a, T> {
     }
 }
 
-impl<'a, T: BinTreeNode<'a> + Clone> Iterator for PostOrderIter<'a, T> {
-    type Item = &'a T::Elem;
+impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
+    for PostOrderIter<'a, Cursor, Tree>
+{
+    type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(current) = self.right_stack.pop() {
