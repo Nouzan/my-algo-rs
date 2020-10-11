@@ -36,7 +36,7 @@ impl<'a, T> BinTreeMut<Cursor<'a, T>, CursorMut<'a, T>> for VecBinaryTree<T> {}
 
 #[cfg(test)]
 mod test {
-    use super::super::{BaseNode, BinTree, BinTreeNodeExt, BinTreeNodeMut};
+    use super::super::{BaseNode, BaseNodeExt, BinTree, BinTreeNodeMut};
     use super::*;
 
     #[test]
@@ -51,17 +51,17 @@ mod test {
         cursor.move_left();
         cursor.insert_as_left(4);
         cursor.insert_as_right(5);
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::in_order_iter(&tree.cursor()) {
+        for elem in tree.cursor().in_order_iter() {
             print!("{} ", elem);
         }
         println!();
         let mut cursor = tree.cursor_mut();
         let mut right = cursor.take_right().unwrap();
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::in_order_iter(&tree.cursor()) {
+        for elem in tree.cursor().in_order_iter() {
             print!("{} ", elem);
         }
         println!();
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::in_order_iter(&right.cursor()) {
+        for elem in right.cursor().in_order_iter() {
             print!("{} ", elem);
         }
         println!();
@@ -69,34 +69,35 @@ mod test {
         cursor.move_left();
         cursor.append_left(&mut right.cursor_mut());
         assert!(right.is_empty());
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::in_order_iter(&tree.cursor()) {
+        for elem in tree.cursor().in_order_iter() {
             print!("{} ", elem);
         }
         println!();
         let mut cursor = tree.cursor_mut();
         cursor.insert_as_right(6);
         // cursor.move_left();
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::in_order_iter(&tree.cursor()) {
+        for elem in tree.cursor().in_order_iter() {
             print!("{} ", elem);
         }
         println!();
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::pre_order_iter(&tree.cursor()) {
+        for elem in tree.cursor().pre_order_iter() {
             print!("{} ", elem);
         }
         println!();
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::mid_order_iter(&tree.cursor()) {
+        for elem in tree.cursor().mid_order_iter() {
             print!("{} ", elem);
         }
         println!();
-        for elem in BinTreeNodeExt::<VecBinaryTree<_>>::post_order_iter(&tree.cursor()) {
+        for elem in tree.cursor().post_order_iter() {
             print!("{} ", elem);
         }
         println!();
 
         let cursor = tree.cursor_mut();
-        let cursor = cursor.cursor();
+        // let cursor = cursor.cursor();
+        // let (left, right) = cursor.split();
 
-        for elem in BinTreeNodeExt::<CursorMut<_>>::post_order_iter(&cursor) {
+        for elem in cursor.cursor().post_order_iter() {
             print!("{} ", elem);
         }
         println!();

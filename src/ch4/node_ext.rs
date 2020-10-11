@@ -1,11 +1,11 @@
 use super::iter::{InOrderIter, MidOrderIter, PostOrderIter, PreOrderIter};
-use super::node::BinTreeNode;
+use super::node::BaseNode;
 
-impl<'a, Tree, T: BinTreeNode<'a, Tree>> BinTreeNodeExt<'a, Tree> for T {}
+impl<'a, T: BaseNode<'a>> BaseNodeExt<'a> for T {}
 
-pub trait BinTreeNodeExt<'a, Tree>: BinTreeNode<'a, Tree> {
+pub trait BaseNodeExt<'a>: BaseNode<'a> {
     /// 创建一个层序遍历迭代器.
-    fn in_order_iter(&self) -> InOrderIter<Self, Tree>
+    fn in_order_iter(&self) -> InOrderIter<Self>
     where
         Self: Sized + Clone,
     {
@@ -18,7 +18,7 @@ pub trait BinTreeNodeExt<'a, Tree>: BinTreeNode<'a, Tree> {
     }
 
     /// 创建一个前序遍历迭代器.
-    fn pre_order_iter(&self) -> PreOrderIter<Self, Tree>
+    fn pre_order_iter(&self) -> PreOrderIter<Self>
     where
         Self: Sized + Clone,
     {
@@ -31,7 +31,7 @@ pub trait BinTreeNodeExt<'a, Tree>: BinTreeNode<'a, Tree> {
     }
 
     /// 创建一个中序遍历迭代器.
-    fn mid_order_iter(&'a self) -> MidOrderIter<Self, Tree>
+    fn mid_order_iter(&'a self) -> MidOrderIter<Self>
     where
         Self: Sized + Clone,
     {
@@ -39,7 +39,7 @@ pub trait BinTreeNodeExt<'a, Tree>: BinTreeNode<'a, Tree> {
     }
 
     /// 创建一个后序遍历迭代器.
-    fn post_order_iter(&'a self) -> PostOrderIter<Self, Tree>
+    fn post_order_iter(&'a self) -> PostOrderIter<Self>
     where
         Self: Sized + Clone,
     {

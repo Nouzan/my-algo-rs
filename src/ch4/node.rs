@@ -1,4 +1,4 @@
-pub trait BaseNode {
+pub trait BaseNode<'a> {
     type Elem;
 
     /// 是否为空树.
@@ -20,14 +20,6 @@ pub trait BaseNode {
 
     /// 若为空树则`no-op`，否则变为右子树.
     fn move_right(&mut self);
-}
-
-/// 不可变二叉树结点特质.
-pub trait BinTreeNode<'a, Tree>: BaseNode {
-    // /// 关联树类型;
-    // type Tree: BinTree<Self, Elem=Self::Elem>;
-
-    fn new(tree: &'a Tree) -> Self;
 
     /// 创建指向左右子树的游标. 若为空树，则返回`None`.
     fn split(&self) -> (Option<Self>, Option<Self>)
@@ -61,8 +53,16 @@ pub trait BinTreeNode<'a, Tree>: BaseNode {
         Self: Sized;
 }
 
+/// 不可变二叉树结点特质.
+pub trait BinTreeNode<'a, Tree>: BaseNode<'a> {
+    // /// 关联树类型;
+    // type Tree: BinTree<Self, Elem=Self::Elem>;
+
+    fn new(tree: &'a Tree) -> Self;
+}
+
 /// 可变二叉树结点特质.
-pub trait BinTreeNodeMut<'a, Tree>: BaseNode {
+pub trait BinTreeNodeMut<'a, Tree>: BaseNode<'a> {
     fn new(tree: &'a mut Tree) -> Self;
 
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.

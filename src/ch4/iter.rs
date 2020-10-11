@@ -1,14 +1,14 @@
-use super::{BinTree, BinTreeNode};
+use super::BaseNode;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 
 /// 层序遍历迭代器结构.
-pub struct InOrderIter<'a, Cursor, Tree> {
+pub struct InOrderIter<'a, Cursor> {
     queue: VecDeque<Cursor>,
-    marker: PhantomData<&'a Tree>,
+    marker: PhantomData<&'a Cursor>,
 }
 
-impl<'a, Cursor, Tree> InOrderIter<'a, Cursor, Tree> {
+impl<'a, Cursor> InOrderIter<'a, Cursor> {
     pub fn new(root: Option<Cursor>) -> Self {
         let mut queue = VecDeque::new();
         if let Some(root) = root {
@@ -21,9 +21,7 @@ impl<'a, Cursor, Tree> InOrderIter<'a, Cursor, Tree> {
     }
 }
 
-impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
-    for InOrderIter<'a, Cursor, Tree>
-{
+impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for InOrderIter<'a, Cursor> {
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -43,13 +41,13 @@ impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
 }
 
 /// 前序遍历迭代器结构.
-pub struct PreOrderIter<'a, Cursor, Tree> {
+pub struct PreOrderIter<'a, Cursor> {
     current: Option<Cursor>,
     stack: Vec<Cursor>,
-    marker: PhantomData<&'a Tree>,
+    marker: PhantomData<&'a Cursor>,
 }
 
-impl<'a, Cursor, Tree> PreOrderIter<'a, Cursor, Tree> {
+impl<'a, Cursor> PreOrderIter<'a, Cursor> {
     pub fn new(root: Option<Cursor>) -> Self {
         Self {
             current: root,
@@ -59,9 +57,7 @@ impl<'a, Cursor, Tree> PreOrderIter<'a, Cursor, Tree> {
     }
 }
 
-impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
-    for PreOrderIter<'a, Cursor, Tree>
-{
+impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for PreOrderIter<'a, Cursor> {
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -88,13 +84,13 @@ impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
 }
 
 /// 中序遍历迭代器结构.
-pub struct MidOrderIter<'a, Cursor, Tree> {
+pub struct MidOrderIter<'a, Cursor> {
     current: Option<Cursor>,
     stack: Vec<Cursor>,
-    marker: PhantomData<&'a Tree>,
+    marker: PhantomData<&'a Cursor>,
 }
 
-impl<'a, Tree, Cursor: BinTreeNode<'a, Tree> + Clone> MidOrderIter<'a, Cursor, Tree> {
+impl<'a, Cursor: BaseNode<'a> + Clone> MidOrderIter<'a, Cursor> {
     fn push_left_chain(&mut self, current: &mut Cursor) {
         while !current.is_empty_subtree() {
             self.stack.push(current.clone());
@@ -114,9 +110,7 @@ impl<'a, Tree, Cursor: BinTreeNode<'a, Tree> + Clone> MidOrderIter<'a, Cursor, T
     }
 }
 
-impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
-    for MidOrderIter<'a, Cursor, Tree>
-{
+impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for MidOrderIter<'a, Cursor> {
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -133,13 +127,13 @@ impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
 }
 
 /// 后序遍历迭代器.
-pub struct PostOrderIter<'a, Cursor, Tree> {
+pub struct PostOrderIter<'a, Cursor> {
     left_stack: Vec<Cursor>,
     right_stack: Vec<Cursor>,
-    marker: PhantomData<&'a Tree>,
+    marker: PhantomData<&'a Cursor>,
 }
 
-impl<'a, Tree, Cursor: BinTreeNode<'a, Tree> + Clone> PostOrderIter<'a, Cursor, Tree> {
+impl<'a, Cursor: BaseNode<'a> + Clone> PostOrderIter<'a, Cursor> {
     fn push_deep_most_chain(&mut self, current: &mut Cursor) {
         while !current.is_empty_subtree() {
             if current.left().is_some() {
@@ -166,9 +160,7 @@ impl<'a, Tree, Cursor: BinTreeNode<'a, Tree> + Clone> PostOrderIter<'a, Cursor, 
     }
 }
 
-impl<'a, T: 'a, Tree, Cursor: BinTreeNode<'a, Tree, Elem = T> + Clone> Iterator
-    for PostOrderIter<'a, Cursor, Tree>
-{
+impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for PostOrderIter<'a, Cursor> {
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {

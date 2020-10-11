@@ -26,7 +26,7 @@ impl<'a, T> Clone for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BaseNode for Cursor<'a, T> {
+impl<'a, T> BaseNode<'a> for Cursor<'a, T> {
     type Elem = T;
 
     fn as_ref(&self) -> Option<&Self::Elem> {
@@ -54,18 +54,18 @@ impl<'a, T> BaseNode for Cursor<'a, T> {
             self.current = idx;
         }
     }
-}
-
-impl<'a, T> BinTreeNode<'a, VecBinaryTree<T>> for Cursor<'a, T> {
-    fn new(tree: &'a VecBinaryTree<T>) -> Self {
-        Self { current: 0, tree }
-    }
 
     fn into_ref(self) -> Option<&'a Self::Elem>
     where
         Self: Sized,
     {
         self.tree.get(self.current)
+    }
+}
+
+impl<'a, T> BinTreeNode<'a, VecBinaryTree<T>> for Cursor<'a, T> {
+    fn new(tree: &'a VecBinaryTree<T>) -> Self {
+        Self { current: 0, tree }
     }
 }
 
@@ -75,13 +75,6 @@ impl<'a, T> BinTreeNode<'a, CursorMut<'a, T>> for Cursor<'a, T> {
             current: tree.current,
             tree: tree.tree,
         }
-    }
-
-    fn into_ref(self) -> Option<&'a Self::Elem>
-    where
-        Self: Sized,
-    {
-        self.tree.get(self.current)
     }
 }
 
@@ -123,7 +116,7 @@ impl<'a, T> CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BaseNode for CursorMut<'a, T> {
+impl<'a, T> BaseNode<'a> for CursorMut<'a, T> {
     type Elem = T;
 
     fn as_ref(&self) -> Option<&Self::Elem> {
@@ -152,12 +145,12 @@ impl<'a, T> BaseNode for CursorMut<'a, T> {
         }
     }
 
-    // fn into_ref(self) -> Option<&'a Self::Elem>
-    // where
-    //     Self: Sized,
-    // {
-    //     self.tree.get(self.current)
-    // }
+    fn into_ref(self) -> Option<&'a Self::Elem>
+    where
+        Self: Sized,
+    {
+        self.tree.get(self.current)
+    }
 }
 
 impl<'a, T> BinTreeNodeMut<'a, VecBinaryTree<T>> for CursorMut<'a, T> {
