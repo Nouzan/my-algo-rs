@@ -26,20 +26,9 @@ impl<'a, T> Clone for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BinTree for Cursor<'a, T> {
+impl<'a, T> BinTreeNode<'a> for Cursor<'a, T> {
     type Elem = T;
-    type Node<'b, E: 'b> = Cursor<'b, E>;
 
-    fn is_empty(&self) -> bool {
-        self.tree.get(self.current).is_none()
-    }
-
-    fn cursor<'b>(&'b self) -> Self::Node<'b, Self::Elem> {
-        self.clone()
-    }
-}
-
-impl<'a, T> BinTreeNode for Cursor<'a, T> {
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.tree.get(self.current)
     }
@@ -53,17 +42,24 @@ impl<'a, T> BinTreeNode for Cursor<'a, T> {
     }
 
     fn move_left(&mut self) {
-        if !self.is_empty() {
+        if !self.is_empty_subtree() {
             let idx = left_index(self.current);
             self.current = idx;
         }
     }
 
     fn move_right(&mut self) {
-        if !self.is_empty() {
+        if !self.is_empty_subtree() {
             let idx = right_index(self.current);
             self.current = idx;
         }
+    }
+
+    fn into_ref(self) -> Option<&'a Self::Elem>
+    where
+        Self: Sized,
+    {
+        self.tree.get(self.current)
     }
 }
 
@@ -105,34 +101,9 @@ impl<'a, T> CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BinTree for CursorMut<'a, T> {
+impl<'a, T> BinTreeNode<'a> for CursorMut<'a, T> {
     type Elem = T;
-    type Node<'b, E: 'b> = Cursor<'b, E>;
 
-    fn is_empty(&self) -> bool {
-        self.as_ref().is_none()
-    }
-
-    fn cursor<'b>(&'b self) -> Self::Node<'b, Self::Elem> {
-        Cursor {
-            current: self.current,
-            tree: self.tree,
-        }
-    }
-}
-
-impl<'a, T> BinTreeMut for CursorMut<'a, T> {
-    type NodeMut<'b, E: 'b> = CursorMut<'b, E>;
-
-    fn cursor_mut<'b>(&'b mut self) -> Self::NodeMut<'b, Self::Elem> {
-        CursorMut {
-            current: self.current,
-            tree: self.tree,
-        }
-    }
-}
-
-impl<'a, T> BinTreeNode for CursorMut<'a, T> {
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.tree.get(self.current)
     }
@@ -158,9 +129,16 @@ impl<'a, T> BinTreeNode for CursorMut<'a, T> {
             self.current = idx;
         }
     }
+
+    fn into_ref(self) -> Option<&'a Self::Elem>
+    where
+        Self: Sized,
+    {
+        self.tree.get(self.current)
+    }
 }
 
-impl<'a, T> BinTreeNodeMut for CursorMut<'a, T> {
+impl<'a, T> BinTreeNodeMut<'a> for CursorMut<'a, T> {
     type Tree = VecBinaryTree<T>;
 
     fn as_mut(&mut self) -> Option<&mut Self::Elem> {
@@ -291,6 +269,18 @@ impl<'a, T> BinTreeNodeMut for CursorMut<'a, T> {
             None
         } else {
             self.tree.inner.get_mut(self.current).unwrap().take()
+        }
+    }
+}
+
+impl<'a, T> BinTree for CursorMut<'a, T> {
+    type Elem = T;
+    type Node<'b, U: 'b> = Cursor<'b, U>;
+
+    fn cursor(&self) -> Self::Node<'_, Self::Elem> {
+        Cursor {
+            current: self.current,
+            tree: self.tree,
         }
     }
 }
