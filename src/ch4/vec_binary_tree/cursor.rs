@@ -273,6 +273,13 @@ impl<'a, T> BaseNodeMut<'a> for CursorMut<'a, T> {
         }
     }
 
+    fn into_mut(self) -> Option<&'a mut Self::Elem>
+    where
+        Self: Sized,
+    {
+        self.tree.get_mut(self.current)
+    }
+
     fn into_inner(self) -> Option<Self::Elem> {
         if self.is_empty_subtree() {
             None
@@ -293,3 +300,35 @@ impl<'a, T> BinTree<Cursor<'a, T>> for CursorMut<'a, T> {
 }
 
 impl<'a, T> BinTreeMut<Cursor<'a, T>, CursorMut<'a, T>> for CursorMut<'a, T> {}
+
+// unsafe impl<'a, T> SplitNodeMut<'a> for CursorMut<'a, T> {
+//     fn split_mut(&mut self) -> (Option<Self>, Option<Self>)
+//     where Self: Sized {
+//         // 这里是安全的. 因为`CursorMut`(的公开方法)只能沿树下降，左、右子树只对其子树是可变的.
+//         // 且左右子树不相交、祖先链则已被冻结，故不存在共享可变引用.
+//         unsafe {
+//             let ptr: *mut _ = self.tree;
+//             let left = if self.left().is_some() {
+//                 let mut next = Self {
+//                     current: self.current,
+//                     tree: &mut *ptr,
+//                 };
+//                 next.move_left();
+//                 Some(next)
+//             } else {
+//                 None
+//             };
+//             let right = if self.right_mut().is_some() {
+//                 let mut next = Self {
+//                     current: self.current,
+//                     tree: &mut *ptr,
+//                 };
+//                 next.move_right();
+//                 Some(next)
+//             } else {
+//                 None
+//             };
+//             (left, right)
+//         }
+//     }
+// }

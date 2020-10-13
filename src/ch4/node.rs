@@ -1,5 +1,3 @@
-use super::BinTree;
-
 pub trait BaseNode<'a> {
     type Elem;
 
@@ -113,6 +111,10 @@ pub trait BaseNodeMut<'a>: BaseNode<'a> {
     fn take_right(&mut self) -> Option<Self::SubTree>
     where
         Self::SubTree: Sized;
+
+    fn into_mut(self) -> Option<&'a mut Self::Elem>
+    where
+        Self: Sized;
 }
 
 /// 可变二叉树结点特质.
