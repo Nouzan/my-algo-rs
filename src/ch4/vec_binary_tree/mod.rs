@@ -4,6 +4,7 @@ pub mod iter;
 use super::{BinTree, BinTreeMut};
 use cursor::{Cursor, CursorMut};
 
+/// 基于`Vec`实现的二叉顺序树.
 pub struct VecBinaryTree<T> {
     inner: Vec<Option<T>>,
 }
@@ -51,55 +52,55 @@ mod test {
         cursor.move_left();
         cursor.insert_as_left(4);
         cursor.insert_as_right(5);
-        for elem in tree.cursor().in_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
+        assert_eq!(
+            tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
+            [0, 1, 2, 3, 4, 5]
+        );
         let mut cursor = tree.cursor_mut();
         let mut right = cursor.take_right().unwrap();
-        for elem in tree.cursor().in_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
-        for elem in right.cursor().in_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
+        assert_eq!(
+            tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
+            [0, 1]
+        );
+        assert_eq!(
+            right.cursor().in_order_iter().copied().collect::<Vec<_>>(),
+            [2, 3, 4, 5]
+        );
         let mut cursor = tree.cursor_mut();
         cursor.move_left();
         cursor.append_left(&mut right.cursor_mut());
         assert!(right.is_empty());
-        for elem in tree.cursor().in_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
+        assert_eq!(
+            tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
+            [0, 1, 2, 3, 4, 5]
+        );
         let mut cursor = tree.cursor_mut();
         cursor.insert_as_right(6);
-        // cursor.move_left();
-        for elem in tree.cursor().in_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
-        for elem in tree.cursor().pre_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
-        for elem in tree.cursor().mid_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
-        for elem in tree.cursor().post_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
-
-        let cursor = tree.cursor_mut();
-        // let cursor = cursor.cursor();
-        // let (left, right) = cursor.split();
-
-        for elem in cursor.cursor().post_order_iter() {
-            print!("{} ", elem);
-        }
-        println!();
+        assert_eq!(
+            tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
+            [0, 1, 6, 2, 3, 4, 5]
+        );
+        assert_eq!(
+            tree.cursor().pre_order_iter().copied().collect::<Vec<_>>(),
+            [0, 1, 2, 3, 4, 5, 6]
+        );
+        assert_eq!(
+            tree.cursor().mid_order_iter().copied().collect::<Vec<_>>(),
+            [4, 3, 5, 2, 1, 0, 6]
+        );
+        assert_eq!(
+            tree.cursor().post_order_iter().copied().collect::<Vec<_>>(),
+            [4, 5, 3, 2, 1, 6, 0]
+        );
+        let mut cursor = tree.cursor_mut();
+        cursor.move_right();
+        assert_eq!(
+            cursor
+                .cursor()
+                .post_order_iter()
+                .copied()
+                .collect::<Vec<_>>(),
+            [6]
+        );
     }
 }
