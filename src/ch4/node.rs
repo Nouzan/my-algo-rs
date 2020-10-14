@@ -6,6 +6,20 @@ pub trait BaseNode<'a> {
         self.as_ref().is_none()
     }
 
+    /// 是否为叶子结点.
+    fn is_leaf(&self) -> bool {
+        self.left().is_none() && self.right().is_none()
+    }
+
+    // /// 判断另一结点是否为当前结点的左孩子.
+    // fn is_left_child(&self, other: &Self) -> bool;
+
+    // /// 判断另一结点是否为当前结点的右孩子.
+    // fn is_right_child(&self, other: &Self) -> bool;
+
+    /// 判断另一结点是否为当前结点的父母.(`other`与`self`必须是同一树中的结点.)
+    fn is_parent(&self, other: &Self) -> bool;
+
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的引用.
     fn as_ref(&self) -> Option<&Self::Elem>;
 

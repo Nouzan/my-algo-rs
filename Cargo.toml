@@ -10,6 +10,7 @@ edition = "2018"
 num-traits = "0.2"
 anyhow = "1.0"
 thiserror = "1.0"
+bitstream-io = "0.9"
 
 [dev-dependencies]
 structopt = "0.3.15"
