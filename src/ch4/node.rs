@@ -6,6 +6,11 @@ pub trait BaseNode<'a> {
         self.as_ref().is_none()
     }
 
+    /// 是否为叶子.
+    fn is_leaf(&self) -> bool {
+        self.left().is_none() && self.right().is_none()
+    }
+
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的引用.
     fn as_ref(&self) -> Option<&Self::Elem>;
 

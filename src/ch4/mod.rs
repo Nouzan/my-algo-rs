@@ -1,3 +1,4 @@
+pub mod coding_tree;
 pub mod iter;
 pub mod node;
 pub mod node_ext;
