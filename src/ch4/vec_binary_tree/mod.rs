@@ -103,4 +103,30 @@ mod test {
             [6]
         );
     }
+
+    #[test]
+    fn test_post_order_iter() {
+        let mut tree = VecBinaryTree::new();
+        assert_eq!(
+            tree.cursor().post_order_iter().copied().collect::<Vec<_>>(),
+            []
+        );
+        let mut cursor = tree.cursor_mut();
+        cursor.insert_as_root(1);
+        cursor.insert_as_left(2);
+        cursor.insert_as_right(3);
+        cursor.move_left();
+        cursor.insert_as_left(4);
+        cursor.insert_as_right(5);
+        cursor = tree.cursor_mut();
+        cursor.move_right();
+        cursor.insert_as_left(6);
+        cursor.move_left();
+        cursor.insert_as_left(7);
+        cursor.insert_as_right(8);
+        assert_eq!(
+            tree.cursor().post_order_iter().copied().collect::<Vec<_>>(),
+            [4, 5, 2, 7, 8, 6, 3, 1]
+        );
+    }
 }
