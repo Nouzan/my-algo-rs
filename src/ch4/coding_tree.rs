@@ -1,4 +1,4 @@
-use super::vec_binary_tree::{cursor::Cursor, VecBinaryTree};
+use super::vec_binary_tree::VecBinaryTree;
 use super::*;
 use crate::ch2::PartialOrdListExt;
 use bitstream_io::{BigEndian, BitReader, BitWriter};
@@ -19,48 +19,42 @@ pub fn char_count(text: &str) -> BTreeMap<char, usize> {
 /// 要求树至少包含2个结点，叶子结点非空，且每个叶子存储的字符不同.
 fn generate_encoding_map(tree: &VecBinaryTree<HuffmanChar>) -> BTreeMap<char, Vec<bool>> {
     let mut code = Vec::new();
-    let mut left_stack = Vec::new();
-    let mut right_stack = Vec::new();
+    let mut stack = Vec::new(); // 保存着已经左转、但还未右转的结点.
     let mut map = BTreeMap::new();
+    let mut current = tree.cursor();
+    if current.is_leaf() {
+        panic!("树必须包含至少2个结点!");
+    } else if current.left().is_some() {
+        stack.push(current.clone());
+        code.push(true);
+        current.move_left();
+    } else {
+        stack.push(current.clone());
+        code.push(false);
+        current.move_right();
+    }
 
-    fn push_deep_most_chain<'a>(
-        code: &mut Vec<bool>,
-        left_stack: &mut Vec<Cursor<'a, HuffmanChar>>,
-        right_stack: &mut Vec<Cursor<'a, HuffmanChar>>,
-        current: &mut Cursor<'a, HuffmanChar>,
-    ) {
-        while !current.is_empty_subtree() {
-            if current.left().is_some() {
-                code.push(true);
-                left_stack.push(current.clone());
-                current.move_left();
-            } else if current.right().is_some() {
-                code.push(false);
-                right_stack.push(current.clone());
-                current.move_right();
-            } else {
-                right_stack.push(current.clone());
-                break;
+    while !stack.is_empty() {
+        if current.is_leaf() {
+            let ch = current.as_ref().unwrap().ch.unwrap();
+            map.insert(ch, code.clone());
+            while let Some(back) = stack.pop() {
+                if code.pop().unwrap() && back.right().is_some() {
+                    stack.push(back.clone());
+                    code.push(false);
+                    current = back;
+                    current.move_right();
+                    break;
+                }
             }
-        }
-    };
-
-    let mut root = tree.cursor();
-    push_deep_most_chain(&mut code, &mut left_stack, &mut right_stack, &mut root);
-
-    loop {
-        if let Some(current) = right_stack.pop() {
-            if current.is_leaf() {
-                map.insert((*current.as_ref().unwrap()).ch.unwrap(), code.clone());
-            }
-            code.pop();
-        } else if let Some(mut current) = left_stack.pop() {
-            right_stack.push(current.clone());
-            current.move_right();
-            code.push(false);
-            push_deep_most_chain(&mut code, &mut left_stack, &mut right_stack, &mut current)
+        } else if current.left().is_some() {
+            stack.push(current.clone());
+            code.push(true);
+            current.move_left();
         } else {
-            break;
+            stack.push(current.clone());
+            code.push(false);
+            current.move_right();
         }
     }
 
@@ -114,7 +108,6 @@ impl PartialOrd for VecBinaryTree<HuffmanChar> {
 impl HuffmanCodingTree {
     pub fn new(text: &str) -> Option<Self> {
         let char_map = char_count(text);
-        println!("{:?}", char_map);
         if char_map.is_empty() {
             None
         } else {
@@ -144,18 +137,9 @@ impl HuffmanCodingTree {
                 forest.push(tree);
             }
             let tree = forest.pop().unwrap();
-            for ch in tree.cursor().pre_order_iter() {
-                print!("{:?} ", ch.ch);
-            }
-            println!();
-            for ch in tree.cursor().post_order_iter() {
-                print!("{:?} ", ch.ch);
-            }
-            println!();
 
             // 建立编码表
             let encoding_map = generate_encoding_map(&tree);
-            println!("{:?}", encoding_map);
 
             // 编码
             let (encoded, len) = Self::encode(text, &encoding_map);

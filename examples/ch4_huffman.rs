@@ -19,7 +19,8 @@ fn main() -> std::io::Result<()> {
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
     let tree = HuffmanCodingTree::new(&contents).unwrap();
-    println!("{:?}", tree.encoded());
+    let (encoded, len) = tree.encoded();
+    println!("encoded = {:?}, len = {}B", encoded, len / 8);
     assert_eq!(tree.decode(), contents);
     Ok(())
 }
