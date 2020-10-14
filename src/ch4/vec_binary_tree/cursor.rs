@@ -12,6 +12,10 @@ pub(super) const fn right_index(index: usize) -> usize {
     2 * index + 2
 }
 
+pub(super) const fn parent_index(index: usize) -> usize {
+    (index - 1) / 2
+}
+
 pub struct Cursor<'a, T> {
     pub(super) current: usize,
     pub(super) tree: &'a VecBinaryTree<T>,
@@ -39,6 +43,10 @@ impl<'a, T> BaseNode<'a> for Cursor<'a, T> {
 
     fn right(&self) -> Option<&Self::Elem> {
         self.tree.get(right_index(self.current))
+    }
+
+    fn is_parent(&self, other: &Self) -> bool {
+        parent_index(self.current) == other.current
     }
 
     fn move_left(&mut self) {
@@ -129,6 +137,10 @@ impl<'a, T> BaseNode<'a> for CursorMut<'a, T> {
 
     fn right(&self) -> Option<&Self::Elem> {
         self.tree.get(right_index(self.current))
+    }
+
+    fn is_parent(&self, other: &Self) -> bool {
+        parent_index(self.current) == other.current
     }
 
     fn move_left(&mut self) {

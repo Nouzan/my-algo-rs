@@ -128,34 +128,41 @@ impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for MidOrderIte
 
 /// 后序遍历迭代器.
 pub struct PostOrderIter<'a, Cursor> {
-    left_stack: Vec<Cursor>,
-    right_stack: Vec<Cursor>,
+    stack: Vec<Cursor>,
     marker: PhantomData<&'a Cursor>,
 }
 
 impl<'a, Cursor: BaseNode<'a> + Clone> PostOrderIter<'a, Cursor> {
-    fn push_deep_most_chain(&mut self, current: &mut Cursor) {
-        while !current.is_empty_subtree() {
-            if current.left().is_some() {
-                self.left_stack.push(current.clone());
-                current.move_left();
-            } else if current.right().is_some() {
-                self.right_stack.push(current.clone());
-                current.move_right();
-            } else {
-                self.right_stack.push(current.clone());
+    /// 寻找以栈顶为根的最高的左侧可见叶结点(HLVFL)，并将沿途结点及其右兄弟入栈(右兄弟优先入栈).
+    fn find_hlvfl(&mut self) {
+        // 不变式: 栈顶为子树中HLVFL在栈中的最近祖先, 次顶(若在子树中)为栈顶的父母或右兄弟.
+        while let Some(top) = self.stack.last() {
+            if top.is_leaf() {
+                // 找到HLVFL
                 break;
+            } else {
+                let (left, right) = top.split();
+                if let Some(right) = right {
+                    self.stack.push(right);
+                }
+                if let Some(left) = left {
+                    self.stack.push(left);
+                }
             }
         }
     }
 
-    pub fn new(mut root: Cursor) -> Self {
+    pub fn new(root: Cursor) -> Self {
         let mut iter = Self {
-            left_stack: Vec::new(),
-            right_stack: Vec::new(),
+            stack: Vec::new(),
             marker: PhantomData::default(),
         };
-        iter.push_deep_most_chain(&mut root);
+
+        if !root.is_empty_subtree() {
+            iter.stack.push(root);
+            iter.find_hlvfl();
+        }
+
         iter
     }
 }
@@ -164,13 +171,15 @@ impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for PostOrderIt
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(current) = self.right_stack.pop() {
-            current.into_ref()
-        } else if let Some(mut current) = self.left_stack.pop() {
-            self.right_stack.push(current.clone());
-            current.move_right();
-            self.push_deep_most_chain(&mut current);
-            self.right_stack.pop().unwrap().into_ref()
+        if let Some(hlvfl) = self.stack.pop() {
+            if let Some(top) = self.stack.last() {
+                // 判断栈顶是否为当前结点的父母，若是则它就是下一hlvfl
+                // 若不是则它必为当前结点的右兄，它的子树还未被扫描，且hlvfl在它的子树中.
+                if !hlvfl.is_parent(top) {
+                    self.find_hlvfl();
+                }
+            }
+            hlvfl.into_ref()
         } else {
             None
         }
