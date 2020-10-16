@@ -1,4 +1,4 @@
-use super::super::{BaseNode, BaseNodeMut, BinTree, BinTreeMut, BinTreeNode, BinTreeNodeMut};
+use super::super::{BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut};
 use super::{
     iter::{in_order_index, InOrderIndexIter, InOrderIter},
     VecBinaryTree,
@@ -30,7 +30,7 @@ impl<'a, T> Clone for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BaseNode<'a> for Cursor<'a, T> {
+impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
     type Elem = T;
 
     fn as_ref(&self) -> Option<&Self::Elem> {
@@ -71,17 +71,15 @@ impl<'a, T> BaseNode<'a> for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeNode<'a, VecBinaryTree<T>> for Cursor<'a, T> {
-    fn new(tree: &'a VecBinaryTree<T>) -> Self {
+impl<'a, T> Cursor<'a, T> {
+    pub fn new(tree: &'a VecBinaryTree<T>) -> Self {
         Self { current: 0, tree }
     }
-}
 
-impl<'a, T> BinTreeNode<'a, CursorMut<'a, T>> for Cursor<'a, T> {
-    fn new(tree: &'a CursorMut<'a, T>) -> Self {
+    pub fn from_cursor_mut(cursor: &'a CursorMut<'a, T>) -> Self {
         Self {
-            current: tree.current,
-            tree: tree.tree,
+            current: cursor.current,
+            tree: cursor.tree,
         }
     }
 }
@@ -124,7 +122,7 @@ impl<'a, T> CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BaseNode<'a> for CursorMut<'a, T> {
+impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
     type Elem = T;
 
     fn as_ref(&self) -> Option<&Self::Elem> {
@@ -165,7 +163,7 @@ impl<'a, T> BaseNode<'a> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BaseNodeMut<'a> for CursorMut<'a, T> {
+impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
     type SubTree = VecBinaryTree<T>;
 
     fn as_mut(&mut self) -> Option<&mut Self::Elem> {
@@ -301,17 +299,31 @@ impl<'a, T> BaseNodeMut<'a> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeNodeMut<'a, VecBinaryTree<T>> for CursorMut<'a, T> {
-    fn new(tree: &'a mut VecBinaryTree<T>) -> Self {
+impl<'a, T> CursorMut<'a, T> {
+    pub fn new(tree: &'a mut VecBinaryTree<T>) -> Self {
         Self { current: 0, tree }
     }
 }
 
-impl<'a, T> BinTree<Cursor<'a, T>> for CursorMut<'a, T> {
+impl<'a, T> BinTree for CursorMut<'a, T> {
     type Elem = T;
+    type Cursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
+        Cursor::from_cursor_mut(self)
+    }
 }
 
-impl<'a, T> BinTreeMut<Cursor<'a, T>, CursorMut<'a, T>> for CursorMut<'a, T> {}
+impl<'a, T> BinTreeMut for CursorMut<'a, T> {
+    type CursorMut<'b, E: 'b> = CursorMut<'b, E>;
+
+    fn cursor_mut(&mut self) -> Self::CursorMut<'_, Self::Elem> {
+        CursorMut {
+            current: self.current,
+            tree: self.tree,
+        }
+    }
+}
 
 // unsafe impl<'a, T> SplitNodeMut<'a> for CursorMut<'a, T> {
 //     fn split_mut(&mut self) -> (Option<Self>, Option<Self>)

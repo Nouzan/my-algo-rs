@@ -1,48 +1,87 @@
 pub mod cursor;
-pub mod iter;
 
-use super::{BinTree, BinTreeMut};
-use cursor::{Cursor, CursorMut};
+use super::{BinTree, BinTreeCursor, BinTreeMut};
 
-/// 基于`Vec`实现的二叉顺序树.
-pub struct VecBinaryTree<T> {
-    inner: Vec<Option<T>>,
+type Link<T> = Option<Box<Node<T>>>;
+
+/// 链式二叉树结点.
+struct Node<T> {
+    left: Link<T>,
+    right: Link<T>,
+    /// 结点内容. 这里的`Option`是为了实现哨兵结点，所有非哨兵结点`elem`均为`Some`.
+    elem: Option<T>,
 }
 
-impl<T> Default for VecBinaryTree<T> {
+/// 链式二叉树.
+/// 带哨兵根结点，根结点是它的左孩子，根结点的后代都是非哨兵结点.
+pub struct LinkedBinaryTree<T> {
+    root: Node<T>,
+}
+
+impl<T> Default for LinkedBinaryTree<T> {
     fn default() -> Self {
-        Self { inner: Vec::new() }
+        Self {
+            root: Node {
+                left: None,
+                right: None,
+                elem: None,
+            },
+        }
     }
 }
 
-impl<T> VecBinaryTree<T> {
-    fn get(&self, index: usize) -> Option<&T> {
-        self.inner.get(index).and_then(|elem| elem.as_ref())
+impl<T: PartialEq> PartialEq for LinkedBinaryTree<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.cursor().as_ref() == other.cursor().as_ref()
     }
+}
 
-    fn get_mut(&mut self, index: usize) -> Option<&mut T> {
-        self.inner.get_mut(index).and_then(|elem| elem.as_mut())
+impl<T: PartialOrd> PartialOrd for LinkedBinaryTree<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self.cursor().as_ref(), other.cursor().as_ref()) {
+            (Some(lc), Some(rc)) => lc.partial_cmp(rc),
+            _ => None,
+        }
     }
+}
 
+impl<T> LinkedBinaryTree<T> {
     pub fn new() -> Self {
         Self::default()
     }
+
+    fn replace_root_node(&mut self, node: Link<T>) -> Link<T> {
+        let old = self.root.left.take();
+        self.root.left = node;
+        old
+    }
 }
 
-impl<'a, T> BinTree<Cursor<'a, T>> for VecBinaryTree<T> {
+impl<T> BinTree for LinkedBinaryTree<T> {
     type Elem = T;
+    type Cursor<'a, E: 'a> = cursor::Cursor<'a, E>;
+
+    fn cursor<'a>(&'a self) -> Self::Cursor<'a, Self::Elem> {
+        cursor::Cursor::new(self)
+    }
 }
 
-impl<'a, T> BinTreeMut<Cursor<'a, T>, CursorMut<'a, T>> for VecBinaryTree<T> {}
+impl<T> BinTreeMut for LinkedBinaryTree<T> {
+    type CursorMut<'a, E: 'a> = cursor::CursorMut<'a, E>;
+
+    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a, Self::Elem> {
+        cursor::CursorMut::new(self)
+    }
+}
 
 #[cfg(test)]
 mod test {
-    use super::super::{BaseNode, BaseNodeExt, BaseNodeMut, BinTree};
+    use super::super::{BinTree, BinTreeCursor, BinTreeCursorExt, BinTreeCursorMut};
     use super::*;
 
     #[test]
-    fn test_vec_binary_tree_basic() {
-        let mut tree = VecBinaryTree::new();
+    fn test_linked_binary_tree_basic() {
+        let mut tree = LinkedBinaryTree::new();
         let mut cursor = tree.cursor_mut();
         cursor.insert_as_root(0);
         cursor.insert_as_left(1);
@@ -106,7 +145,7 @@ mod test {
 
     #[test]
     fn test_post_order_iter() {
-        let mut tree = VecBinaryTree::new();
+        let mut tree = LinkedBinaryTree::new();
         assert_eq!(
             tree.cursor().post_order_iter().copied().collect::<Vec<_>>(),
             []

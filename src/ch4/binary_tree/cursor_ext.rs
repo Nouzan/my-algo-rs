@@ -1,9 +1,9 @@
+use super::cursor::BinTreeCursor;
 use super::iter::{InOrderIter, MidOrderIter, PostOrderIter, PreOrderIter};
-use super::node::BaseNode;
 
-impl<'a, T: BaseNode<'a>> BaseNodeExt<'a> for T {}
+impl<'a, T: BinTreeCursor<'a>> BinTreeCursorExt<'a> for T {}
 
-pub trait BaseNodeExt<'a>: BaseNode<'a> {
+pub trait BinTreeCursorExt<'a>: BinTreeCursor<'a> {
     /// 创建一个层序遍历迭代器.
     fn in_order_iter(&self) -> InOrderIter<Self>
     where

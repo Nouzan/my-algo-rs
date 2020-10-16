@@ -1,6 +1,6 @@
-use super::vec_binary_tree::VecBinaryTree;
+use super::super::PriorityQueue;
 use super::*;
-use crate::ch2::PartialOrdListExt;
+use crate::vec::MyVec;
 use bitstream_io::{BigEndian, BitReader, BitWriter};
 use std::cmp::{Ordering, PartialOrd};
 use std::collections::BTreeMap;
@@ -14,54 +14,7 @@ pub fn char_count(text: &str) -> BTreeMap<char, usize> {
     map
 }
 
-/// 从编码树建立编码表.
-/// # Panics
-/// 要求树至少包含2个结点，叶子结点非空，且每个叶子存储的字符不同.
-fn generate_encoding_map(tree: &VecBinaryTree<HuffmanChar>) -> BTreeMap<char, Vec<bool>> {
-    let mut code = Vec::new();
-    let mut stack = Vec::new(); // 保存着已经左转、但还未右转的结点.
-    let mut map = BTreeMap::new();
-    let mut current = tree.cursor();
-    if current.is_leaf() {
-        panic!("树必须包含至少2个结点!");
-    } else if current.left().is_some() {
-        stack.push(current.clone());
-        code.push(true);
-        current.move_left();
-    } else {
-        stack.push(current.clone());
-        code.push(false);
-        current.move_right();
-    }
-
-    while !stack.is_empty() {
-        if current.is_leaf() {
-            let ch = current.as_ref().unwrap().ch.unwrap();
-            map.insert(ch, code.clone());
-            while let Some(back) = stack.pop() {
-                if code.pop().unwrap() && back.right().is_some() {
-                    stack.push(back.clone());
-                    code.push(false);
-                    current = back;
-                    current.move_right();
-                    break;
-                }
-            }
-        } else if current.left().is_some() {
-            stack.push(current.clone());
-            code.push(true);
-            current.move_left();
-        } else {
-            stack.push(current.clone());
-            code.push(false);
-            current.move_right();
-        }
-    }
-
-    map
-}
-
-struct HuffmanChar {
+pub struct HuffmanChar {
     ch: Option<char>,
     count: usize,
 }
@@ -80,66 +33,107 @@ impl PartialEq for HuffmanChar {
 
 impl PartialOrd for HuffmanChar {
     fn partial_cmp(&self, other: &HuffmanChar) -> Option<Ordering> {
-        self.count.partial_cmp(&other.count)
+        self.count
+            .partial_cmp(&other.count)
+            .map(|ordering| match ordering {
+                // 较小者优先级较大.
+                Ordering::Greater => Ordering::Less,
+                Ordering::Less => Ordering::Greater,
+                Ordering::Equal => Ordering::Equal,
+            })
     }
 }
 
-pub struct HuffmanCodingTree {
-    tree: VecBinaryTree<HuffmanChar>,
+pub struct HuffmanCodingTree<Tree> {
+    tree: Tree,
     encoded: Vec<u8>,
     len: usize,
 }
 
-impl PartialEq for VecBinaryTree<HuffmanChar> {
-    fn eq(&self, other: &Self) -> bool {
-        self.cursor().as_ref() == other.cursor().as_ref()
-    }
-}
-
-impl PartialOrd for VecBinaryTree<HuffmanChar> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match (self.cursor().as_ref(), other.cursor().as_ref()) {
-            (Some(lc), Some(rc)) => lc.partial_cmp(rc),
-            _ => None,
+impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingTree<Tree> {
+    /// 从编码树建立编码表.
+    /// # Panics
+    /// 要求树至少包含2个结点，叶子结点非空，且每个叶子存储的字符不同.
+    fn generate_encoding_map(tree: &Tree) -> BTreeMap<char, Vec<bool>> {
+        let mut code = Vec::new();
+        let mut stack = Vec::new(); // 保存着已经左转、但还未右转的结点.
+        let mut map = BTreeMap::new();
+        let mut current = tree.cursor();
+        if current.is_leaf() {
+            panic!("树必须包含至少2个结点!");
+        } else if current.left().is_some() {
+            stack.push(current.clone());
+            code.push(true);
+            current.move_left();
+        } else {
+            stack.push(current.clone());
+            code.push(false);
+            current.move_right();
         }
-    }
-}
 
-impl HuffmanCodingTree {
-    pub fn new(text: &str) -> Option<Self> {
+        while !stack.is_empty() {
+            if current.is_leaf() {
+                let ch = current.as_ref().unwrap().ch.unwrap();
+                map.insert(ch, code.clone());
+                while let Some(back) = stack.pop() {
+                    if code.pop().unwrap() && back.right().is_some() {
+                        stack.push(back.clone());
+                        code.push(false);
+                        current = back;
+                        current.move_right();
+                        break;
+                    }
+                }
+            } else if current.left().is_some() {
+                stack.push(current.clone());
+                code.push(true);
+                current.move_left();
+            } else {
+                stack.push(current.clone());
+                code.push(false);
+                current.move_right();
+            }
+        }
+
+        map
+    }
+    pub fn new<Pq: PriorityQueue<Tree>>(text: &str) -> Option<Self> {
         let char_map = char_count(text);
         if char_map.is_empty() {
             None
         } else {
             // 创建编码森林
-            let mut forest: Vec<_> = char_map
+            let forest: Vec<_> = char_map
                 .iter()
                 .map(|(&ch, &count)| {
-                    let mut tree = VecBinaryTree::new();
+                    let mut tree = Tree::default();
                     tree.cursor_mut()
                         .insert_as_root(HuffmanChar::new(Some(ch), count));
                     tree
                 })
                 .collect();
 
+            let mut forest = Pq::from(MyVec::from(forest));
+
             // 自底向上建树
             while forest.len() > 1 {
                 // TODO: use faster structure.
                 let (mut lhs, mut rhs) =
-                    (forest.delete_min().unwrap(), forest.delete_min().unwrap());
-                let mut tree = VecBinaryTree::new();
+                    (forest.delete_max().unwrap(), forest.delete_max().unwrap());
+                let mut tree = Tree::default();
                 let mut cursor = tree.cursor_mut();
                 let count =
                     lhs.cursor().as_ref().unwrap().count + rhs.cursor().as_ref().unwrap().count;
                 cursor.insert_as_root(HuffmanChar::new(None, count));
                 cursor.append_left(&mut lhs.cursor_mut());
                 cursor.append_right(&mut rhs.cursor_mut());
-                forest.push(tree);
+                drop(cursor);
+                forest.insert(tree);
             }
-            let tree = forest.pop().unwrap();
+            let tree = forest.delete_max().unwrap();
 
             // 建立编码表
-            let encoding_map = generate_encoding_map(&tree);
+            let encoding_map = Self::generate_encoding_map(&tree);
 
             // 编码
             let (encoded, len) = Self::encode(text, &encoding_map);
@@ -191,13 +185,16 @@ impl HuffmanCodingTree {
 
 #[cfg(test)]
 mod test {
+    use super::super::super::priority_queue::complete_heap::CompleteMaxHeap;
+    use super::super::linked_binary_tree::LinkedBinaryTree;
     use super::*;
 
     #[test]
     fn test_encoding() {
         let s = String::from("hello, world!");
-        let encoding_tree = HuffmanCodingTree::new(&s).unwrap();
+        let encoding_tree =
+            HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&s).unwrap();
         println!("{:?}", encoding_tree.encoded());
-        println!("{}", encoding_tree.decode());
+        assert_eq!(s, encoding_tree.decode());
     }
 }

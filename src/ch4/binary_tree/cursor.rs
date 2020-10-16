@@ -1,4 +1,4 @@
-pub trait BaseNode<'a> {
+pub trait BinTreeCursor<'a> {
     type Elem;
 
     /// 是否为空树.
@@ -67,16 +67,7 @@ pub trait BaseNode<'a> {
         Self: Sized;
 }
 
-/// 不可变二叉树结点特质.
-pub trait BinTreeNode<'a, Tree>: BaseNode<'a> {
-    // /// 关联树类型;
-    // type Tree: BinTree<Self, Elem=Self::Elem>;
-
-    fn new(tree: &'a Tree) -> Self;
-}
-
-pub trait BaseNodeMut<'a>: BaseNode<'a> {
-    /// 子树.
+pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     type SubTree;
 
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
@@ -103,7 +94,7 @@ pub trait BaseNodeMut<'a>: BaseNode<'a> {
     /// - 否则元素将作为右孩子插入树中，并返回`None`.
     fn insert_as_right(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
 
-    /// 消耗整棵树返回根的内容. 若为空树，则返回`None`.
+    /// 消耗整棵子树返回根的内容. 若为空树，则返回`None`.
     fn into_inner(self) -> Option<Self::Elem>;
 
     /// 把一棵树作为左子树接入. 操作后`other`变为空树.
@@ -129,9 +120,4 @@ pub trait BaseNodeMut<'a>: BaseNode<'a> {
     fn into_mut(self) -> Option<&'a mut Self::Elem>
     where
         Self: Sized;
-}
-
-/// 可变二叉树结点特质.
-pub trait BinTreeNodeMut<'a, Tree>: BaseNodeMut<'a> {
-    fn new(tree: &'a mut Tree) -> Self;
 }

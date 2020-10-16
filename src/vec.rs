@@ -207,6 +207,16 @@ impl<T> List<T> for MyVec<T> {
     }
 }
 
+impl<T> From<Vec<T>> for MyVec<T> {
+    fn from(mut vec: Vec<T>) -> Self {
+        let mut myvec = MyVec::default();
+        for elem in vec.drain(0..) {
+            myvec.push(elem);
+        }
+        myvec
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
