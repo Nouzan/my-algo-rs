@@ -14,53 +14,6 @@ pub fn char_count(text: &str) -> BTreeMap<char, usize> {
     map
 }
 
-/// 从编码树建立编码表.
-/// # Panics
-/// 要求树至少包含2个结点，叶子结点非空，且每个叶子存储的字符不同.
-fn generate_encoding_map(tree: &LinkedBinaryTree<HuffmanChar>) -> BTreeMap<char, Vec<bool>> {
-    let mut code = Vec::new();
-    let mut stack = Vec::new(); // 保存着已经左转、但还未右转的结点.
-    let mut map = BTreeMap::new();
-    let mut current = tree.cursor();
-    if current.is_leaf() {
-        panic!("树必须包含至少2个结点!");
-    } else if current.left().is_some() {
-        stack.push(current.clone());
-        code.push(true);
-        current.move_left();
-    } else {
-        stack.push(current.clone());
-        code.push(false);
-        current.move_right();
-    }
-
-    while !stack.is_empty() {
-        if current.is_leaf() {
-            let ch = current.as_ref().unwrap().ch.unwrap();
-            map.insert(ch, code.clone());
-            while let Some(back) = stack.pop() {
-                if code.pop().unwrap() && back.right().is_some() {
-                    stack.push(back.clone());
-                    code.push(false);
-                    current = back;
-                    current.move_right();
-                    break;
-                }
-            }
-        } else if current.left().is_some() {
-            stack.push(current.clone());
-            code.push(true);
-            current.move_left();
-        } else {
-            stack.push(current.clone());
-            code.push(false);
-            current.move_right();
-        }
-    }
-
-    map
-}
-
 struct HuffmanChar {
     ch: Option<char>,
     count: usize,
@@ -90,22 +43,53 @@ pub struct HuffmanCodingTree {
     len: usize,
 }
 
-impl PartialEq for LinkedBinaryTree<HuffmanChar> {
-    fn eq(&self, other: &Self) -> bool {
-        self.cursor().as_ref() == other.cursor().as_ref()
-    }
-}
-
-impl PartialOrd for LinkedBinaryTree<HuffmanChar> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match (self.cursor().as_ref(), other.cursor().as_ref()) {
-            (Some(lc), Some(rc)) => lc.partial_cmp(rc),
-            _ => None,
-        }
-    }
-}
-
 impl HuffmanCodingTree {
+    /// 从编码树建立编码表.
+    /// # Panics
+    /// 要求树至少包含2个结点，叶子结点非空，且每个叶子存储的字符不同.
+    fn generate_encoding_map(tree: &LinkedBinaryTree<HuffmanChar>) -> BTreeMap<char, Vec<bool>> {
+        let mut code = Vec::new();
+        let mut stack = Vec::new(); // 保存着已经左转、但还未右转的结点.
+        let mut map = BTreeMap::new();
+        let mut current = tree.cursor();
+        if current.is_leaf() {
+            panic!("树必须包含至少2个结点!");
+        } else if current.left().is_some() {
+            stack.push(current.clone());
+            code.push(true);
+            current.move_left();
+        } else {
+            stack.push(current.clone());
+            code.push(false);
+            current.move_right();
+        }
+
+        while !stack.is_empty() {
+            if current.is_leaf() {
+                let ch = current.as_ref().unwrap().ch.unwrap();
+                map.insert(ch, code.clone());
+                while let Some(back) = stack.pop() {
+                    if code.pop().unwrap() && back.right().is_some() {
+                        stack.push(back.clone());
+                        code.push(false);
+                        current = back;
+                        current.move_right();
+                        break;
+                    }
+                }
+            } else if current.left().is_some() {
+                stack.push(current.clone());
+                code.push(true);
+                current.move_left();
+            } else {
+                stack.push(current.clone());
+                code.push(false);
+                current.move_right();
+            }
+        }
+
+        map
+    }
     pub fn new(text: &str) -> Option<Self> {
         let char_map = char_count(text);
         if char_map.is_empty() {
@@ -139,7 +123,7 @@ impl HuffmanCodingTree {
             let tree = forest.pop().unwrap();
 
             // 建立编码表
-            let encoding_map = generate_encoding_map(&tree);
+            let encoding_map = Self::generate_encoding_map(&tree);
 
             // 编码
             let (encoded, len) = Self::encode(text, &encoding_map);

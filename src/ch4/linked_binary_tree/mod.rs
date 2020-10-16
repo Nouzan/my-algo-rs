@@ -1,6 +1,6 @@
 pub mod cursor;
 
-use super::{BinTree, BinTreeMut};
+use super::{BaseNode, BinTree, BinTreeMut};
 
 type Link<T> = Option<Box<Node<T>>>;
 
@@ -26,6 +26,21 @@ impl<T> Default for LinkedBinaryTree<T> {
                 right: None,
                 elem: None,
             },
+        }
+    }
+}
+
+impl<T: PartialEq> PartialEq for LinkedBinaryTree<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.cursor().as_ref() == other.cursor().as_ref()
+    }
+}
+
+impl<T: PartialOrd> PartialOrd for LinkedBinaryTree<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self.cursor().as_ref(), other.cursor().as_ref()) {
+            (Some(lc), Some(rc)) => lc.partial_cmp(rc),
+            _ => None,
         }
     }
 }
