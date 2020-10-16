@@ -1,4 +1,5 @@
-use my_algo::ch4::coding_tree::{HuffmanChar, HuffmanCodingTree};
+use my_algo::ch4::coding_tree::HuffmanCodingTree;
+use my_algo::ch4::complete_heap::CompleteMaxHeap;
 use my_algo::ch4::linked_binary_tree::LinkedBinaryTree;
 use std::fs::File;
 use std::io::prelude::*;
@@ -19,9 +20,11 @@ fn main() -> std::io::Result<()> {
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
-    let tree = HuffmanCodingTree::<LinkedBinaryTree<HuffmanChar>>::new(&contents).unwrap();
-    let (encoded, len) = tree.encoded();
-    println!("encoded = {:?}, len = {}B", encoded, len / 8);
+    let tree =
+        HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&contents).unwrap();
+    let (_, len) = tree.encoded();
+    println!("len = {}B", len / 8);
+    #[cfg(debug)]
     assert_eq!(tree.decode(), contents);
     Ok(())
 }

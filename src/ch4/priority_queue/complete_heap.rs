@@ -1,3 +1,4 @@
+use super::PriorityQueue;
 use crate::vec::MyVec;
 use std::convert::From;
 
@@ -74,15 +75,28 @@ impl<T: PartialOrd> CompleteMaxHeap<T> {
         self.percolate_down_with_limit(n, self.vec.len())
     }
 
+    /// 堆排序.
+    /// 消耗一个列表，并返回一个排序好的列表.
+    pub fn sort(vec: MyVec<T>) -> MyVec<T> {
+        let mut heap = Self::from(vec);
+        for idx in (0..(heap.vec.len())).rev() {
+            heap.vec.swap(0, idx);
+            heap.percolate_down_with_limit(0, idx);
+        }
+        heap.vec
+    }
+}
+
+impl<T: PartialOrd> PriorityQueue<T> for CompleteMaxHeap<T> {
     /// 插入一个新的元素.
-    pub fn insert(&mut self, elem: T) {
+    fn insert(&mut self, elem: T) {
         self.vec.push(elem);
         self.percolate_up(self.vec.len() - 1);
     }
 
     /// 删除最大元素.
     /// 若堆空则返回`None`.
-    pub fn delete_max(&mut self) -> Option<T> {
+    fn delete_max(&mut self) -> Option<T> {
         if self.vec.is_empty() {
             None
         } else {
@@ -94,15 +108,12 @@ impl<T: PartialOrd> CompleteMaxHeap<T> {
         }
     }
 
-    /// 堆排序.
-    /// 消耗一个列表，并返回一个排序好的列表.
-    pub fn sort(vec: MyVec<T>) -> MyVec<T> {
-        let mut heap = Self::from(vec);
-        for idx in (0..(heap.vec.len())).rev() {
-            heap.vec.swap(0, idx);
-            heap.percolate_down_with_limit(0, idx);
-        }
-        heap.vec
+    fn len(&self) -> usize {
+        self.vec.len()
+    }
+
+    fn get_max(&self) -> Option<&T> {
+        self.vec.get(0)
     }
 }
 

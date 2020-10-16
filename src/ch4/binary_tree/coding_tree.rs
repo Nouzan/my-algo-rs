@@ -1,5 +1,6 @@
+use super::super::PriorityQueue;
 use super::*;
-use crate::ch2::PartialOrdListExt;
+use crate::vec::MyVec;
 use bitstream_io::{BigEndian, BitReader, BitWriter};
 use std::cmp::{Ordering, PartialOrd};
 use std::collections::BTreeMap;
@@ -32,7 +33,14 @@ impl PartialEq for HuffmanChar {
 
 impl PartialOrd for HuffmanChar {
     fn partial_cmp(&self, other: &HuffmanChar) -> Option<Ordering> {
-        self.count.partial_cmp(&other.count)
+        self.count
+            .partial_cmp(&other.count)
+            .map(|ordering| match ordering {
+                // 较小者优先级较大.
+                Ordering::Greater => Ordering::Less,
+                Ordering::Less => Ordering::Greater,
+                Ordering::Equal => Ordering::Equal,
+            })
     }
 }
 
@@ -89,13 +97,13 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
 
         map
     }
-    pub fn new(text: &str) -> Option<Self> {
+    pub fn new<Pq: PriorityQueue<Tree>>(text: &str) -> Option<Self> {
         let char_map = char_count(text);
         if char_map.is_empty() {
             None
         } else {
             // 创建编码森林
-            let mut forest: Vec<_> = char_map
+            let forest: Vec<_> = char_map
                 .iter()
                 .map(|(&ch, &count)| {
                     let mut tree = Tree::default();
@@ -105,11 +113,13 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
                 })
                 .collect();
 
+            let mut forest = Pq::from(MyVec::from(forest));
+
             // 自底向上建树
             while forest.len() > 1 {
                 // TODO: use faster structure.
                 let (mut lhs, mut rhs) =
-                    (forest.delete_min().unwrap(), forest.delete_min().unwrap());
+                    (forest.delete_max().unwrap(), forest.delete_max().unwrap());
                 let mut tree = Tree::default();
                 let mut cursor = tree.cursor_mut();
                 let count =
@@ -118,9 +128,9 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
                 cursor.append_left(&mut lhs.cursor_mut());
                 cursor.append_right(&mut rhs.cursor_mut());
                 drop(cursor);
-                forest.push(tree);
+                forest.insert(tree);
             }
-            let tree = forest.pop().unwrap();
+            let tree = forest.delete_max().unwrap();
 
             // 建立编码表
             let encoding_map = Self::generate_encoding_map(&tree);
@@ -175,13 +185,15 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
 
 #[cfg(test)]
 mod test {
+    use super::super::super::priority_queue::complete_heap::CompleteMaxHeap;
     use super::super::linked_binary_tree::LinkedBinaryTree;
     use super::*;
 
     #[test]
     fn test_encoding() {
         let s = String::from("hello, world!");
-        let encoding_tree = HuffmanCodingTree::<LinkedBinaryTree<HuffmanChar>>::new(&s).unwrap();
+        let encoding_tree =
+            HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&s).unwrap();
         println!("{:?}", encoding_tree.encoded());
         assert_eq!(s, encoding_tree.decode());
     }
