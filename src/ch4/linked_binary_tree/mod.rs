@@ -1,6 +1,6 @@
 pub mod cursor;
 
-use super::{BaseNode, BinTree, BinTreeMut};
+use super::{BinTree, BinTreeCursor, BinTreeMut};
 
 type Link<T> = Option<Box<Node<T>>>;
 
@@ -57,15 +57,26 @@ impl<T> LinkedBinaryTree<T> {
     }
 }
 
-impl<'a, T> BinTree<cursor::Cursor<'a, T>> for LinkedBinaryTree<T> {
+impl<T> BinTree for LinkedBinaryTree<T> {
     type Elem = T;
+    type Cursor<'a, E: 'a> = cursor::Cursor<'a, E>;
+
+    fn cursor<'a>(&'a self) -> Self::Cursor<'a, Self::Elem> {
+        cursor::Cursor::new(self)
+    }
 }
 
-impl<'a, T> BinTreeMut<cursor::Cursor<'a, T>, cursor::CursorMut<'a, T>> for LinkedBinaryTree<T> {}
+impl<T> BinTreeMut for LinkedBinaryTree<T> {
+    type CursorMut<'a, E: 'a> = cursor::CursorMut<'a, E>;
+
+    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a, Self::Elem> {
+        cursor::CursorMut::new(self)
+    }
+}
 
 #[cfg(test)]
 mod test {
-    use super::super::{BaseNode, BaseNodeExt, BaseNodeMut, BinTree};
+    use super::super::{BinTree, BinTreeCursor, BinTreeCursorExt, BinTreeCursorMut};
     use super::*;
 
     #[test]

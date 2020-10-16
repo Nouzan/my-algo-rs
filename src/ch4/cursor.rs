@@ -1,4 +1,4 @@
-pub trait BaseNode<'a> {
+pub trait BinTreeCursor<'a> {
     type Elem;
 
     /// 是否为空树.
@@ -67,16 +67,7 @@ pub trait BaseNode<'a> {
         Self: Sized;
 }
 
-/// 不可变二叉树结点特质.
-pub trait BinTreeNode<'a, Tree>: BaseNode<'a> {
-    // /// 关联树类型;
-    // type Tree: BinTree<Self, Elem=Self::Elem>;
-
-    fn new(tree: &'a Tree) -> Self;
-}
-
-pub trait BaseNodeMut<'a>: BaseNode<'a> {
-    /// 子树.
+pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     type SubTree;
 
     /// 若为空树则返回`None`，否则返回当前结点(根)的内容的可变引用.
@@ -129,9 +120,4 @@ pub trait BaseNodeMut<'a>: BaseNode<'a> {
     fn into_mut(self) -> Option<&'a mut Self::Elem>
     where
         Self: Sized;
-}
-
-/// 可变二叉树结点特质.
-pub trait BinTreeNodeMut<'a, Tree>: BaseNodeMut<'a> {
-    fn new(tree: &'a mut Tree) -> Self;
 }

@@ -1,4 +1,4 @@
-use super::BaseNode;
+use super::BinTreeCursor;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 
@@ -21,7 +21,7 @@ impl<'a, Cursor> InOrderIter<'a, Cursor> {
     }
 }
 
-impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for InOrderIter<'a, Cursor> {
+impl<'a, T: 'a, Cursor: BinTreeCursor<'a, Elem = T> + Clone> Iterator for InOrderIter<'a, Cursor> {
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -57,7 +57,7 @@ impl<'a, Cursor> PreOrderIter<'a, Cursor> {
     }
 }
 
-impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for PreOrderIter<'a, Cursor> {
+impl<'a, T: 'a, Cursor: BinTreeCursor<'a, Elem = T> + Clone> Iterator for PreOrderIter<'a, Cursor> {
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -90,7 +90,7 @@ pub struct MidOrderIter<'a, Cursor> {
     marker: PhantomData<&'a Cursor>,
 }
 
-impl<'a, Cursor: BaseNode<'a> + Clone> MidOrderIter<'a, Cursor> {
+impl<'a, Cursor: BinTreeCursor<'a> + Clone> MidOrderIter<'a, Cursor> {
     fn push_left_chain(&mut self, current: &mut Cursor) {
         while !current.is_empty_subtree() {
             self.stack.push(current.clone());
@@ -110,7 +110,7 @@ impl<'a, Cursor: BaseNode<'a> + Clone> MidOrderIter<'a, Cursor> {
     }
 }
 
-impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for MidOrderIter<'a, Cursor> {
+impl<'a, T: 'a, Cursor: BinTreeCursor<'a, Elem = T> + Clone> Iterator for MidOrderIter<'a, Cursor> {
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -132,7 +132,7 @@ pub struct PostOrderIter<'a, Cursor> {
     marker: PhantomData<&'a Cursor>,
 }
 
-impl<'a, Cursor: BaseNode<'a> + Clone> PostOrderIter<'a, Cursor> {
+impl<'a, Cursor: BinTreeCursor<'a> + Clone> PostOrderIter<'a, Cursor> {
     /// 寻找以栈顶为根的最高的左侧可见叶结点(HLVFL)，并将沿途结点及其右兄弟入栈(右兄弟优先入栈).
     fn find_hlvfl(&mut self) {
         // 不变式: 栈顶为子树中HLVFL在栈中的最近祖先, 次顶(若在子树中)为栈顶的父母或右兄弟.
@@ -167,7 +167,9 @@ impl<'a, Cursor: BaseNode<'a> + Clone> PostOrderIter<'a, Cursor> {
     }
 }
 
-impl<'a, T: 'a, Cursor: BaseNode<'a, Elem = T> + Clone> Iterator for PostOrderIter<'a, Cursor> {
+impl<'a, T: 'a, Cursor: BinTreeCursor<'a, Elem = T> + Clone> Iterator
+    for PostOrderIter<'a, Cursor>
+{
     type Item = &'a Cursor::Elem;
 
     fn next(&mut self) -> Option<Self::Item> {

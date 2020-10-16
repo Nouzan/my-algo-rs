@@ -1,4 +1,4 @@
-use super::super::{BaseNode, BaseNodeMut, BinTree, BinTreeNode, BinTreeNodeMut};
+use super::super::{BinTree, BinTreeCursor, BinTreeCursorMut};
 use super::{LinkedBinaryTree, Node};
 
 /// 链式二叉树只读游标.
@@ -31,7 +31,7 @@ impl<'a, T> Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BaseNode<'a> for Cursor<'a, T> {
+impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
     type Elem = T;
 
     fn as_ref(&self) -> Option<&Self::Elem> {
@@ -68,21 +68,19 @@ impl<'a, T> BaseNode<'a> for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeNode<'a, LinkedBinaryTree<T>> for Cursor<'a, T> {
-    fn new(tree: &'a LinkedBinaryTree<T>) -> Self {
+impl<'a, T> Cursor<'a, T> {
+    pub fn new(tree: &'a LinkedBinaryTree<T>) -> Self {
         Self {
             current: tree.root.left.as_deref(),
         }
     }
-}
 
-impl<'a, T> BinTreeNode<'a, CursorMut<'a, T>> for Cursor<'a, T> {
-    fn new(tree: &'a CursorMut<'a, T>) -> Self {
+    pub fn from_cursor_mut(cursor: &'a CursorMut<'a, T>) -> Self {
         Self {
-            current: if tree.is_left_child {
-                tree.parent.as_ref().unwrap().left.as_deref()
+            current: if cursor.is_left_child {
+                cursor.parent.as_ref().unwrap().left.as_deref()
             } else {
-                tree.parent.as_ref().unwrap().right.as_deref()
+                cursor.parent.as_ref().unwrap().right.as_deref()
             },
         }
     }
@@ -129,9 +127,16 @@ impl<'a, T> CursorMut<'a, T> {
             .zip(other.current().as_deref())
             .map_or(false, |(lhs, rhs)| lhs as *const _ == rhs as *const _)
     }
+
+    pub fn new(tree: &'a mut LinkedBinaryTree<T>) -> Self {
+        Self {
+            parent: Some(&mut tree.root),
+            is_left_child: true,
+        }
+    }
 }
 
-impl<'a, T> BaseNode<'a> for CursorMut<'a, T> {
+impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
     type Elem = T;
 
     fn as_ref(&self) -> Option<&Self::Elem> {
@@ -202,7 +207,7 @@ impl<'a, T> BaseNode<'a> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BaseNodeMut<'a> for CursorMut<'a, T> {
+impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
     type SubTree = LinkedBinaryTree<T>;
 
     fn as_mut(&mut self) -> Option<&mut Self::Elem> {
@@ -397,15 +402,11 @@ impl<'a, T> BaseNodeMut<'a> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeNodeMut<'a, LinkedBinaryTree<T>> for CursorMut<'a, T> {
-    fn new(tree: &'a mut LinkedBinaryTree<T>) -> Self {
-        Self {
-            parent: Some(&mut tree.root),
-            is_left_child: true,
-        }
-    }
-}
-
-impl<'a, T> BinTree<Cursor<'a, T>> for CursorMut<'a, T> {
+impl<'a, T> BinTree for CursorMut<'a, T> {
     type Elem = T;
+    type Cursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
+        Cursor::from_cursor_mut(self)
+    }
 }
