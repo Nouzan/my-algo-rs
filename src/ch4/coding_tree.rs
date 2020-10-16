@@ -198,6 +198,6 @@ mod test {
         let s = String::from("hello, world!");
         let encoding_tree = HuffmanCodingTree::new(&s).unwrap();
         println!("{:?}", encoding_tree.encoded());
-        println!("{}", encoding_tree.decode());
+        assert_eq!(s, encoding_tree.decode());
     }
 }

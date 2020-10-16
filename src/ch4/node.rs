@@ -103,7 +103,7 @@ pub trait BaseNodeMut<'a>: BaseNode<'a> {
     /// - 否则元素将作为右孩子插入树中，并返回`None`.
     fn insert_as_right(&mut self, elem: Self::Elem) -> Option<Self::Elem>;
 
-    /// 消耗整棵树返回根的内容. 若为空树，则返回`None`.
+    /// 消耗整棵子树返回根的内容. 若为空树，则返回`None`.
     fn into_inner(self) -> Option<Self::Elem>;
 
     /// 把一棵树作为左子树接入. 操作后`other`变为空树.

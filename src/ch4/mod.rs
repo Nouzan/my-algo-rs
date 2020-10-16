@@ -1,5 +1,6 @@
 pub mod coding_tree;
 pub mod iter;
+pub mod linked_binary_tree;
 pub mod node;
 pub mod node_ext;
 pub mod vec_binary_tree;
