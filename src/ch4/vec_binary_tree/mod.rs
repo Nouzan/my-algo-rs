@@ -1,7 +1,7 @@
 pub mod cursor;
 pub mod iter;
 
-use super::{BinTree, BinTreeMut};
+use super::{BaseNode, BinTree, BinTreeMut};
 use cursor::{Cursor, CursorMut};
 
 /// 基于`Vec`实现的二叉顺序树.
@@ -12,6 +12,21 @@ pub struct VecBinaryTree<T> {
 impl<T> Default for VecBinaryTree<T> {
     fn default() -> Self {
         Self { inner: Vec::new() }
+    }
+}
+
+impl<T: PartialEq> PartialEq for VecBinaryTree<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.cursor().as_ref() == other.cursor().as_ref()
+    }
+}
+
+impl<T: PartialOrd> PartialOrd for VecBinaryTree<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self.cursor().as_ref(), other.cursor().as_ref()) {
+            (Some(lc), Some(rc)) => lc.partial_cmp(rc),
+            _ => None,
+        }
     }
 }
 
