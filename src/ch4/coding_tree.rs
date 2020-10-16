@@ -1,4 +1,3 @@
-use super::linked_binary_tree::LinkedBinaryTree;
 use super::*;
 use crate::ch2::PartialOrdListExt;
 use bitstream_io::{BigEndian, BitReader, BitWriter};
@@ -14,7 +13,7 @@ pub fn char_count(text: &str) -> BTreeMap<char, usize> {
     map
 }
 
-struct HuffmanChar {
+pub struct HuffmanChar {
     ch: Option<char>,
     count: usize,
 }
@@ -37,17 +36,17 @@ impl PartialOrd for HuffmanChar {
     }
 }
 
-pub struct HuffmanCodingTree {
-    tree: LinkedBinaryTree<HuffmanChar>,
+pub struct HuffmanCodingTree<Tree> {
+    tree: Tree,
     encoded: Vec<u8>,
     len: usize,
 }
 
-impl HuffmanCodingTree {
+impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingTree<Tree> {
     /// 从编码树建立编码表.
     /// # Panics
     /// 要求树至少包含2个结点，叶子结点非空，且每个叶子存储的字符不同.
-    fn generate_encoding_map(tree: &LinkedBinaryTree<HuffmanChar>) -> BTreeMap<char, Vec<bool>> {
+    fn generate_encoding_map(tree: &Tree) -> BTreeMap<char, Vec<bool>> {
         let mut code = Vec::new();
         let mut stack = Vec::new(); // 保存着已经左转、但还未右转的结点.
         let mut map = BTreeMap::new();
@@ -99,7 +98,7 @@ impl HuffmanCodingTree {
             let mut forest: Vec<_> = char_map
                 .iter()
                 .map(|(&ch, &count)| {
-                    let mut tree = LinkedBinaryTree::new();
+                    let mut tree = Tree::default();
                     tree.cursor_mut()
                         .insert_as_root(HuffmanChar::new(Some(ch), count));
                     tree
@@ -111,13 +110,14 @@ impl HuffmanCodingTree {
                 // TODO: use faster structure.
                 let (mut lhs, mut rhs) =
                     (forest.delete_min().unwrap(), forest.delete_min().unwrap());
-                let mut tree = LinkedBinaryTree::new();
+                let mut tree = Tree::default();
                 let mut cursor = tree.cursor_mut();
                 let count =
                     lhs.cursor().as_ref().unwrap().count + rhs.cursor().as_ref().unwrap().count;
                 cursor.insert_as_root(HuffmanChar::new(None, count));
                 cursor.append_left(&mut lhs.cursor_mut());
                 cursor.append_right(&mut rhs.cursor_mut());
+                drop(cursor);
                 forest.push(tree);
             }
             let tree = forest.pop().unwrap();
@@ -175,12 +175,13 @@ impl HuffmanCodingTree {
 
 #[cfg(test)]
 mod test {
+    use super::super::linked_binary_tree::LinkedBinaryTree;
     use super::*;
 
     #[test]
     fn test_encoding() {
         let s = String::from("hello, world!");
-        let encoding_tree = HuffmanCodingTree::new(&s).unwrap();
+        let encoding_tree = HuffmanCodingTree::<LinkedBinaryTree<HuffmanChar>>::new(&s).unwrap();
         println!("{:?}", encoding_tree.encoded());
         assert_eq!(s, encoding_tree.decode());
     }
