@@ -49,16 +49,12 @@ impl<T: PartialOrd> CompleteMaxHeap<T> {
         while n < limit {
             let mut max = n;
             let left = Self::left(n);
-            if left < limit {
-                if self.vec.get(max).unwrap() < self.vec.get(left).unwrap() {
-                    max = left;
-                }
+            if left < limit && self.vec.get(max).unwrap() < self.vec.get(left).unwrap() {
+                max = left;
             }
             let right = Self::right(n);
-            if right < limit {
-                if self.vec.get(max).unwrap() < self.vec.get(right).unwrap() {
-                    max = right;
-                }
+            if right < limit && self.vec.get(max).unwrap() < self.vec.get(right).unwrap() {
+                max = right;
             }
             if max != n {
                 self.vec.swap(max, n);
@@ -151,7 +147,7 @@ mod test {
         #[test]
         fn test_basic(mut data: Vec<i64>) {
             let sorted = CompleteMaxHeap::sort(MyVec::from(data.clone()));
-            data.sort();
+            data.sort_unstable();
             for (idx, &elem) in sorted.iter().enumerate() {
                 prop_assert_eq!(data[idx], elem);
             }
@@ -159,7 +155,7 @@ mod test {
 
         #[test]
         fn test_priority(data1: Vec<i64>, data2: Vec<i64>) {
-            let mut heap = CompleteMaxHeap::from(MyVec::from(data1.clone()));
+            let mut heap = CompleteMaxHeap::from(MyVec::from(data1));
             for &elem in data2.iter() {
                 heap.insert(elem);
                 let max = heap.vec.iter().max().copied();

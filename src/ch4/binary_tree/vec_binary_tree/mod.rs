@@ -48,7 +48,7 @@ impl<T> BinTree for VecBinaryTree<T> {
     type Elem = T;
     type Cursor<'a, E: 'a> = Cursor<'a, E>;
 
-    fn cursor<'a>(&'a self) -> Self::Cursor<'a, Self::Elem> {
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
         Cursor::new(self)
     }
 }
@@ -56,7 +56,7 @@ impl<T> BinTree for VecBinaryTree<T> {
 impl<T: 'static> BinTreeMut for VecBinaryTree<T> {
     type CursorMut<'a> = CursorMut<'a, T>;
 
-    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a> {
+    fn cursor_mut(&mut self) -> Self::CursorMut<'_> {
         CursorMut::new(self)
     }
 }

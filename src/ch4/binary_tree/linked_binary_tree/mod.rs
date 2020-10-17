@@ -61,7 +61,7 @@ impl<T> BinTree for LinkedBinaryTree<T> {
     type Elem = T;
     type Cursor<'a, E: 'a> = cursor::Cursor<'a, E>;
 
-    fn cursor<'a>(&'a self) -> Self::Cursor<'a, Self::Elem> {
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
         cursor::Cursor::new(self)
     }
 }
@@ -69,7 +69,7 @@ impl<T> BinTree for LinkedBinaryTree<T> {
 impl<T: 'static> BinTreeMut for LinkedBinaryTree<T> {
     type CursorMut<'a> = cursor::CursorMut<'a, T>;
 
-    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a> {
+    fn cursor_mut(&mut self) -> Self::CursorMut<'_> {
         cursor::CursorMut::new(self)
     }
 }

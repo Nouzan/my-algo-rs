@@ -136,7 +136,7 @@ mod test {
 
         #[test]
         fn test_priority(data1: Vec<i64>, data2: Vec<i64>) {
-            let mut heap = LeftHeap::from(MyVec::from(data1.clone()));
+            let mut heap = LeftHeap::from(MyVec::from(data1));
             for &elem in data2.iter() {
                 heap.insert(elem);
                 let max = heap.tree.cursor().in_order_iter().map(|node| node.elem).max();
