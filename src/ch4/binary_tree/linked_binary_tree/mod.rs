@@ -61,15 +61,15 @@ impl<T> BinTree for LinkedBinaryTree<T> {
     type Elem = T;
     type Cursor<'a, E: 'a> = cursor::Cursor<'a, E>;
 
-    fn cursor<'a>(&'a self) -> Self::Cursor<'a, Self::Elem> {
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
         cursor::Cursor::new(self)
     }
 }
 
-impl<T> BinTreeMut for LinkedBinaryTree<T> {
-    type CursorMut<'a, E: 'a> = cursor::CursorMut<'a, E>;
+impl<T: 'static> BinTreeMut for LinkedBinaryTree<T> {
+    type CursorMut<'a> = cursor::CursorMut<'a, T>;
 
-    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a, Self::Elem> {
+    fn cursor_mut(&mut self) -> Self::CursorMut<'_> {
         cursor::CursorMut::new(self)
     }
 }
@@ -96,7 +96,7 @@ mod test {
             [0, 1, 2, 3, 4, 5]
         );
         let mut cursor = tree.cursor_mut();
-        let mut right = cursor.take_right().unwrap();
+        let right = cursor.take_right().unwrap();
         assert_eq!(
             tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
             [0, 1]
@@ -107,8 +107,7 @@ mod test {
         );
         let mut cursor = tree.cursor_mut();
         cursor.move_left();
-        cursor.append_left(&mut right.cursor_mut());
-        assert!(right.is_empty());
+        cursor.append_left(right);
         assert_eq!(
             tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
             [0, 1, 2, 3, 4, 5]

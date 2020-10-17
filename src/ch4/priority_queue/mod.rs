@@ -1,4 +1,5 @@
 pub mod complete_heap;
+pub mod left_heap;
 
 use crate::vec::MyVec;
 
@@ -22,4 +23,7 @@ pub trait PriorityQueue<T: PartialOrd>: From<MyVec<T>> {
 
     /// 向队列插入一个元素.
     fn insert(&mut self, elem: T);
+
+    /// 合并两个优先队列.
+    fn merge(&mut self, other: Self);
 }

@@ -1,4 +1,4 @@
-use super::super::{BinTree, BinTreeCursor, BinTreeCursorMut};
+use super::super::{BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut};
 use super::{LinkedBinaryTree, Node};
 
 /// 链式二叉树只读游标.
@@ -207,7 +207,7 @@ impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
+impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
     type SubTree = LinkedBinaryTree<T>;
 
     fn as_mut(&mut self) -> Option<&mut Self::Elem> {
@@ -345,7 +345,8 @@ impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         }
     }
 
-    fn append_left(&mut self, other: &mut Self) {
+    fn append_left(&mut self, mut other: Self::SubTree) {
+        let mut other = other.cursor_mut();
         if self.left().is_some() {
             panic!("左子树不为空!");
         } else {
@@ -359,7 +360,8 @@ impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         }
     }
 
-    fn append_right(&mut self, other: &mut Self) {
+    fn append_right(&mut self, mut other: Self::SubTree) {
+        let mut other = other.cursor_mut();
         if self.right().is_some() {
             panic!("左子树不为空!");
         } else {

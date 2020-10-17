@@ -163,7 +163,7 @@ impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
+impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
     type SubTree = VecBinaryTree<T>;
 
     fn as_mut(&mut self) -> Option<&mut Self::Elem> {
@@ -215,7 +215,8 @@ impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         }
     }
 
-    fn append_left(&mut self, other: &mut Self) {
+    fn append_left(&mut self, mut other: Self::SubTree) {
+        let mut other = other.cursor_mut();
         if self.left_mut().is_some() {
             panic!("Left subtree is non-empty!")
         } else {
@@ -229,7 +230,8 @@ impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         }
     }
 
-    fn append_right(&mut self, other: &mut Self) {
+    fn append_right(&mut self, mut other: Self::SubTree) {
+        let mut other = other.cursor_mut();
         if self.right_mut().is_some() {
             panic!("Right subtree is non-empty!")
         } else {
@@ -314,16 +316,16 @@ impl<'a, T> BinTree for CursorMut<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeMut for CursorMut<'a, T> {
-    type CursorMut<'b, E: 'b> = CursorMut<'b, E>;
+// impl<'a, T> BinTreeMut for CursorMut<'a, T> {
+//     type CursorMut<'b, E: 'b, St> = CursorMut<'b, E>;
 
-    fn cursor_mut(&mut self) -> Self::CursorMut<'_, Self::Elem> {
-        CursorMut {
-            current: self.current,
-            tree: self.tree,
-        }
-    }
-}
+//     fn cursor_mut(&mut self) -> Self::CursorMut<'_, Self::Elem, Self> {
+//         CursorMut {
+//             current: self.current,
+//             tree: self.tree,
+//         }
+//     }
+// }
 
 // unsafe impl<'a, T> SplitNodeMut<'a> for CursorMut<'a, T> {
 //     fn split_mut(&mut self) -> (Option<Self>, Option<Self>)

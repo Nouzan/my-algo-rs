@@ -17,7 +17,7 @@ pub trait BinTree {
     type Cursor<'a, T: 'a>: BinTreeCursor<'a, Elem = T> + Clone;
 
     /// 是否为空树.
-    fn is_empty<'a>(&'a self) -> bool
+    fn is_empty(&self) -> bool
     where
         Self: Sized,
     {
@@ -25,14 +25,14 @@ pub trait BinTree {
     }
 
     /// 创建一个只读结点游标.
-    fn cursor<'a>(&'a self) -> Self::Cursor<'a, Self::Elem>;
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem>;
 }
 
 /// 可变二叉树特质.
 pub trait BinTreeMut: BinTree {
     /// 可变游标类型.
-    type CursorMut<'a, T: 'a>: BinTreeCursorMut<'a, Elem = T>;
+    type CursorMut<'a>: BinTreeCursorMut<'a, Elem = Self::Elem, SubTree = Self>;
 
     /// 创建一个可变结点游标.
-    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a, Self::Elem>;
+    fn cursor_mut(&mut self) -> Self::CursorMut<'_>;
 }
