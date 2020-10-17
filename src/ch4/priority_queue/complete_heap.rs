@@ -85,6 +85,16 @@ impl<T: PartialOrd> CompleteMaxHeap<T> {
         }
         heap.vec
     }
+
+    /// 重新建堆.
+    fn rebuild(&mut self) {
+        if self.vec.len() > 1 {
+            let last = self.vec.len() - 1;
+            for idx in (0..=Self::parent(last)).rev() {
+                self.percolate_down(idx);
+            }
+        }
+    }
 }
 
 impl<T: PartialOrd> PriorityQueue<T> for CompleteMaxHeap<T> {
@@ -115,17 +125,19 @@ impl<T: PartialOrd> PriorityQueue<T> for CompleteMaxHeap<T> {
     fn get_max(&self) -> Option<&T> {
         self.vec.get(0)
     }
+
+    fn merge(&mut self, other: &mut Self) {
+        while let Some(elem) = other.vec.pop() {
+            self.vec.push(elem);
+        }
+        self.rebuild();
+    }
 }
 
 impl<T: PartialOrd> From<MyVec<T>> for CompleteMaxHeap<T> {
     fn from(vec: MyVec<T>) -> Self {
         let mut heap = Self { vec };
-        if heap.vec.len() > 1 {
-            let last = heap.vec.len() - 1;
-            for idx in (0..=Self::parent(last)).rev() {
-                heap.percolate_down(idx);
-            }
-        }
+        heap.rebuild();
         heap
     }
 }
@@ -137,11 +149,33 @@ mod test {
 
     proptest! {
         #[test]
-        fn basic_test(mut data: Vec<i64>) {
+        fn test_basic(mut data: Vec<i64>) {
             let sorted = CompleteMaxHeap::sort(MyVec::from(data.clone()));
             data.sort();
             for (idx, &elem) in sorted.iter().enumerate() {
                 prop_assert_eq!(data[idx], elem);
+            }
+        }
+
+        #[test]
+        fn test_priority(data1: Vec<i64>, data2: Vec<i64>) {
+            let mut heap = CompleteMaxHeap::from(MyVec::from(data1.clone()));
+            for &elem in data2.iter() {
+                heap.insert(elem);
+                let max = heap.vec.iter().max().copied();
+                prop_assert_eq!(heap.delete_max(), max);
+            }
+        }
+
+        #[test]
+        fn test_merge(data1: Vec<i64>, data2: Vec<i64>) {
+            let mut heap1 = CompleteMaxHeap::from(MyVec::from(data1));
+            let mut heap2 = CompleteMaxHeap::from(MyVec::from(data2));
+            heap1.merge(&mut heap2);
+            assert!(heap2.is_empty());
+            while !heap1.is_empty() {
+                let max = heap1.vec.iter().max().copied();
+                assert_eq!(heap1.delete_max(), max);
             }
         }
     }
