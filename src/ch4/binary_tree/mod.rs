@@ -31,8 +31,8 @@ pub trait BinTree {
 /// 可变二叉树特质.
 pub trait BinTreeMut: BinTree {
     /// 可变游标类型.
-    type CursorMut<'a, T: 'a>: BinTreeCursorMut<'a, Elem = T>;
+    type CursorMut<'a>: BinTreeCursorMut<'a, Elem = Self::Elem, SubTree = Self>;
 
     /// 创建一个可变结点游标.
-    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a, Self::Elem>;
+    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a>;
 }

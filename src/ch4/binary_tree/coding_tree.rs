@@ -125,8 +125,8 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
                 let count =
                     lhs.cursor().as_ref().unwrap().count + rhs.cursor().as_ref().unwrap().count;
                 cursor.insert_as_root(HuffmanChar::new(None, count));
-                cursor.append_left(&mut lhs.cursor_mut());
-                cursor.append_right(&mut rhs.cursor_mut());
+                cursor.append_left(lhs);
+                cursor.append_right(rhs);
                 drop(cursor);
                 forest.insert(tree);
             }

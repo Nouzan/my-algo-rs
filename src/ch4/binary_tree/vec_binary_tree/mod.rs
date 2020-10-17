@@ -53,10 +53,10 @@ impl<T> BinTree for VecBinaryTree<T> {
     }
 }
 
-impl<T> BinTreeMut for VecBinaryTree<T> {
-    type CursorMut<'a, E: 'a> = CursorMut<'a, E>;
+impl<T: 'static> BinTreeMut for VecBinaryTree<T> {
+    type CursorMut<'a> = CursorMut<'a, T>;
 
-    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a, Self::Elem> {
+    fn cursor_mut<'a>(&'a mut self) -> Self::CursorMut<'a> {
         CursorMut::new(self)
     }
 }
@@ -94,8 +94,7 @@ mod test {
         );
         let mut cursor = tree.cursor_mut();
         cursor.move_left();
-        cursor.append_left(&mut right.cursor_mut());
-        assert!(right.is_empty());
+        cursor.append_left(right);
         assert_eq!(
             tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
             [0, 1, 2, 3, 4, 5]

@@ -1,3 +1,5 @@
+use super::BinTreeMut;
+
 pub trait BinTreeCursor<'a> {
     type Elem;
 
@@ -100,12 +102,12 @@ pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     /// 把一棵树作为左子树接入. 操作后`other`变为空树.
     /// # Panics
     /// 若左子树不为空则报错.
-    fn append_left(&mut self, other: &mut Self);
+    fn append_left(&mut self, other: Self::SubTree);
 
     /// 把一棵树作为右子树接入. 操作后`other`变为空树.
     /// # Panics
     /// 若右子树不为空则报错.
-    fn append_right(&mut self, other: &mut Self);
+    fn append_right(&mut self, other: Self::SubTree);
 
     /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
     fn take_left(&mut self) -> Option<Self::SubTree>
