@@ -1,4 +1,5 @@
 pub mod complete_heap;
+pub mod left_heap;
 
 use crate::vec::MyVec;
 
