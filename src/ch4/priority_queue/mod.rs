@@ -25,6 +25,5 @@ pub trait PriorityQueue<T: PartialOrd>: From<MyVec<T>> {
     fn insert(&mut self, elem: T);
 
     /// 合并两个优先队列.
-    /// 合并后，另一个优先队列变为空队.
-    fn merge(&mut self, other: &mut Self);
+    fn merge(&mut self, other: Self);
 }

@@ -1,5 +1,3 @@
-use super::BinTreeMut;
-
 pub trait BinTreeCursor<'a> {
     type Elem;
 

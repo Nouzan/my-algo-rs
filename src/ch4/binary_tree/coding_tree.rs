@@ -97,6 +97,10 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
 
         map
     }
+
+    /// 创建Huffman编码树，并对`text`进行编码.
+    /// # Panics
+    /// `text`字符数必须大于`1`.
     pub fn new<Pq: PriorityQueue<Tree>>(text: &str) -> Option<Self> {
         let char_map = char_count(text);
         if char_map.is_empty() {
@@ -117,9 +121,7 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
 
             // 自底向上建树
             while forest.len() > 1 {
-                // TODO: use faster structure.
-                let (mut lhs, mut rhs) =
-                    (forest.delete_max().unwrap(), forest.delete_max().unwrap());
+                let (lhs, rhs) = (forest.delete_max().unwrap(), forest.delete_max().unwrap());
                 let mut tree = Tree::default();
                 let mut cursor = tree.cursor_mut();
                 let count =
@@ -186,8 +188,11 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
 #[cfg(test)]
 mod test {
     use super::super::super::priority_queue::complete_heap::CompleteMaxHeap;
+    use super::super::super::priority_queue::left_heap::LeftHeap;
     use super::super::linked_binary_tree::LinkedBinaryTree;
+    use super::super::vec_binary_tree::VecBinaryTree;
     use super::*;
+    use proptest::prelude::*;
 
     #[test]
     fn test_encoding() {
@@ -196,5 +201,25 @@ mod test {
             HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&s).unwrap();
         println!("{:?}", encoding_tree.encoded());
         assert_eq!(s, encoding_tree.decode());
+    }
+
+    proptest! {
+        #[test]
+        fn test_encoding_with_lbt_ch(s: String) {
+            if s.chars().count() > 1 {
+                let encoding_tree =
+                    HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&s).unwrap();
+                assert_eq!(s, encoding_tree.decode());
+            }
+        }
+
+        #[test]
+        fn test_encoding_with_vbt_lh(s: String) {
+            if s.chars().count() > 1 {
+                let encoding_tree =
+                    HuffmanCodingTree::<VecBinaryTree<_>>::new::<LeftHeap<_>>(&s).unwrap();
+                assert_eq!(s, encoding_tree.decode());
+            }
+        }
     }
 }

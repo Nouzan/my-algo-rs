@@ -126,7 +126,7 @@ impl<T: PartialOrd> PriorityQueue<T> for CompleteMaxHeap<T> {
         self.vec.get(0)
     }
 
-    fn merge(&mut self, other: &mut Self) {
+    fn merge(&mut self, mut other: Self) {
         while let Some(elem) = other.vec.pop() {
             self.vec.push(elem);
         }
@@ -170,9 +170,8 @@ mod test {
         #[test]
         fn test_merge(data1: Vec<i64>, data2: Vec<i64>) {
             let mut heap1 = CompleteMaxHeap::from(MyVec::from(data1));
-            let mut heap2 = CompleteMaxHeap::from(MyVec::from(data2));
-            heap1.merge(&mut heap2);
-            assert!(heap2.is_empty());
+            let heap2 = CompleteMaxHeap::from(MyVec::from(data2));
+            heap1.merge(heap2);
             while !heap1.is_empty() {
                 let max = heap1.vec.iter().max().copied();
                 assert_eq!(heap1.delete_max(), max);

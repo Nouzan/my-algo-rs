@@ -83,7 +83,7 @@ mod test {
             [0, 1, 2, 3, 4, 5]
         );
         let mut cursor = tree.cursor_mut();
-        let mut right = cursor.take_right().unwrap();
+        let right = cursor.take_right().unwrap();
         assert_eq!(
             tree.cursor().in_order_iter().copied().collect::<Vec<_>>(),
             [0, 1]
