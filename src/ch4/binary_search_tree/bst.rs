@@ -22,7 +22,7 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
     /// 删除游标所指结点，并返回其值.
     /// # Panics
     /// `cursor`所指结点必须存在.
-    fn delete_at(mut cursor: Tree::CursorMut<'_>) -> V {
+    fn delete_at(cursor: &mut Tree::CursorMut<'_>) -> V {
         if cursor.left().is_none() {
             let tree = cursor.take_right().unwrap();
             let entry = cursor.take().cursor_mut().into_inner().unwrap();
@@ -41,31 +41,58 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
             Self::delete_at(cursor)
         }
     }
+
+    /// 沿树下降搜索.
+    ///
+    /// 若`cursor`所指结点不存在，则返回`None`.
+    ///
+    /// 若命中，则返回`Some(Ordering::Equal)`，此时`cursor`指向命中的目标.
+    ///
+    /// 若没命中，则返回`Some(Ordering::Less)`或`Some(Ordering::Greater)`，分别表示命中原因，此时`cursor`指向目标位置的父母.
+    fn move_to_target<'a, C>(cursor: &mut C, target: &K) -> Option<Ordering>
+    where
+        C: BinTreeCursor<'a, Elem = Tree::Elem>,
+    {
+        while let Some(entry) = cursor.as_ref() {
+            match target.cmp(&entry.key) {
+                Ordering::Equal => return Some(Ordering::Equal),
+                Ordering::Less => {
+                    if cursor.left().is_none() {
+                        return Some(Ordering::Less);
+                    } else {
+                        cursor.move_left();
+                    }
+                }
+                Ordering::Greater => {
+                    if cursor.right().is_none() {
+                        return Some(Ordering::Greater);
+                    } else {
+                        cursor.move_right();
+                    }
+                }
+            }
+        }
+        None
+    }
 }
 
 impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for TreeMap<Tree, K, V> {
     fn get(&self, key: &K) -> Option<&V> {
         let mut cursor = self.tree.cursor();
-        while let Some(entry) = cursor.as_ref() {
-            match key.cmp(&entry.key) {
-                Ordering::Equal => return cursor.into_ref().map(|entry| &entry.value),
-                Ordering::Less => cursor.move_left(),
-                Ordering::Greater => cursor.move_right(),
-            }
+        if let Some(Ordering::Equal) = Self::move_to_target(&mut cursor, key) {
+            cursor.into_ref().map(|entry| &entry.value)
+        } else {
+            None
         }
-        None
     }
 
     fn get_mut(&mut self, key: &K) -> Option<&mut V> {
         let mut cursor = self.tree.cursor_mut();
-        while let Some(entry) = cursor.as_ref() {
-            match key.cmp(&entry.key) {
-                Ordering::Equal => return cursor.into_mut().map(|entry| &mut entry.value),
-                Ordering::Less => cursor.move_left(),
-                Ordering::Greater => cursor.move_right(),
-            }
+        if let Some(Ordering::Equal) = Self::move_to_target(&mut cursor, key) {
+            cursor.into_mut().map(|entry| &mut entry.value)
+        } else {
+            None
         }
-        None
     }
 
     fn len(&self) -> usize {
@@ -74,50 +101,37 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
 
     fn insert(&mut self, key: K, mut value: V) -> Option<V> {
         let mut parent = self.tree.cursor_mut();
-        while let Some(entry) = parent.as_ref() {
-            match key.cmp(&entry.key) {
-                Ordering::Equal => {
-                    mem::swap(&mut parent.into_mut().unwrap().value, &mut value);
-                    return Some(value);
-                }
-                Ordering::Less => {
-                    if parent.left().is_none() {
-                        parent.insert_as_left(Entry { key, value });
-                        self.len += 1;
-                        return None;
-                    } else {
-                        parent.move_left();
-                    }
-                }
-                Ordering::Greater => {
-                    if parent.right().is_none() {
-                        parent.insert_as_right(Entry { key, value });
-                        self.len += 1;
-                        return None;
-                    } else {
-                        parent.move_right();
-                    }
-                }
+        match Self::move_to_target(&mut parent, &key) {
+            Some(Ordering::Equal) => {
+                mem::swap(&mut parent.into_mut().unwrap().value, &mut value);
+                Some(value)
+            }
+            Some(Ordering::Less) => {
+                parent.insert_as_left(Entry { key, value });
+                self.len += 1;
+                None
+            }
+            Some(Ordering::Greater) => {
+                parent.insert_as_right(Entry { key, value });
+                self.len += 1;
+                None
+            }
+            None => {
+                parent.insert_as_root(Entry { key, value });
+                self.len += 1;
+                None
             }
         }
-        parent.insert_as_root(Entry { key, value });
-        self.len += 1;
-        None
     }
 
     fn remove(&mut self, key: &K) -> Option<V> {
         let mut cursor = self.tree.cursor_mut();
-        while let Some(entry) = cursor.as_ref() {
-            match key.cmp(&entry.key) {
-                Ordering::Equal => {
-                    self.len -= 1;
-                    return Some(Self::delete_at(cursor));
-                }
-                Ordering::Less => cursor.move_left(),
-                Ordering::Greater => cursor.move_right(),
-            }
+        if let Some(Ordering::Equal) = Self::move_to_target(&mut cursor, key) {
+            self.len -= 1;
+            Some(Self::delete_at(&mut cursor))
+        } else {
+            None
         }
-        None
     }
 }
 
