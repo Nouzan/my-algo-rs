@@ -35,6 +35,16 @@ pub trait BinTreeCursor<'a> {
     /// 若为空树则`no-op`，否则变为右子树.
     fn move_right(&mut self);
 
+    /// 移动到当前结点的在子树中的直接中序后继，若为空树或无右子树则为`no-op`.
+    fn move_succ(&mut self) {
+        if self.right().is_some() {
+            self.move_right();
+            while self.left().is_some() {
+                self.move_left();
+            }
+        }
+    }
+
     /// 创建指向左右子树的游标. 若为空树，则返回`None`.
     fn split(&self) -> (Option<Self>, Option<Self>)
     where
@@ -79,6 +89,34 @@ pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     /// 若为空树或不含右孩子则返回`None`，否则返回右孩子的内容的可变引用.
     fn right_mut(&mut self) -> Option<&mut Self::Elem>;
 
+    /// 移动至当前结点在子树中的直接中序后继，并返回原来所指结点内容的可变引用以及后继所指结点内容的可变引用.
+    /// 若子树为空或右子树为空，则为`no-op`.
+    /// 若子树为空则返回`None`.
+    /// 若后继不存在时返回`None`.
+    fn move_succ_and_split_mut(&mut self) -> (Option<&mut Self::Elem>, Option<&mut Self::Elem>);
+
+    /// (unsafe版本)移动至当前结点在子树中的直接中序后继，并返回原来所指结点的可变引用.
+    /// 若子树为空或右子树为空，则为`no-op`，子树不为空时返回当前结点的可变引用.
+    /// 若子树为空则返回`None`.
+    /// # Safety
+    /// `move_right`和`move_left`不会改变树，以及原结点内容的地址，而仅仅只是在树上移动.
+    unsafe fn move_succ_and_split_mut_unchecked(
+        &mut self,
+    ) -> (Option<&mut Self::Elem>, Option<&mut Self::Elem>) {
+        let current = self.as_mut().map(|node| node as *mut _);
+        let mut succ = None;
+        if self.right().is_some() {
+            self.move_right();
+            while self.left().is_some() {
+                self.move_left();
+            }
+            if self.as_mut().map(|node| node as *mut _) != current {
+                succ = self.as_mut();
+            }
+        }
+        (current.and_then(|ptr: *mut Self::Elem| ptr.as_mut()), succ)
+    }
+
     /// 插入一个元素作为根.
     /// 若不为空树，则是`no-op`并返回被插入的元素，
     /// 否则将元素作为根插入树中，并返回`None`.
@@ -97,15 +135,22 @@ pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     /// 消耗整棵子树返回根的内容. 若为空树，则返回`None`.
     fn into_inner(self) -> Option<Self::Elem>;
 
-    /// 把一棵树作为左子树接入. 操作后`other`变为空树.
+    /// 把一棵树作为子树接入.
+    /// 若当前子树不为空则报错.
+    fn append(&mut self, other: Self::SubTree);
+
+    /// 把一棵树作为左子树接入.
     /// # Panics
     /// 若左子树不为空则报错.
     fn append_left(&mut self, other: Self::SubTree);
 
-    /// 把一棵树作为右子树接入. 操作后`other`变为空树.
+    /// 把一棵树作为右子树接入.
     /// # Panics
     /// 若右子树不为空则报错.
     fn append_right(&mut self, other: Self::SubTree);
+
+    /// 摘取整棵子树并返回. 若树为空则返回空树.
+    fn take(&mut self) -> Self::SubTree;
 
     /// 摘取左子树并返回. 若树为空，则返回`None`，若子树为空，则返回空树.
     fn take_left(&mut self) -> Option<Self::SubTree>

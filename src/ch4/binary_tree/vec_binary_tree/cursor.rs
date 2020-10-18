@@ -180,6 +180,11 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         self.tree.get_mut(idx)
     }
 
+    fn move_succ_and_split_mut(&mut self) -> (Option<&mut Self::Elem>, Option<&mut Self::Elem>) {
+        // Safety: `move_left`和`move_right`的实现仅仅只是修改了`current: usize`的值，并未对树进行任何修改和移动.
+        unsafe { self.move_succ_and_split_mut_unchecked() }
+    }
+
     fn insert_as_root(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
         if self.is_empty_subtree() {
             if self.current >= self.tree.inner.len() {
@@ -215,6 +220,21 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         }
     }
 
+    fn append(&mut self, mut other: Self::SubTree) {
+        let mut other = other.cursor_mut();
+        if !self.is_empty_subtree() {
+            panic!("Subtree is non-empty!");
+        } else {
+            let base = self.current;
+            for (dst, src) in other.in_order_index_iter().enumerate() {
+                let dst = in_order_index(base, dst);
+                let src_node = other.get_node_and_resize(src);
+                let dst_node = self.get_node_and_resize(dst);
+                *dst_node = src_node.take();
+            }
+        }
+    }
+
     fn append_left(&mut self, mut other: Self::SubTree) {
         let mut other = other.cursor_mut();
         if self.left_mut().is_some() {
@@ -243,6 +263,22 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
                 *dst_node = src_node.take();
             }
         }
+    }
+
+    fn take(&mut self) -> Self::SubTree {
+        let mut tree = VecBinaryTree::new();
+        let mut cursor: CursorMut<_> = tree.cursor_mut();
+        let iter = InOrderIndexIter::new(self.current, self.tree.inner.len());
+        for (dst, src) in iter.enumerate() {
+            if src < self.tree.inner.len() {
+                let src_node = self.get_node_and_resize(src);
+                let dst_node = cursor.get_node_and_resize(dst);
+                *dst_node = src_node.take();
+            } else {
+                break;
+            }
+        }
+        tree
     }
 
     fn take_left(&mut self) -> Option<VecBinaryTree<T>> {

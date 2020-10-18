@@ -317,6 +317,26 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         }
     }
 
+    fn move_succ_and_split_mut(&mut self) -> (Option<&mut Self::Elem>, Option<&mut Self::Elem>) {
+        // Safety: `move_left`和`move_right`的实现，仅仅只是将`parent`从指向当前结点的父母改为指向当前结点，并未对树进行任何修改或移动.
+        unsafe { self.move_succ_and_split_mut_unchecked() }
+    }
+
+    fn take(&mut self) -> Self::SubTree {
+        if self.current().is_some() {
+            let node = if self.is_left_child {
+                self.parent.as_mut().unwrap().left.take()
+            } else {
+                self.parent.as_mut().unwrap().right.take()
+            };
+            let mut tree = LinkedBinaryTree::default();
+            tree.replace_root_node(node);
+            tree
+        } else {
+            LinkedBinaryTree::default()
+        }
+    }
+
     fn take_left(&mut self) -> Option<Self::SubTree>
     where
         Self::SubTree: Sized,
@@ -342,6 +362,24 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
             Some(tree)
         } else {
             None
+        }
+    }
+
+    fn append(&mut self, mut other: Self::SubTree) {
+        let mut other = other.cursor_mut();
+        if self.current().is_some() {
+            panic!("子树不为空!");
+        } else {
+            let node = if other.is_left_child {
+                other.parent.as_mut().unwrap().left.take()
+            } else {
+                other.parent.as_mut().unwrap().right.take()
+            };
+            if self.is_left_child {
+                self.parent.as_mut().unwrap().left = node;
+            } else {
+                self.parent.as_mut().unwrap().right = node;
+            }
         }
     }
 
