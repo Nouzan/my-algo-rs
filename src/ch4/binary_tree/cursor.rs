@@ -166,3 +166,12 @@ pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     where
         Self: Sized;
 }
+
+pub trait MoveParentCursor<'a>: BinTreeCursor<'a> {
+    fn move_parent(&mut self);
+    fn parent(&self) -> Option<&Self::Elem>;
+}
+
+pub trait MoveParentCursorMut<'a>: MoveParentCursor<'a> {
+    fn parent_mut(&mut self) -> Option<&mut Self::Elem>;
+}

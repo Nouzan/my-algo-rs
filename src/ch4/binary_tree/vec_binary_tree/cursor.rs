@@ -1,7 +1,9 @@
-use super::super::{BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut};
 use super::{
     iter::{in_order_index, InOrderIndexIter, InOrderIter},
     VecBinaryTree,
+};
+use crate::ch4::binary_tree::{
+    BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut, MoveParentCursor, MoveParentCursorMut,
 };
 
 pub(super) const fn left_index(index: usize) -> usize {
@@ -80,6 +82,22 @@ impl<'a, T> Cursor<'a, T> {
         Self {
             current: cursor.current,
             tree: cursor.tree,
+        }
+    }
+}
+
+impl<'a, T> MoveParentCursor<'a> for Cursor<'a, T> {
+    fn move_parent(&mut self) {
+        if !self.is_empty_subtree() && self.current != 0 {
+            self.current = parent_index(self.current);
+        }
+    }
+
+    fn parent(&self) -> Option<&Self::Elem> {
+        if self.current != 0 {
+            self.tree.get(parent_index(self.current))
+        } else {
+            None
         }
     }
 }
@@ -333,6 +351,32 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
             None
         } else {
             self.tree.inner.get_mut(self.current).unwrap().take()
+        }
+    }
+}
+
+impl<'a, T> MoveParentCursor<'a> for CursorMut<'a, T> {
+    fn move_parent(&mut self) {
+        if self.current != 0 {
+            self.current = parent_index(self.current);
+        }
+    }
+
+    fn parent(&self) -> Option<&Self::Elem> {
+        if self.current != 0 {
+            self.tree.get(parent_index(self.current))
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a, T> MoveParentCursorMut<'a> for CursorMut<'a, T> {
+    fn parent_mut(&mut self) -> Option<&mut Self::Elem> {
+        if self.current != 0 {
+            self.tree.get_mut(parent_index(self.current))
+        } else {
+            None
         }
     }
 }

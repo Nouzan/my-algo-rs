@@ -5,8 +5,8 @@ use std::mem;
 
 /// 二叉查找树.
 pub struct TreeMap<Tree: BinTreeMut<Elem = Entry<K, V>>, K: Ord, V> {
-    tree: Tree,
-    len: usize,
+    pub(crate) tree: Tree,
+    pub(crate) len: usize,
 }
 
 impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Default for TreeMap<Tree, K, V> {
@@ -22,7 +22,10 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
     /// 删除游标所指结点，并返回其值.
     /// # Panics
     /// `cursor`所指结点必须存在.
-    fn delete_at(cursor: &mut Tree::CursorMut<'_>) -> V {
+    pub(crate) fn delete_at<'a, C>(cursor: &mut C) -> V
+    where
+        C: BinTreeCursorMut<'a, Elem = Tree::Elem, SubTree = Tree>,
+    {
         if cursor.left().is_none() {
             let tree = cursor.take_right().unwrap();
             let entry = cursor.take().cursor_mut().into_inner().unwrap();
@@ -49,7 +52,7 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
     /// 若命中，则返回`Some(Ordering::Equal)`，此时`cursor`指向命中的目标.
     ///
     /// 若没命中，则返回`Some(Ordering::Less)`或`Some(Ordering::Greater)`，分别表示命中原因，此时`cursor`指向目标位置的父母.
-    fn move_to_target<'a, C>(cursor: &mut C, target: &K) -> Option<Ordering>
+    pub(crate) fn move_to_target<'a, C>(cursor: &mut C, target: &K) -> Option<Ordering>
     where
         C: BinTreeCursor<'a, Elem = Tree::Elem>,
     {
@@ -74,6 +77,30 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
         }
         None
     }
+
+    // /// 顺时针旋转子树(提升左子树)，游标所指位置不变.
+    // /// # Panics
+    // /// `cursor`所指结点及其左孩子必须存在.
+    // pub(crate) fn zig(cursor: &mut Tree::CursorMut<'_>) {
+    //     let mut left_child = cursor.take_left().unwrap();
+    //     let mut tree = cursor.take();
+    //     let left_child_right = left_child.cursor_mut().take_right().unwrap();
+    //     tree.cursor_mut().append_left(left_child_right);
+    //     left_child.cursor_mut().append_right(tree);
+    //     cursor.append(left_child);
+    // }
+
+    // /// 逆时针旋转子树(提升右子树)，游标所指位置不变.
+    // /// # Panics
+    // /// `cursor`所指结点及其右孩子必须存在.
+    // pub(crate) fn zag(cursor: &mut Tree::CursorMut<'_>) {
+    //     let mut right_child = cursor.take_right().unwrap();
+    //     let mut tree = cursor.take();
+    //     let right_child_left = right_child.cursor_mut().take_left().unwrap();
+    //     tree.cursor_mut().append_right(right_child_left);
+    //     right_child.cursor_mut().append_left(tree);
+    //     cursor.append(right_child);
+    // }
 }
 
 impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for TreeMap<Tree, K, V> {

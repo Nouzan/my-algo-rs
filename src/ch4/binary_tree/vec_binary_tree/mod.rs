@@ -1,12 +1,12 @@
 pub mod cursor;
 pub mod iter;
 
-use super::{BinTree, BinTreeCursor, BinTreeMut};
+use super::{BinTree, BinTreeCursor, BinTreeMut, MoveParentBinTreeMut};
 use cursor::{Cursor, CursorMut};
 
 /// 基于`Vec`实现的二叉顺序树.
 pub struct VecBinaryTree<T> {
-    inner: Vec<Option<T>>,
+    pub(crate) inner: Vec<Option<T>>,
 }
 
 impl<T> Default for VecBinaryTree<T> {
@@ -61,10 +61,18 @@ impl<T: 'static> BinTreeMut for VecBinaryTree<T> {
     }
 }
 
+impl<T: 'static> MoveParentBinTreeMut for VecBinaryTree<T> {
+    type CursorMut<'a> = CursorMut<'a, T>;
+
+    fn cursor_mut(&mut self) -> Self::CursorMut<'_> {
+        CursorMut::new(self)
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use super::super::{BinTree, BinTreeCursor, BinTreeCursorExt, BinTreeCursorMut};
-    use super::*;
+    use super::super::{BinTree, BinTreeCursor, BinTreeCursorExt, BinTreeCursorMut, BinTreeMut};
+    use super::VecBinaryTree;
 
     #[test]
     fn test_vec_binary_tree_basic() {

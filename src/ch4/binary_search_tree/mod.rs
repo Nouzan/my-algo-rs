@@ -1,6 +1,8 @@
+pub mod avl;
 pub mod bst;
 
 /// 词条结构，表示一个键值对.
+#[derive(Debug)]
 pub struct Entry<K: Ord, V> {
     pub key: K,
     pub value: V,

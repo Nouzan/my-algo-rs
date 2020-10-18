@@ -36,3 +36,12 @@ pub trait BinTreeMut: BinTree {
     /// 创建一个可变结点游标.
     fn cursor_mut(&mut self) -> Self::CursorMut<'_>;
 }
+
+pub trait MoveParentBinTreeMut: BinTree {
+    /// 可变游标类型.
+    type CursorMut<'a>: BinTreeCursorMut<'a, Elem = Self::Elem, SubTree = Self>
+        + MoveParentCursorMut<'a, Elem = Self::Elem>;
+
+    /// 创建一个可变结点游标.
+    fn cursor_mut(&mut self) -> Self::CursorMut<'_>;
+}
