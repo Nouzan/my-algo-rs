@@ -1,5 +1,6 @@
 use super::{Entry, Map};
 use crate::ch4::{BinTreeCursor, BinTreeCursorMut, BinTreeMut};
+use std::cmp::Ordering;
 use std::mem;
 
 /// 二叉查找树.
@@ -46,12 +47,10 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
     fn get(&self, key: &K) -> Option<&V> {
         let mut cursor = self.tree.cursor();
         while let Some(entry) = cursor.as_ref() {
-            if *key == entry.key {
-                return cursor.into_ref().map(|entry| &entry.value);
-            } else if *key < entry.key {
-                cursor.move_left();
-            } else {
-                cursor.move_right();
+            match key.cmp(&entry.key) {
+                Ordering::Equal => return cursor.into_ref().map(|entry| &entry.value),
+                Ordering::Less => cursor.move_left(),
+                Ordering::Greater => cursor.move_right(),
             }
         }
         None
@@ -60,12 +59,10 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
     fn get_mut(&mut self, key: &K) -> Option<&mut V> {
         let mut cursor = self.tree.cursor_mut();
         while let Some(entry) = cursor.as_ref() {
-            if *key == entry.key {
-                return cursor.into_mut().map(|entry| &mut entry.value);
-            } else if *key < entry.key {
-                cursor.move_left();
-            } else {
-                cursor.move_right();
+            match key.cmp(&entry.key) {
+                Ordering::Equal => return cursor.into_mut().map(|entry| &mut entry.value),
+                Ordering::Less => cursor.move_left(),
+                Ordering::Greater => cursor.move_right(),
             }
         }
         None
@@ -78,24 +75,28 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
     fn insert(&mut self, key: K, mut value: V) -> Option<V> {
         let mut parent = self.tree.cursor_mut();
         while let Some(entry) = parent.as_ref() {
-            if key == entry.key {
-                mem::swap(&mut parent.into_mut().unwrap().value, &mut value);
-                return Some(value);
-            } else if key < entry.key {
-                if parent.left().is_none() {
-                    parent.insert_as_left(Entry { key, value });
-                    self.len += 1;
-                    return None;
-                } else {
-                    parent.move_left();
+            match key.cmp(&entry.key) {
+                Ordering::Equal => {
+                    mem::swap(&mut parent.into_mut().unwrap().value, &mut value);
+                    return Some(value);
                 }
-            } else if key > entry.key {
-                if parent.right().is_none() {
-                    parent.insert_as_right(Entry { key, value });
-                    self.len += 1;
-                    return None;
-                } else {
-                    parent.move_right();
+                Ordering::Less => {
+                    if parent.left().is_none() {
+                        parent.insert_as_left(Entry { key, value });
+                        self.len += 1;
+                        return None;
+                    } else {
+                        parent.move_left();
+                    }
+                }
+                Ordering::Greater => {
+                    if parent.right().is_none() {
+                        parent.insert_as_right(Entry { key, value });
+                        self.len += 1;
+                        return None;
+                    } else {
+                        parent.move_right();
+                    }
                 }
             }
         }
@@ -107,13 +108,13 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
     fn remove(&mut self, key: &K) -> Option<V> {
         let mut cursor = self.tree.cursor_mut();
         while let Some(entry) = cursor.as_ref() {
-            if *key == entry.key {
-                self.len -= 1;
-                return Some(Self::delete_at(cursor));
-            } else if *key < entry.key {
-                cursor.move_left();
-            } else {
-                cursor.move_right();
+            match key.cmp(&entry.key) {
+                Ordering::Equal => {
+                    self.len -= 1;
+                    return Some(Self::delete_at(cursor));
+                }
+                Ordering::Less => cursor.move_left(),
+                Ordering::Greater => cursor.move_right(),
             }
         }
         None
@@ -141,7 +142,9 @@ mod test {
             assert!(map.insert(k, v).is_none());
         }
         for k in data.keys() {
-            map.get_mut(k).map(|elem| *elem += 1);
+            if let Some(elem) = map.get_mut(k) {
+                *elem += 1
+            }
             assert_eq!(map.get(k).copied(), data.get(k).map(|elem| elem + 1));
         }
         for k in data.keys().cloned() {
@@ -175,7 +178,7 @@ mod test {
 
             // get_mut
             for k in data.keys() {
-                map.get_mut(k).map(|elem| *elem += 1);
+                if let Some(elem) = map.get_mut(k) { *elem += 1 };
                 assert_eq!(map.get(k).copied(), data.get(k).map(|elem| elem + 1));
             }
 
@@ -218,7 +221,7 @@ mod test {
 
             // get_mut
             for k in data.keys() {
-                map.get_mut(k).map(|elem| *elem += 1);
+                if let Some(elem) = map.get_mut(k) { *elem += 1 }
                 assert_eq!(map.get(k).copied(), data.get(k).map(|elem| elem + 1));
             }
 

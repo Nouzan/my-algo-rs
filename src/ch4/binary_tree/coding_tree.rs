@@ -100,7 +100,7 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
 
     /// 创建Huffman编码树，并对`text`进行编码.
     /// # Panics
-    /// `text`字符数必须大于`1`.
+    /// `text`中不同的字符数必须大于`1`.
     pub fn new<Pq: PriorityQueue<Tree>>(text: &str) -> Option<Self> {
         let char_map = char_count(text);
         if char_map.is_empty() {
@@ -194,6 +194,20 @@ mod test {
     use super::*;
     use proptest::prelude::*;
 
+    fn at_least_two_disctint_chars(s: &str) -> bool {
+        let mut cache = None;
+        for ch in s.chars() {
+            if let Some(cached) = cache {
+                if cached != ch {
+                    return true;
+                }
+            } else {
+                cache = Some(ch);
+            }
+        }
+        false
+    }
+
     #[test]
     fn test_encoding() {
         let s = String::from("hello, world!");
@@ -206,7 +220,7 @@ mod test {
     proptest! {
         #[test]
         fn test_encoding_with_lbt_ch(s: String) {
-            if s.chars().count() > 1 {
+            if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
                     HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
@@ -215,7 +229,7 @@ mod test {
 
         #[test]
         fn test_encoding_with_vbt_lh(s: String) {
-            if s.chars().count() > 1 {
+            if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
                     HuffmanCodingTree::<VecBinaryTree<_>>::new::<LeftHeap<_>>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
