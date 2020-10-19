@@ -68,11 +68,15 @@ impl<T> DoublyLinkedBinaryTree<T> {
             elem: None,
         });
         Self {
-            root: Node::leak(node),
+            root: Node::leak(node), // `Node::leak`的生命期被推断为与`T`一样长.
             marker: PhantomData::default(),
         }
     }
 
+    /// 用`new`对应的新指针替换当前的根结点(若有则整棵树都会被移除)指针并返回.
+    /// # Safety
+    /// `new`若存在则必须是合法的(可安全地解引用为一个`Box<Node<T>>`)且不在树中，
+    /// 且以它为根的子树也必须是合法的并且不指向树中原有结点.
     unsafe fn replace_root_node(&mut self, new: Link<T>) -> Link<T> {
         let link = if let Some(mut posi) = new {
             posi.as_mut().parent = Some(self.root);
@@ -86,7 +90,9 @@ impl<T> DoublyLinkedBinaryTree<T> {
         link
     }
 
+    /// 消耗整棵树，返回根结点.
     fn into_root(mut self) -> Option<Box<Node<T>>> {
+        // Safety: `root`所指结点是合法的.
         unsafe {
             self.root
                 .as_mut()
@@ -98,9 +104,13 @@ impl<T> DoublyLinkedBinaryTree<T> {
 }
 
 impl<T> Drop for DoublyLinkedBinaryTree<T> {
+    /// 递归地释放树中包含的所有结点.
     fn drop(&mut self) {
         unsafe {
+            // Safety: `self.root`(若仅通过公开方法)只来源于`new`，而`new`是通过`Box::leak`来得到
+            // `root`指针的，它保证能跟`T`活得一样长，因此这里它是合法的.
             let mut node = Box::from_raw(self.root.as_ptr());
+            // Safety: `node.left`根据不变式(若存在)是合法的，它的左右孩子也是合法的.
             if let Some(root) = node.left.take() {
                 let root = Box::from_raw(root.as_ptr());
                 if let Some(left) = root.left {
