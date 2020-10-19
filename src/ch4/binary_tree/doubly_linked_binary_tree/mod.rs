@@ -1,6 +1,6 @@
 pub mod cursor;
 
-use super::{BinTree, BinTreeMut, BinTreeCursor, MoveParentBinTreeMut};
+use super::{BinTree, BinTreeCursor, BinTreeMut, MoveParentBinTreeMut};
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 
@@ -144,7 +144,7 @@ impl<T: 'static> MoveParentBinTreeMut for DoublyLinkedBinaryTree<T> {
 #[cfg(test)]
 mod test {
     use super::DoublyLinkedBinaryTree;
-    use crate::ch4::{BinTreeCursor, BinTreeCursorExt, BinTreeCursorMut, BinTreeMut, BinTree};
+    use crate::ch4::{BinTree, BinTreeCursor, BinTreeCursorExt, BinTreeCursorMut, BinTreeMut};
 
     #[test]
     fn test_drop() {

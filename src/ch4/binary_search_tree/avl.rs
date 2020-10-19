@@ -306,8 +306,8 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ch4::vec_binary_tree::VecBinaryTree;
     use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
+    use crate::ch4::vec_binary_tree::VecBinaryTree;
     use proptest::prelude::*;
     use std::collections::HashMap;
 

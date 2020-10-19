@@ -31,9 +31,10 @@ fn main() -> std::io::Result<()> {
     buf_reader.read_to_string(&mut contents)?;
     match (opt.vbt, opt.lh) {
         (false, false) => {
-            let tree =
-                HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&contents)
-                    .unwrap();
+            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(
+                &contents,
+            )
+            .unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
             #[cfg(debug)]
@@ -49,7 +50,8 @@ fn main() -> std::io::Result<()> {
         }
         (false, true) => {
             let tree =
-                HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>>(&contents).unwrap();
+                HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>>(&contents)
+                    .unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
             #[cfg(debug)]

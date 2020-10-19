@@ -191,8 +191,8 @@ mod test {
     use super::super::super::priority_queue::left_heap::LeftHeap;
     use super::super::linked_binary_tree::LinkedBinaryTree;
     use super::super::vec_binary_tree::VecBinaryTree;
-    use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
     use super::*;
+    use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
     use proptest::prelude::*;
 
     fn at_least_two_disctint_chars(s: &str) -> bool {
