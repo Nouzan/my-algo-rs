@@ -1,4 +1,5 @@
 use my_algo::ch4::coding_tree::char_count;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -18,7 +19,7 @@ fn main() -> std::io::Result<()> {
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
-    for (c, count) in char_count(&contents) {
+    for (c, count) in char_count::<BTreeMap<_, _>>(&contents) {
         println!("{:?}: {}", c, count);
     }
 

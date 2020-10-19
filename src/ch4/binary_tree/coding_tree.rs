@@ -1,15 +1,19 @@
 use super::super::PriorityQueue;
 use super::*;
+use crate::ch4::Map;
 use crate::vec::MyVec;
 use bitstream_io::{BigEndian, BitReader, BitWriter};
 use std::cmp::{Ordering, PartialOrd};
-use std::collections::BTreeMap;
 use std::io;
 
-pub fn char_count(text: &str) -> BTreeMap<char, usize> {
-    let mut map = BTreeMap::new();
+pub fn char_count<M: Map<char, usize>>(text: &str) -> M {
+    let mut map = M::default();
     for c in text.chars() {
-        *map.entry(c).or_insert(0) += 1;
+        if let Some(value) = map.get_mut(&c) {
+            *value += 1;
+        } else {
+            map.insert(c, 0);
+        }
     }
     map
 }
@@ -54,10 +58,10 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
     /// 从编码树建立编码表.
     /// # Panics
     /// 要求树至少包含2个结点，叶子结点非空，且每个叶子存储的字符不同.
-    fn generate_encoding_map(tree: &Tree) -> BTreeMap<char, Vec<bool>> {
+    fn generate_encoding_map<M: Map<char, Vec<bool>>>(tree: &Tree) -> M {
         let mut code = Vec::new();
         let mut stack = Vec::new(); // 保存着已经左转、但还未右转的结点.
-        let mut map = BTreeMap::new();
+        let mut map = M::default();
         let mut current = tree.cursor();
         if current.is_leaf() {
             panic!("树必须包含至少2个结点!");
@@ -101,8 +105,10 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
     /// 创建Huffman编码树，并对`text`进行编码.
     /// # Panics
     /// `text`中不同的字符数必须大于`1`.
-    pub fn new<Pq: PriorityQueue<Tree>>(text: &str) -> Option<Self> {
-        let char_map = char_count(text);
+    pub fn new<Pq: PriorityQueue<Tree>, M1: Map<char, Vec<bool>>, M2: Map<char, usize>>(
+        text: &str,
+    ) -> Option<Self> {
+        let char_map: M2 = char_count(text);
         if char_map.is_empty() {
             None
         } else {
@@ -135,7 +141,7 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
             let tree = forest.delete_max().unwrap();
 
             // 建立编码表
-            let encoding_map = Self::generate_encoding_map(&tree);
+            let encoding_map: M1 = Self::generate_encoding_map(&tree);
 
             // 编码
             let (encoded, len) = Self::encode(text, &encoding_map);
@@ -170,7 +176,7 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
     /// 编码字符串.
     /// # Panics
     /// 要求`text`中的所有字符均已被编码(存储在`encoding_map`中)，否则报错.
-    fn encode(text: &str, encoding_map: &BTreeMap<char, Vec<bool>>) -> (Vec<u8>, usize) {
+    fn encode<M: Map<char, Vec<bool>>>(text: &str, encoding_map: &M) -> (Vec<u8>, usize) {
         let mut writer = BitWriter::endian(Vec::new(), BigEndian);
         let mut len = 0;
         for ch in text.chars() {
@@ -192,6 +198,7 @@ mod test {
     use super::super::linked_binary_tree::LinkedBinaryTree;
     use super::super::vec_binary_tree::VecBinaryTree;
     use super::*;
+    use crate::ch4::avl::AVLTreeMap;
     use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
     use proptest::prelude::*;
 
@@ -212,8 +219,12 @@ mod test {
     #[test]
     fn test_encoding() {
         let s = String::from("hello, world!");
-        let encoding_tree =
-            HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&s).unwrap();
+        let encoding_tree = HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<
+            CompleteMaxHeap<_>,
+            AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+        >(&s)
+        .unwrap();
         println!("{:?}", encoding_tree.encoded());
         assert_eq!(s, encoding_tree.decode());
     }
@@ -223,7 +234,7 @@ mod test {
         fn test_encoding_with_lbt_ch(s: String) {
             if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
-                    HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&s).unwrap();
+                    HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
             }
         }
@@ -232,7 +243,7 @@ mod test {
         fn test_encoding_with_vbt_lh(s: String) {
             if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
-                    HuffmanCodingTree::<VecBinaryTree<_>>::new::<LeftHeap<_>>(&s).unwrap();
+                    HuffmanCodingTree::<VecBinaryTree<_>>::new::<LeftHeap<_>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
             }
         }
@@ -241,7 +252,7 @@ mod test {
         fn test_encoding_with_dlbt_lh(s: String) {
             if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
-                    HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>>(&s).unwrap();
+                    HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
             }
         }

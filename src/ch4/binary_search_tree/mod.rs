@@ -1,6 +1,9 @@
 pub mod avl;
 pub mod bst;
 
+use std::collections::{BTreeMap, HashMap};
+use std::hash::Hash;
+
 /// 词条结构，表示一个键值对.
 #[derive(Debug)]
 pub struct Entry<K: Ord, V> {
@@ -52,5 +55,59 @@ pub trait Map<K: Ord, V>: Default {
     /// 字典是否为空.
     fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    fn iter<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = (&K, &V)>>;
+}
+
+impl<K: Ord, V> Map<K, V> for BTreeMap<K, V> {
+    fn get(&self, key: &K) -> Option<&V> {
+        self.get(key)
+    }
+
+    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+        self.get_mut(key)
+    }
+
+    fn insert(&mut self, key: K, value: V) -> Option<V> {
+        self.insert(key, value)
+    }
+
+    fn remove(&mut self, key: &K) -> Option<V> {
+        self.remove(key)
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn iter<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = (&K, &V)>> {
+        Box::new(self.iter())
+    }
+}
+
+impl<K: Hash + Ord, V> Map<K, V> for HashMap<K, V> {
+    fn get(&self, key: &K) -> Option<&V> {
+        self.get(key)
+    }
+
+    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+        self.get_mut(key)
+    }
+
+    fn insert(&mut self, key: K, value: V) -> Option<V> {
+        self.insert(key, value)
+    }
+
+    fn remove(&mut self, key: &K) -> Option<V> {
+        self.remove(key)
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn iter<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = (&K, &V)>> {
+        Box::new(self.iter())
     }
 }

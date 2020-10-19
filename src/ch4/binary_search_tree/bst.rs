@@ -1,5 +1,5 @@
 use super::{Entry, Map};
-use crate::ch4::{BinTreeCursor, BinTreeCursorMut, BinTreeMut};
+use crate::ch4::{BinTreeCursor, BinTreeCursorExt, BinTreeCursorMut, BinTreeMut};
 use std::cmp::Ordering;
 use std::mem;
 
@@ -159,6 +159,15 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
         } else {
             None
         }
+    }
+
+    fn iter<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = (&K, &V)>> {
+        Box::new(
+            self.tree
+                .cursor()
+                .into_mid_order_iter()
+                .map(|entry| (&entry.key, &entry.value)),
+        )
     }
 }
 

@@ -38,6 +38,14 @@ pub trait BinTreeCursorExt<'a>: BinTreeCursor<'a> {
         MidOrderIter::new(self.clone())
     }
 
+    /// 转变为一个中序遍历迭代器.
+    fn into_mid_order_iter(self) -> MidOrderIter<'a, Self>
+    where
+        Self: Sized + Clone,
+    {
+        MidOrderIter::new(self)
+    }
+
     /// 创建一个后序遍历迭代器.
     fn post_order_iter(&'a self) -> PostOrderIter<Self>
     where

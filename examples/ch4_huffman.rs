@@ -2,6 +2,7 @@ use my_algo::ch4::coding_tree::HuffmanCodingTree;
 use my_algo::ch4::complete_heap::CompleteMaxHeap;
 use my_algo::ch4::left_heap::LeftHeap;
 // use my_algo::ch4::linked_binary_tree::LinkedBinaryTree;
+use my_algo::ch4::avl::AVLTreeMap;
 use my_algo::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
 use my_algo::ch4::vec_binary_tree::VecBinaryTree;
 use std::fs::File;
@@ -31,9 +32,11 @@ fn main() -> std::io::Result<()> {
     buf_reader.read_to_string(&mut contents)?;
     match (opt.vbt, opt.lh) {
         (false, false) => {
-            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(
-                &contents,
-            )
+            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
@@ -41,25 +44,36 @@ fn main() -> std::io::Result<()> {
             assert_eq!(tree.decode(), contents);
         }
         (true, false) => {
-            let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&contents)
-                .unwrap();
+            let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            >(&contents)
+            .unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
         (false, true) => {
-            let tree =
-                HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>>(&contents)
-                    .unwrap();
+            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            >(&contents)
+            .unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
         (true, true) => {
-            let tree =
-                HuffmanCodingTree::<VecBinaryTree<_>>::new::<LeftHeap<_>>(&contents).unwrap();
+            let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+                AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            >(&contents)
+            .unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
             #[cfg(debug)]

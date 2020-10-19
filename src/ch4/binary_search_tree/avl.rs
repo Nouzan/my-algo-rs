@@ -27,6 +27,8 @@ impl<T> DerefMut for AVLNode<T> {
     }
 }
 
+pub type AVLEntry<K, V> = Entry<K, AVLNode<V>>;
+
 pub struct AVLTreeMap<Tree: BinTreeMut<Elem = Entry<K, AVLNode<V>>>, K: Ord, V> {
     bst: TreeMap<Tree, K, AVLNode<V>>,
 }
@@ -300,6 +302,10 @@ where
         } else {
             None
         }
+    }
+
+    fn iter<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = (&K, &V)>> {
+        Box::new(self.bst.iter().map(|(k, node)| (k, &node.elem)))
     }
 }
 
