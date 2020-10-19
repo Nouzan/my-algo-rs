@@ -522,6 +522,11 @@ impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
     fn into_inner(mut self) -> Option<Self::Elem> {
         // 根据局部共享性，当前所指结点只会被共享到它的父母和子树，而与父母的关联被`take`切断
         // 子树在方法结束后会被`drop`，因此方法结束后不会存在其它的指向当前结点内容的引用或指针.
+
+        // 由于`into_root`会返回根结点(包含着左右子树的引用)，
+        // 但我们这里并不打算手动释放左右子树，因此提前将它们摘除.
+        self.take_left();
+        self.take_right();
         let tree = self.take();
         tree.into_root().and_then(|node| node.elem)
     }

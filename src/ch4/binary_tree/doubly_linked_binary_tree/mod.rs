@@ -91,6 +91,8 @@ impl<T> DoublyLinkedBinaryTree<T> {
     }
 
     /// 消耗整棵树，返回根结点.
+    ///
+    /// 注意，它不会释放左右子树. 若不手动释放它们，将会造成内存泄漏.
     fn into_root(mut self) -> Option<Box<Node<T>>> {
         // Safety: `root`所指结点是合法的.
         unsafe {
