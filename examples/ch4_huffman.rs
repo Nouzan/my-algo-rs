@@ -1,7 +1,8 @@
 use my_algo::ch4::coding_tree::HuffmanCodingTree;
 use my_algo::ch4::complete_heap::CompleteMaxHeap;
 use my_algo::ch4::left_heap::LeftHeap;
-use my_algo::ch4::linked_binary_tree::LinkedBinaryTree;
+// use my_algo::ch4::linked_binary_tree::LinkedBinaryTree;
+use my_algo::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
 use my_algo::ch4::vec_binary_tree::VecBinaryTree;
 use std::fs::File;
 use std::io::prelude::*;
@@ -31,7 +32,7 @@ fn main() -> std::io::Result<()> {
     match (opt.vbt, opt.lh) {
         (false, false) => {
             let tree =
-                HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&contents)
+                HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<CompleteMaxHeap<_>>(&contents)
                     .unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
@@ -48,7 +49,7 @@ fn main() -> std::io::Result<()> {
         }
         (false, true) => {
             let tree =
-                HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<LeftHeap<_>>(&contents).unwrap();
+                HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>>(&contents).unwrap();
             let (_, len) = tree.encoded();
             println!("len = {}B", len / 8);
             #[cfg(debug)]

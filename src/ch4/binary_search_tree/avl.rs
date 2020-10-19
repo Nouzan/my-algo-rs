@@ -307,7 +307,8 @@ where
 mod test {
     use super::*;
     use crate::ch4::vec_binary_tree::VecBinaryTree;
-    // use proptest::prelude::*;
+    use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
+    use proptest::prelude::*;
     use std::collections::HashMap;
 
     #[test]
@@ -344,51 +345,82 @@ mod test {
         }
     }
 
-    // proptest! {
-    //     #![proptest_config(ProptestConfig {
-    //         cases: 1, .. ProptestConfig::default()
-    //       })]
-    //     #[test]
-    //     fn test_map_basic_vbt(mut data: HashMap<i64, i64>, random: i64) {
-    //         let mut map = AVLTreeMap::<VecBinaryTree<_>, _, _>::default();
-    //         assert!(map.is_empty());
-    //         // insert
-    //         for (k, v) in data.clone() {
-    //             assert!(map.insert(k, v).is_none());
-    //         }
+    #[test]
+    fn test_map_basic_dlbt() {
+        let mut data = HashMap::new();
+        data.insert("Hello", 1);
+        data.insert("World", 2);
+        data.insert("!", 3);
+        data.insert("Good", 4);
+        data.insert("Job", 5);
+        data.insert("Hhaha", 6);
+        data.insert("Xfwawd", 7);
+        data.insert("Gooo", 8);
+        data.insert("jiojoij", 9);
+        let mut map = AVLTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+        for (k, v) in data.clone() {
+            assert!(map.insert(k, v).is_none());
+        }
+        for k in data.keys() {
+            if let Some(elem) = map.get_mut(k) {
+                *elem += 1
+            }
+            assert_eq!(map.get(k).copied(), data.get(k).map(|elem| elem + 1));
+        }
+        for k in data.keys().cloned() {
+            let elem = data.get(&k).copied().unwrap();
+            assert_eq!(map.insert(k, elem), Some(elem + 1));
+        }
+        // println!("{:?}", map.bst.tree.inner);
+        for k in data.keys() {
+            println!("{}", k);
+            assert_eq!(map.remove(k), data.get(k).copied());
+            // println!("{:?}", map.bst.tree.inner);
+        }
+    }
 
-    //         assert_eq!(map.len(), data.len());
+    proptest! {
+        #[test]
+        fn test_map_dlbt(mut data: HashMap<String, i64>, random: String) {
+            let mut map = AVLTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+            assert!(map.is_empty());
+            // insert
+            for (k, v) in data.clone() {
+                assert!(map.insert(k, v).is_none());
+            }
 
-    //         // get
-    //         for k in data.keys() {
-    //             assert_eq!(map.get(k), data.get(k));
-    //         }
+            assert_eq!(map.len(), data.len());
 
-    //         // random get
-    //         assert_eq!(map.get(&random), data.get(&random));
+            // get
+            for k in data.keys() {
+                assert_eq!(map.get(k), data.get(k));
+            }
 
-    //         // get_mut
-    //         for k in data.keys() {
-    //             if let Some(elem) = map.get_mut(k) { *elem += 1 };
-    //             assert_eq!(map.get(k).copied(), data.get(k).map(|elem| elem + 1));
-    //         }
+            // random get
+            assert_eq!(map.get(&random), data.get(&random));
 
-    //         assert_eq!(map.len(), data.len());
+            // get_mut
+            for k in data.keys() {
+                if let Some(elem) = map.get_mut(k) { *elem += 1 };
+                assert_eq!(map.get(k).copied(), data.get(k).map(|elem| elem + 1));
+            }
 
-    //         // replace by insert
-    //         for k in data.keys().cloned() {
-    //             let elem = data.get(&k).copied().unwrap();
-    //             assert_eq!(map.insert(k, elem), Some(elem + 1));
-    //         }
+            assert_eq!(map.len(), data.len());
 
-    //         assert_eq!(map.len(), data.len());
+            // replace by insert
+            for k in data.keys().cloned() {
+                let elem = data.get(&k).copied().unwrap();
+                assert_eq!(map.insert(k, elem), Some(elem + 1));
+            }
 
-    //         // remove
-    //         for (idx, k) in data.keys().enumerate() {
-    //             assert_eq!(map.remove(k), data.get(k).copied());
-    //             assert_eq!(map.len(), data.len() - idx - 1);
-    //         }
-    //         assert!(map.is_empty());
-    //     }
-    // }
+            assert_eq!(map.len(), data.len());
+
+            // remove
+            for (idx, k) in data.keys().enumerate() {
+                assert_eq!(map.remove(k), data.get(k).copied());
+                assert_eq!(map.len(), data.len() - idx - 1);
+            }
+            assert!(map.is_empty());
+        }
+    }
 }

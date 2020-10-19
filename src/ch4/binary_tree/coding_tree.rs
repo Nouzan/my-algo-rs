@@ -191,6 +191,7 @@ mod test {
     use super::super::super::priority_queue::left_heap::LeftHeap;
     use super::super::linked_binary_tree::LinkedBinaryTree;
     use super::super::vec_binary_tree::VecBinaryTree;
+    use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
     use super::*;
     use proptest::prelude::*;
 
@@ -232,6 +233,15 @@ mod test {
             if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
                     HuffmanCodingTree::<VecBinaryTree<_>>::new::<LeftHeap<_>>(&s).unwrap();
+                assert_eq!(s, encoding_tree.decode());
+            }
+        }
+
+        #[test]
+        fn test_encoding_with_dlbt_lh(s: String) {
+            if at_least_two_disctint_chars(&s) {
+                let encoding_tree =
+                    HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
             }
         }
