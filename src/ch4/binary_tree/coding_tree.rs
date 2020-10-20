@@ -9,11 +9,7 @@ use std::io;
 pub fn char_count<M: Map<char, usize>>(text: &str) -> M {
     let mut map = M::default();
     for c in text.chars() {
-        if let Some(value) = map.get_mut(&c) {
-            *value += 1;
-        } else {
-            map.insert(c, 0);
-        }
+        *map.get_mut_or_insert(c, 0) += 1;
     }
     map
 }
@@ -108,10 +104,12 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
     pub fn new<Pq: PriorityQueue<Tree>, M1: Map<char, Vec<bool>>, M2: Map<char, usize>>(
         text: &str,
     ) -> Option<Self> {
+        println!("Counting...");
         let char_map: M2 = char_count(text);
         if char_map.is_empty() {
             None
         } else {
+            println!("Building...");
             // 创建编码森林
             let forest: Vec<_> = char_map
                 .iter()
@@ -140,9 +138,11 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
             }
             let tree = forest.delete_max().unwrap();
 
+            println!("Coding...");
             // 建立编码表
             let encoding_map: M1 = Self::generate_encoding_map(&tree);
 
+            println!("Encoding...");
             // 编码
             let (encoded, len) = Self::encode(text, &encoding_map);
 

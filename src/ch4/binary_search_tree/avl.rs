@@ -94,7 +94,7 @@ where
     /// T F: 1 p 2 v 3 g 4
     /// F F: 1 g 2 p 3 v 4
     /// F T: 1 g 2 v 3 p 4
-    fn rebalance_at<'a, C>(cursor: &mut C, p_flag: bool, v_flag: bool)
+    fn rebalance_at<'a, C>(cursor: &mut C, p_flag: bool, v_flag: bool) -> Ordering
     where
         C: MoveParentCursor<'a, Elem = Tree::Elem>
             + BinTreeCursorMut<'a, Elem = Tree::Elem, SubTree = Tree>,
@@ -129,6 +129,7 @@ where
             MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_right(g);
             Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut p));
             cursor.append(p);
+            Ordering::Less
         } else if p_flag && !v_flag {
             // T F: 1 p 2 v 3 g 4
             let t2 = cursor.take_left();
@@ -158,6 +159,7 @@ where
             MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_right(g);
             Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut v));
             cursor.append(v);
+            Ordering::Equal
         } else if !p_flag && !v_flag {
             // F F: 1 g 2 p 3 v 4
             let t3 = cursor.take_left();
@@ -187,6 +189,7 @@ where
             MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_right(v);
             Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut p));
             cursor.append(p);
+            Ordering::Greater
         } else {
             // F T: 1 g 2 v 3 p 4
             let t2 = cursor.take_left();
@@ -216,6 +219,7 @@ where
             MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_right(p);
             Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut v));
             cursor.append(v);
+            Ordering::Equal
         }
     }
 }
@@ -236,6 +240,73 @@ where
 
     fn len(&self) -> usize {
         self.bst.len()
+    }
+
+    fn get_mut_or_insert(&mut self, key: K, default: V) -> &mut V {
+        let mut parent = MoveParentBinTreeMut::move_parent_cursor_mut(&mut self.bst.tree);
+        let value = AVLNode {
+            elem: default,
+            height: 0,
+        };
+        let mut stack = Vec::new();
+        match TreeMap::<Tree, _, _>::move_to_target(&mut parent, &key) {
+            Some(Ordering::Equal) => {
+                return &mut parent.into_mut().unwrap().value;
+            }
+            Some(Ordering::Less) => {
+                parent.insert_as_left(Entry { key, value });
+                self.bst.len += 1;
+                stack.push(true);
+            }
+            Some(Ordering::Greater) => {
+                parent.insert_as_right(Entry { key, value });
+                self.bst.len += 1;
+                stack.push(false);
+            }
+            None => {
+                parent.insert_as_root(Entry { key, value });
+                self.bst.len += 1;
+                // 根是树中唯一结点，因此无需平衡.
+                return &mut parent.into_mut().unwrap().value;
+            }
+        }
+        Self::update_height(&mut parent);
+        // 使树重新平衡.
+        while parent.parent().is_some() {
+            stack.push(parent.is_left_child());
+            parent.move_parent();
+            if Self::is_avl_balanced(&parent) {
+                Self::update_height(&mut parent);
+            } else {
+                // stack.pop();
+                let p_flag = stack.pop().unwrap();
+                let v_flag = stack.pop().unwrap();
+                if p_flag {
+                    parent.move_left()
+                } else {
+                    parent.move_right()
+                }
+                if v_flag {
+                    parent.move_left()
+                } else {
+                    parent.move_right()
+                }
+                match Self::rebalance_at(&mut parent, p_flag, v_flag) {
+                    Ordering::Less => stack.push(true),
+                    Ordering::Greater => stack.push(false),
+                    _ => (),
+                }
+                break;
+            }
+        }
+        while let Some(flag) = stack.pop() {
+            if flag {
+                parent.move_left();
+            } else {
+                parent.move_right();
+            }
+        }
+        &mut parent.into_mut().unwrap().value
     }
 
     fn insert(&mut self, key: K, value: V) -> Option<V> {

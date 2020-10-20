@@ -146,6 +146,45 @@ impl<Tree: Default + MoveParentBinTreeMut<Elem = Entry<K, V>>, K: Ord, V> Map<K,
         self.bst.iter()
     }
 
+    fn get_mut_or_insert(&mut self, key: K, default: V) -> &mut V {
+        let mut parent = self.bst.tree.move_parent_cursor_mut();
+        match Self::move_to_target_and_splay(&mut parent, &key) {
+            Some(Ordering::Equal) => (),
+            Some(Ordering::Less) => {
+                // pl [v] [p] pr
+                let pl = parent.take_left().unwrap();
+                let p = parent.take();
+                parent.insert_as_root(Entry {
+                    key,
+                    value: default,
+                });
+                parent.append_left(pl);
+                parent.append_right(p);
+                self.bst.len += 1;
+            }
+            Some(Ordering::Greater) => {
+                // pl [p] [v] pr
+                let pr = parent.take_right().unwrap();
+                let p = parent.take();
+                parent.insert_as_root(Entry {
+                    key,
+                    value: default,
+                });
+                parent.append_right(pr);
+                parent.append_left(p);
+                self.bst.len += 1;
+            }
+            None => {
+                parent.insert_as_root(Entry {
+                    key,
+                    value: default,
+                });
+                self.bst.len += 1;
+            }
+        }
+        &mut parent.into_mut().unwrap().value
+    }
+
     fn insert(&mut self, key: K, mut value: V) -> Option<V> {
         let mut parent = self.bst.tree.move_parent_cursor_mut();
         match Self::move_to_target_and_splay(&mut parent, &key) {

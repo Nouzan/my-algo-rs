@@ -126,6 +126,37 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
         self.len
     }
 
+    fn get_mut_or_insert(&mut self, key: K, default: V) -> &mut V {
+        let mut parent = self.tree.cursor_mut();
+        match Self::move_to_target(&mut parent, &key) {
+            Some(Ordering::Equal) => (),
+            Some(Ordering::Less) => {
+                parent.insert_as_left(Entry {
+                    key,
+                    value: default,
+                });
+                self.len += 1;
+                parent.move_left();
+            }
+            Some(Ordering::Greater) => {
+                parent.insert_as_right(Entry {
+                    key,
+                    value: default,
+                });
+                self.len += 1;
+                parent.move_right();
+            }
+            None => {
+                parent.insert_as_root(Entry {
+                    key,
+                    value: default,
+                });
+                self.len += 1;
+            }
+        }
+        &mut parent.into_mut().unwrap().value
+    }
+
     fn insert(&mut self, key: K, mut value: V) -> Option<V> {
         let mut parent = self.tree.cursor_mut();
         match Self::move_to_target(&mut parent, &key) {

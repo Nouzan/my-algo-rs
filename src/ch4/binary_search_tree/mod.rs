@@ -52,6 +52,9 @@ pub trait Map<K: Ord, V>: Default {
     /// 若键存在，则更新它的值，并将旧值返回.
     fn insert(&mut self, key: K, value: V) -> Option<V>;
 
+    /// 返回键所对应值的可变引用. 若不存在则插入`default`后，再返回可变引用.
+    fn get_mut_or_insert(&mut self, key: K, default: V) -> &mut V;
+
     /// 移除一个键值对，并返回它的值.
     fn remove(&mut self, key: &K) -> Option<V>;
 
@@ -79,6 +82,10 @@ impl<K: Ord, V> Map<K, V> for BTreeMap<K, V> {
         self.insert(key, value)
     }
 
+    fn get_mut_or_insert(&mut self, key: K, default: V) -> &mut V {
+        self.entry(key).or_insert(default)
+    }
+
     fn remove(&mut self, key: &K) -> Option<V> {
         self.remove(key)
     }
@@ -99,6 +106,10 @@ impl<K: Hash + Ord, V> Map<K, V> for HashMap<K, V> {
 
     fn get_mut(&mut self, key: &K) -> Option<&mut V> {
         self.get_mut(key)
+    }
+
+    fn get_mut_or_insert(&mut self, key: K, default: V) -> &mut V {
+        self.entry(key).or_insert(default)
     }
 
     fn insert(&mut self, key: K, value: V) -> Option<V> {
