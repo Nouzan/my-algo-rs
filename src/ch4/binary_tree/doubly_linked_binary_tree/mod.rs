@@ -146,9 +146,9 @@ impl<T: 'static> BinTreeMut for DoublyLinkedBinaryTree<T> {
 }
 
 impl<T: 'static> MoveParentBinTreeMut for DoublyLinkedBinaryTree<T> {
-    type CursorMut<'a> = cursor::CursorMut<'a, T>;
+    type MoveParentCursorMut<'a> = cursor::CursorMut<'a, T>;
 
-    fn cursor_mut(&mut self) -> Self::CursorMut<'_> {
+    fn move_parent_cursor_mut(&mut self) -> Self::MoveParentCursorMut<'_> {
         cursor::CursorMut::new(self)
     }
 }

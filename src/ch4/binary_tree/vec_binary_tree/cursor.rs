@@ -100,6 +100,10 @@ impl<'a, T> MoveParentCursor<'a> for Cursor<'a, T> {
             None
         }
     }
+
+    fn is_left_child(&self) -> bool {
+        self.current % 2 == 1
+    }
 }
 
 pub struct CursorMut<'a, T> {
@@ -368,6 +372,10 @@ impl<'a, T> MoveParentCursor<'a> for CursorMut<'a, T> {
         } else {
             None
         }
+    }
+
+    fn is_left_child(&self) -> bool {
+        self.current % 2 == 1
     }
 }
 

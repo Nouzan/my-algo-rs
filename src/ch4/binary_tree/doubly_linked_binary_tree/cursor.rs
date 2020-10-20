@@ -203,6 +203,10 @@ impl<'a, T> MoveParentCursor<'a> for Cursor<'a, T> {
             None
         }
     }
+
+    fn is_left_child(&self) -> bool {
+        self.is_left
+    }
 }
 
 // `new`及所有只读函数的安全性与正确性跟`Cursor`是一致的.
@@ -289,6 +293,10 @@ impl<'a, T> MoveParentCursor<'a> for CursorMut<'a, T> {
         } else {
             None
         }
+    }
+
+    fn is_left_child(&self) -> bool {
+        self.is_left
     }
 }
 

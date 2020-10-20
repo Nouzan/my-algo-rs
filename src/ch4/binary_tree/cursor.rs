@@ -11,9 +11,6 @@ pub trait BinTreeCursor<'a> {
         self.left().is_none() && self.right().is_none()
     }
 
-    // /// 判断另一结点是否为当前结点的左孩子.
-    // fn is_left_child(&self, other: &Self) -> bool;
-
     // /// 判断另一结点是否为当前结点的右孩子.
     // fn is_right_child(&self, other: &Self) -> bool;
 
@@ -170,6 +167,8 @@ pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
 pub trait MoveParentCursor<'a>: BinTreeCursor<'a> {
     fn move_parent(&mut self);
     fn parent(&self) -> Option<&Self::Elem>;
+    /// 判断当前结点是否为左孩子.
+    fn is_left_child(&self) -> bool;
 }
 
 pub trait MoveParentCursorMut<'a>: MoveParentCursor<'a> {

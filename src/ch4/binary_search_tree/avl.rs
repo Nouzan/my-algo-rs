@@ -112,22 +112,22 @@ where
             let t4 = cursor.take_right();
             let mut g = cursor.take();
             if let Some(t) = t1 {
-                MoveParentBinTreeMut::cursor_mut(&mut v).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_left(t)
             };
             if let Some(t) = t2 {
-                MoveParentBinTreeMut::cursor_mut(&mut v).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut v));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut v));
             if let Some(t) = t3 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_left(t)
             };
             if let Some(t) = t4 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut g));
-            MoveParentBinTreeMut::cursor_mut(&mut p).append_left(v);
-            MoveParentBinTreeMut::cursor_mut(&mut p).append_right(g);
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut p));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut g));
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_left(v);
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_right(g);
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut p));
             cursor.append(p);
         } else if p_flag && !v_flag {
             // T F: 1 p 2 v 3 g 4
@@ -141,22 +141,22 @@ where
             let t4 = cursor.take_right();
             let mut g = cursor.take();
             if let Some(t) = t1 {
-                MoveParentBinTreeMut::cursor_mut(&mut p).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_left(t)
             };
             if let Some(t) = t2 {
-                MoveParentBinTreeMut::cursor_mut(&mut p).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut p));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut p));
             if let Some(t) = t3 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_left(t)
             };
             if let Some(t) = t4 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut g));
-            MoveParentBinTreeMut::cursor_mut(&mut v).append_left(p);
-            MoveParentBinTreeMut::cursor_mut(&mut v).append_right(g);
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut v));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut g));
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_left(p);
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_right(g);
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut v));
             cursor.append(v);
         } else if !p_flag && !v_flag {
             // F F: 1 g 2 p 3 v 4
@@ -170,22 +170,22 @@ where
             let t1 = cursor.take_left();
             let mut g = cursor.take();
             if let Some(t) = t1 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_left(t)
             };
             if let Some(t) = t2 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut g));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut g));
             if let Some(t) = t3 {
-                MoveParentBinTreeMut::cursor_mut(&mut v).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_left(t)
             };
             if let Some(t) = t4 {
-                MoveParentBinTreeMut::cursor_mut(&mut v).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut v));
-            MoveParentBinTreeMut::cursor_mut(&mut p).append_left(g);
-            MoveParentBinTreeMut::cursor_mut(&mut p).append_right(v);
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut p));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut v));
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_left(g);
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_right(v);
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut p));
             cursor.append(p);
         } else {
             // F T: 1 g 2 v 3 p 4
@@ -199,22 +199,22 @@ where
             let t1 = cursor.take_left();
             let mut g = cursor.take();
             if let Some(t) = t1 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_left(t)
             };
             if let Some(t) = t2 {
-                MoveParentBinTreeMut::cursor_mut(&mut g).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut g).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut g));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut g));
             if let Some(t) = t3 {
-                MoveParentBinTreeMut::cursor_mut(&mut p).append_left(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_left(t)
             };
             if let Some(t) = t4 {
-                MoveParentBinTreeMut::cursor_mut(&mut p).append_right(t)
+                MoveParentBinTreeMut::move_parent_cursor_mut(&mut p).append_right(t)
             };
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut p));
-            MoveParentBinTreeMut::cursor_mut(&mut v).append_left(g);
-            MoveParentBinTreeMut::cursor_mut(&mut v).append_right(p);
-            Self::update_height(&mut MoveParentBinTreeMut::cursor_mut(&mut v));
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut p));
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_left(g);
+            MoveParentBinTreeMut::move_parent_cursor_mut(&mut v).append_right(p);
+            Self::update_height(&mut MoveParentBinTreeMut::move_parent_cursor_mut(&mut v));
             cursor.append(v);
         }
     }
@@ -239,7 +239,7 @@ where
     }
 
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        let mut parent = MoveParentBinTreeMut::cursor_mut(&mut self.bst.tree);
+        let mut parent = MoveParentBinTreeMut::move_parent_cursor_mut(&mut self.bst.tree);
         let mut value = AVLNode {
             elem: value,
             height: 0,
@@ -284,7 +284,7 @@ where
     }
 
     fn remove(&mut self, key: &K) -> Option<V> {
-        let mut cursor = MoveParentBinTreeMut::cursor_mut(&mut self.bst.tree);
+        let mut cursor = MoveParentBinTreeMut::move_parent_cursor_mut(&mut self.bst.tree);
         if let Some(Ordering::Equal) = TreeMap::<Tree, _, _>::move_to_target(&mut cursor, key) {
             self.bst.len -= 1;
             let elem = TreeMap::<Tree, _, _>::delete_at(&mut cursor).elem;

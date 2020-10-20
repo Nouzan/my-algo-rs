@@ -1,4 +1,10 @@
+/// 伸展树(Splay Tree).
+pub mod st;
+
+/// AVL树.
 pub mod avl;
+
+/// 基础二叉查找树.
 pub mod bst;
 
 use std::collections::{BTreeMap, HashMap};

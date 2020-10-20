@@ -62,9 +62,9 @@ impl<T: 'static> BinTreeMut for VecBinaryTree<T> {
 }
 
 impl<T: 'static> MoveParentBinTreeMut for VecBinaryTree<T> {
-    type CursorMut<'a> = CursorMut<'a, T>;
+    type MoveParentCursorMut<'a> = CursorMut<'a, T>;
 
-    fn cursor_mut(&mut self) -> Self::CursorMut<'_> {
+    fn move_parent_cursor_mut(&mut self) -> Self::MoveParentCursorMut<'_> {
         CursorMut::new(self)
     }
 }
