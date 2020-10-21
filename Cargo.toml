@@ -16,6 +16,7 @@ bitstream-io = "0.9"
 structopt = "0.3.15"
 proptest = "0.10.0"
 permutation_iterator = "0.1.2"
+random = "0.12"
 
 [[example]]
 name = "fib-recurrence"

@@ -128,3 +128,206 @@ impl<K: Hash + Ord, V> Map<K, V> for HashMap<K, V> {
         Box::new(self.iter())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::ch4::{
+        doubly_linked_binary_tree::DoublyLinkedBinaryTree, linked_binary_tree::LinkedBinaryTree,
+    };
+    use ::test::Bencher;
+    use avl::AVLTreeMap;
+    use bst::TreeMap;
+    use random::Source;
+    use st::SplayTreeMap;
+    use std::collections::{BTreeMap, HashMap};
+
+    const N: usize = 10000;
+    const M: usize = 100;
+    const SEEDS: [u64; 2] = [42, 69];
+
+    #[bench]
+    fn bench_std_hm_random_insert(b: &mut Bencher) {
+        let mut map = HashMap::<_, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.insert(source.read(), source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_std_btm_random_insert(b: &mut Bencher) {
+        let mut map = BTreeMap::<_, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.insert(source.read(), source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_tm_random_insert(b: &mut Bencher) {
+        let mut map = TreeMap::<LinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.insert(source.read(), source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_stm_random_insert(b: &mut Bencher) {
+        let mut map = SplayTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.insert(source.read(), source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_avl_random_insert(b: &mut Bencher) {
+        let mut map = AVLTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.insert(source.read(), source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_std_hm_random_get(b: &mut Bencher) {
+        let mut map = HashMap::<_, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.get(&source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_std_btm_random_get(b: &mut Bencher) {
+        let mut map = BTreeMap::<_, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.get(&source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_tm_random_get(b: &mut Bencher) {
+        let mut map = TreeMap::<LinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.get(&source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_stm_random_get(b: &mut Bencher) {
+        let mut map = SplayTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.get_mut(&source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_avl_random_get(b: &mut Bencher) {
+        let mut map = AVLTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        b.iter(|| {
+            map.get(&source.read());
+        })
+    }
+
+    #[bench]
+    fn bench_std_hm_sequential_get(b: &mut Bencher) {
+        let mut map = HashMap::<_, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        let mut gets = (0..M).map(|n| n as i64).cycle();
+        b.iter(|| {
+            map.get(&gets.next().unwrap());
+        })
+    }
+
+    #[bench]
+    fn bench_std_btm_sequential_get(b: &mut Bencher) {
+        let mut map = BTreeMap::<_, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        let mut gets = (0..M).map(|n| n as i64).cycle();
+        b.iter(|| {
+            map.get(&gets.next().unwrap());
+        })
+    }
+
+    #[bench]
+    fn bench_tm_sequential_get(b: &mut Bencher) {
+        let mut map = TreeMap::<LinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        let mut gets = (0..M).map(|n| n as i64).cycle();
+        b.iter(|| {
+            map.get(&gets.next().unwrap());
+        })
+    }
+
+    #[bench]
+    fn bench_stm_sequential_get(b: &mut Bencher) {
+        let mut map = SplayTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        let mut gets = (0..M).map(|n| n as i64).cycle();
+        b.iter(|| {
+            map.get(&gets.next().unwrap());
+        })
+    }
+
+    #[bench]
+    fn bench_avl_sequential_get(b: &mut Bencher) {
+        let mut map = AVLTreeMap::<DoublyLinkedBinaryTree<_>, _, _>::default();
+        let mut source = random::default().seed(SEEDS);
+        for idx in source.iter::<i64>().take(N) {
+            map.insert(idx, idx);
+        }
+        let mut gets = (0..M).map(|n| n as i64).cycle();
+        b.iter(|| {
+            map.get(&gets.next().unwrap());
+        })
+    }
+}

@@ -138,13 +138,13 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
             }
             let tree = forest.delete_max().unwrap();
 
-            println!("Coding...");
+            println!("Code generating...");
             // 建立编码表
-            let encoding_map: M1 = Self::generate_encoding_map(&tree);
+            let mut encoding_map: M1 = Self::generate_encoding_map(&tree);
 
             println!("Encoding...");
             // 编码
-            let (encoded, len) = Self::encode(text, &encoding_map);
+            let (encoded, len) = Self::encode(text, &mut encoding_map);
 
             Some(Self { tree, encoded, len })
         }
@@ -176,13 +176,13 @@ impl<Tree: Default + BinTreeMut<Elem = HuffmanChar> + PartialOrd> HuffmanCodingT
     /// 编码字符串.
     /// # Panics
     /// 要求`text`中的所有字符均已被编码(存储在`encoding_map`中)，否则报错.
-    fn encode<M: Map<char, Vec<bool>>>(text: &str, encoding_map: &M) -> (Vec<u8>, usize) {
+    fn encode<M: Map<char, Vec<bool>>>(text: &str, encoding_map: &mut M) -> (Vec<u8>, usize) {
         let mut writer = BitWriter::endian(Vec::new(), BigEndian);
         let mut len = 0;
         for ch in text.chars() {
-            let code = encoding_map.get(&ch).unwrap();
+            let code = encoding_map.get_mut(&ch).unwrap();
             len += code.len();
-            for &bit in code {
+            for &mut bit in code {
                 writer.write_bit(bit).unwrap();
             }
         }
