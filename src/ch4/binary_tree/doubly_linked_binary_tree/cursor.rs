@@ -69,6 +69,34 @@ unsafe fn elem_mut<'a, T>(link: Link<T>) -> Option<&'a mut T> {
     link.and_then(|posi| (*posi.as_ptr()).elem.as_mut())
 }
 
+/// 使用新的左孩子替代当前结点的左孩子，并将原来的左孩子返回.
+///
+/// 原来左孩子的`parent`域保持不变.
+/// # Safety
+/// `node`和`left`必须是合法的[2]，但不要求`left`的`parent`域是正确的.
+unsafe fn replace_left<T>(mut node: NodePosi<T>, left: Link<T>) -> Link<T> {
+    let old = node.as_mut().left;
+    node.as_mut().left = left;
+    if let Some(mut p) = left {
+        p.as_mut().parent = Some(node);
+    }
+    old
+}
+
+/// 使用新的右孩子替代当前结点的右孩子，并将原来的右孩子返回.
+///
+/// 原来右孩子的`parent`域保持不变.
+/// # Safety
+/// `node`和`left`必须是合法的[2]，但不要求`left`的`parent`域是正确的.
+unsafe fn replace_right<T>(mut node: NodePosi<T>, right: Link<T>) -> Link<T> {
+    let old = node.as_mut().right;
+    node.as_mut().right = right;
+    if let Some(mut p) = right {
+        p.as_mut().parent = Some(node);
+    }
+    old
+}
+
 // 注意到我们只有树的只读引用，因此树的所有不变式均保持.
 // 只需要验证`parent`域的不变式[5]即可.
 impl<'a, T> Cursor<'a, T> {
@@ -537,6 +565,44 @@ impl<'a, T> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         self.take_right();
         let tree = self.take();
         tree.into_root().and_then(|node| node.elem)
+    }
+
+    fn zig(&mut self) {
+        // Safety: 根据合法性[2]，下面的操作都是安全的.
+        unsafe {
+            if let Some(current) = self.current_link() {
+                if let Some(lc) = left(Some(current)) {
+                    let lcr = replace_right(lc, Some(current));
+                    replace_left(current, lcr);
+                    if self.is_left {
+                        replace_left(self.parent, Some(lc));
+                    } else {
+                        replace_right(self.parent, Some(lc));
+                    }
+                }
+            }
+        }
+        // 操作后，parent <--> lc <--(right)--> current <--(left)--> lcr
+        // 保持了所有不变式.
+    }
+
+    fn zag(&mut self) {
+        // Safety: 根据合法性[2]，下面的操作都是安全的.
+        unsafe {
+            if let Some(current) = self.current_link() {
+                if let Some(rc) = right(Some(current)) {
+                    let rcl = replace_left(rc, Some(current));
+                    replace_right(current, rcl);
+                    if self.is_left {
+                        replace_left(self.parent, Some(rc));
+                    } else {
+                        replace_right(self.parent, Some(rc));
+                    }
+                }
+            }
+        }
+        // 操作后，parent <--> rc <--(left)--> current <--(right)--> rcl
+        // 保持了所有不变式.
     }
 }
 

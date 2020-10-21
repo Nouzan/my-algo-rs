@@ -19,77 +19,37 @@ impl<Tree: Default + MoveParentBinTreeMut<Elem = Entry<K, V>>, K: Ord, V> SplayT
     {
         if !cursor.is_empty_subtree() {
             while cursor.parent().is_some() {
-                let (vl, vr) = (cursor.take_left().unwrap(), cursor.take_right().unwrap());
                 let vflag = cursor.is_left_child();
                 cursor.move_parent();
-                let (mut v, pt) = if vflag {
-                    (cursor.take_left().unwrap(), cursor.take_right().unwrap())
-                } else {
-                    (cursor.take_right().unwrap(), cursor.take_left().unwrap())
-                };
                 if cursor.parent().is_some() {
                     let pflag = cursor.is_left_child();
-                    cursor.move_parent();
-                    let (mut p, gt) = if pflag {
-                        (cursor.take_left().unwrap(), cursor.take_right().unwrap())
-                    } else {
-                        (cursor.take_right().unwrap(), cursor.take_left().unwrap())
-                    };
-                    let mut g = cursor.take();
                     match (vflag, pflag) {
                         (true, true) => {
-                            // vl [v] vr [p] pt [g] gt
-                            g.cursor_mut().append_left(pt);
-                            g.cursor_mut().append_right(gt);
-                            p.cursor_mut().append_left(vr);
-                            p.cursor_mut().append_right(g);
-                            v.cursor_mut().append_left(vl);
-                            v.cursor_mut().append_right(p);
+                            cursor.move_parent();
+                            cursor.zig();
+                            cursor.zig();
                         }
                         (false, false) => {
-                            // gt [g] pt [p] vl [v] vr
-                            g.cursor_mut().append_left(gt);
-                            g.cursor_mut().append_right(pt);
-                            p.cursor_mut().append_left(g);
-                            p.cursor_mut().append_right(vl);
-                            v.cursor_mut().append_left(p);
-                            v.cursor_mut().append_right(vr);
+                            cursor.move_parent();
+                            cursor.zag();
+                            cursor.zag();
                         }
                         (true, false) => {
-                            // gt [g] vl [v] vr [p] pt
-                            g.cursor_mut().append_left(gt);
-                            g.cursor_mut().append_right(vl);
-                            p.cursor_mut().append_left(vr);
-                            p.cursor_mut().append_right(pt);
-                            v.cursor_mut().append_left(g);
-                            v.cursor_mut().append_right(p);
+                            cursor.zig();
+                            cursor.move_parent();
+                            cursor.zag();
                         }
                         (false, true) => {
-                            // pt [p] vl [v] vr [g] gt
-                            g.cursor_mut().append_left(vr);
-                            g.cursor_mut().append_right(gt);
-                            p.cursor_mut().append_left(pt);
-                            p.cursor_mut().append_right(vl);
-                            v.cursor_mut().append_left(p);
-                            v.cursor_mut().append_right(g);
+                            cursor.zag();
+                            cursor.move_parent();
+                            cursor.zig();
                         }
                     }
                 } else if vflag {
-                    // vl [v] vr [p] pt
-                    let mut p = cursor.take();
-                    p.cursor_mut().append_left(vr);
-                    p.cursor_mut().append_right(pt);
-                    v.cursor_mut().append_left(vl);
-                    v.cursor_mut().append_right(p);
+                    cursor.zig();
                 } else {
-                    // pt [p] vl [v] vr
-                    let mut p = cursor.take();
-                    p.cursor_mut().append_left(pt);
-                    p.cursor_mut().append_right(vl);
-                    v.cursor_mut().append_left(p);
-                    v.cursor_mut().append_right(vr);
+                    cursor.zag();
                 }
-                cursor.append(v);
             }
         }
     }

@@ -77,30 +77,6 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
         }
         None
     }
-
-    // /// 顺时针旋转子树(提升左子树)，游标所指位置不变.
-    // /// # Panics
-    // /// `cursor`所指结点及其左孩子必须存在.
-    // pub(crate) fn zig(cursor: &mut Tree::CursorMut<'_>) {
-    //     let mut left_child = cursor.take_left().unwrap();
-    //     let mut tree = cursor.take();
-    //     let left_child_right = left_child.cursor_mut().take_right().unwrap();
-    //     tree.cursor_mut().append_left(left_child_right);
-    //     left_child.cursor_mut().append_right(tree);
-    //     cursor.append(left_child);
-    // }
-
-    // /// 逆时针旋转子树(提升右子树)，游标所指位置不变.
-    // /// # Panics
-    // /// `cursor`所指结点及其右孩子必须存在.
-    // pub(crate) fn zag(cursor: &mut Tree::CursorMut<'_>) {
-    //     let mut right_child = cursor.take_right().unwrap();
-    //     let mut tree = cursor.take();
-    //     let right_child_left = right_child.cursor_mut().take_left().unwrap();
-    //     tree.cursor_mut().append_right(right_child_left);
-    //     right_child.cursor_mut().append_left(tree);
-    //     cursor.append(right_child);
-    // }
 }
 
 impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for TreeMap<Tree, K, V> {

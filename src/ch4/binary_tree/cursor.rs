@@ -1,3 +1,5 @@
+use super::BinTreeMut;
+
 pub trait BinTreeCursor<'a> {
     type Elem;
 
@@ -162,6 +164,50 @@ pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     fn into_mut(self) -> Option<&'a mut Self::Elem>
     where
         Self: Sized;
+
+    /// 顺时针旋转子树(提升左子树)，游标所指位置不变.
+    ///
+    /// 若当前结点或左孩子不存在则为`no-op`.
+    fn zig(&mut self)
+    where
+        Self::SubTree: BinTreeMut,
+    {
+        if let Some(mut left_child) = self.take_left() {
+            // 当前结点存在.
+            if let Some(left_child_right) = {
+                let tree = left_child.cursor_mut().take_right();
+                tree
+            } {
+                // 左孩子存在.
+                let mut tree = self.take();
+                tree.cursor_mut().append_left(left_child_right);
+                left_child.cursor_mut().append_right(tree);
+                self.append(left_child);
+            }
+        }
+    }
+
+    /// 逆时针旋转子树(提升右子树)，游标所指位置不变.
+    ///
+    /// 若当前结点或左孩子不存在则为`no-op`.
+    fn zag(&mut self)
+    where
+        Self::SubTree: BinTreeMut,
+    {
+        if let Some(mut right_child) = self.take_right() {
+            // 当前结点存在.
+            if let Some(right_child_left) = {
+                let tree = right_child.cursor_mut().take_left();
+                tree
+            } {
+                // 左孩子存在.
+                let mut tree = self.take();
+                tree.cursor_mut().append_right(right_child_left);
+                right_child.cursor_mut().append_left(tree);
+                self.append(right_child);
+            }
+        }
+    }
 }
 
 pub trait MoveParentCursor<'a>: BinTreeCursor<'a> {
