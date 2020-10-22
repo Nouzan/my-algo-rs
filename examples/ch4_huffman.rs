@@ -1,5 +1,6 @@
 use my_algo::ch4::avl::AVLTreeMap;
 use my_algo::ch4::bst::TreeMap;
+use my_algo::ch4::btree::BTreeMap as MyBTreeMap;
 use my_algo::ch4::coding_tree::HuffmanCodingTree;
 use my_algo::ch4::complete_heap::CompleteMaxHeap;
 use my_algo::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
@@ -14,6 +15,8 @@ use std::io::BufReader;
 use std::path::PathBuf;
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
+
+const MBTM_ARG: usize = 12;
 
 arg_enum! {
     #[derive(Debug)]
@@ -35,6 +38,7 @@ arg_enum! {
 arg_enum! {
     #[derive(Debug)]
     enum Map {
+        Mbtm,
         Btm,
         Hm,
         Tm,
@@ -74,7 +78,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -86,7 +90,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -98,7 +102,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -110,7 +114,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -122,7 +126,19 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Lbt, Heap::Ch, Map::Mbtm) => {
+            let tree = HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -134,7 +150,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -146,7 +162,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -158,7 +174,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -170,7 +186,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -182,7 +198,19 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Lbt, Heap::Lh, Map::Mbtm) => {
+            let tree = HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -194,7 +222,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -206,7 +234,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -218,7 +246,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -230,7 +258,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -242,7 +270,19 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Vbt, Heap::Ch, Map::Mbtm) => {
+            let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -254,7 +294,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -266,7 +306,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -278,7 +318,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -290,7 +330,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -302,7 +342,19 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Vbt, Heap::Lh, Map::Mbtm) => {
+            let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -314,7 +366,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -326,7 +378,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -338,7 +390,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -350,7 +402,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -362,7 +414,19 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Dlbt, Heap::Ch, Map::Mbtm) => {
+            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -374,7 +438,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -386,7 +450,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -398,7 +462,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -410,7 +474,7 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
@@ -422,7 +486,19 @@ fn main() -> std::io::Result<()> {
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
-            println!("len = {}B", len / 8);
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Dlbt, Heap::Lh, Map::Mbtm) => {
+            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+                MyBTreeMap<_, _, MBTM_ARG>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }

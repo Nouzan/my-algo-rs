@@ -1,3 +1,6 @@
+/// B树.
+pub mod btree;
+
 /// 伸展树(Splay Tree).
 pub mod st;
 

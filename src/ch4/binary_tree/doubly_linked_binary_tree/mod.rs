@@ -29,7 +29,7 @@ impl<T> Node<T> {
     where
         T: 'a,
     {
-        NonNull::new(Box::leak(boxed)).unwrap()
+        NonNull::new(Box::leak::<'a>(boxed)).unwrap()
     }
 }
 

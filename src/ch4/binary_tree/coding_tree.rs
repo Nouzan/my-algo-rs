@@ -199,6 +199,7 @@ mod test {
     use super::super::vec_binary_tree::VecBinaryTree;
     use super::*;
     use crate::ch4::avl::AVLTreeMap;
+    use crate::ch4::btree::BTreeMap;
     use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
     use proptest::prelude::*;
 
@@ -253,6 +254,15 @@ mod test {
             if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
                     HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>, AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,>(&s).unwrap();
+                assert_eq!(s, encoding_tree.decode());
+            }
+        }
+
+        #[test]
+        fn test_encoding_with_btm_lh(s: String) {
+            if at_least_two_disctint_chars(&s) {
+                let encoding_tree =
+                    HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>, BTreeMap<_, _, 4>, BTreeMap<_, _, 4>,>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
             }
         }
