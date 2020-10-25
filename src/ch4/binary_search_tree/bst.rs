@@ -22,9 +22,10 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
     /// 删除游标所指结点，并返回其值.
     /// # Panics
     /// `cursor`所指结点必须存在.
-    pub(crate) fn delete_at<'a, C>(cursor: &mut C) -> V
+    pub(crate) fn delete_at<'a, C, F>(cursor: &mut C, mut swap: F) -> V
     where
         C: BinTreeCursorMut<'a, Elem = Tree::Elem, SubTree = Tree>,
+        F: FnMut(&mut Tree::Elem, &mut Tree::Elem),
     {
         if cursor.left().is_none() {
             let tree = cursor.take_right().unwrap();
@@ -40,8 +41,8 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> TreeMap<Tree, K,
             let (current, succ) = cursor.move_succ_and_split_mut();
             let current = current.unwrap();
             let succ = succ.unwrap();
-            mem::swap(current, succ);
-            Self::delete_at(cursor)
+            swap(current, succ);
+            Self::delete_at(cursor, swap)
         }
     }
 
@@ -162,7 +163,9 @@ impl<K: Ord, V, Tree: Default + BinTreeMut<Elem = Entry<K, V>>> Map<K, V> for Tr
         let mut cursor = self.tree.cursor_mut();
         if let Some(Ordering::Equal) = Self::move_to_target(&mut cursor, key) {
             self.len -= 1;
-            Some(Self::delete_at(&mut cursor))
+            Some(Self::delete_at(&mut cursor, |x, y| {
+                mem::swap(x, y);
+            }))
         } else {
             None
         }

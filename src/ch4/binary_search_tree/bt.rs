@@ -661,7 +661,7 @@ mod test {
         data.insert("g", 7);
         data.insert("h", 8);
         data.insert("i", 9);
-        let mut map = BTreeMap::<_, _, 4>::default();
+        let mut map = BTreeMap::<_, _, 5>::default();
         assert!(map.is_empty());
         // insert
         for (k, v) in data.clone() {
@@ -738,7 +738,7 @@ mod test {
     proptest! {
         #[test]
         fn test_btree_map(mut data: HashMap<i64, i64>, random: i64) {
-            let mut map = BTreeMap::<_, _, 5>::default();
+            let mut map = BTreeMap::<_, _, 3>::default();
             assert!(map.is_empty());
             // insert
             for (k, v) in data.clone() {

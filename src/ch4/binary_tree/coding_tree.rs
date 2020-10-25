@@ -198,9 +198,10 @@ mod test {
     use super::super::linked_binary_tree::LinkedBinaryTree;
     use super::super::vec_binary_tree::VecBinaryTree;
     use super::*;
-    use crate::ch4::avl::AVLTreeMap;
-    use crate::ch4::btree::BTreeMap;
+    use crate::ch4::avlt::AVLTreeMap;
+    use crate::ch4::bt::BTreeMap;
     use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
+    use crate::ch4::rbt::RBTreeMap;
     use proptest::prelude::*;
 
     fn at_least_two_disctint_chars(s: &str) -> bool {
@@ -219,11 +220,11 @@ mod test {
 
     #[test]
     fn test_encoding() {
-        let s = String::from("hello, world!");
+        let s = String::from("0j 1ￚ\u{a81}A_2¡𐝀®a𝒻kB￼lCVD");
         let encoding_tree = HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<
             CompleteMaxHeap<_>,
-            AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
-            AVLTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
         >(&s)
         .unwrap();
         println!("{:?}", encoding_tree.encoded());
@@ -263,6 +264,15 @@ mod test {
             if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
                     HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>, BTreeMap<_, _, 4>, BTreeMap<_, _, 4>,>(&s).unwrap();
+                assert_eq!(s, encoding_tree.decode());
+            }
+        }
+
+        #[test]
+        fn test_encoding_with_rbtm_lh(s: String) {
+            if at_least_two_disctint_chars(&s) {
+                let encoding_tree =
+                    HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>, RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>, RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
             }
         }

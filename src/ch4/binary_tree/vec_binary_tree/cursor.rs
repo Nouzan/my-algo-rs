@@ -3,7 +3,8 @@ use super::{
     VecBinaryTree,
 };
 use crate::ch4::binary_tree::{
-    BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut, MoveParentCursor, MoveParentCursorMut,
+    BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut, MoveParentBinTree, MoveParentCursor,
+    MoveParentCursorMut,
 };
 
 pub(super) const fn left_index(index: usize) -> usize {
@@ -32,9 +33,16 @@ impl<'a, T> Clone for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
+impl<'a, T> BinTree for Cursor<'a, T> {
     type Elem = T;
+    type Cursor<'b, E: 'b> = Cursor<'b, E>;
 
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
+        self.clone()
+    }
+}
+
+impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.tree.get(self.current)
     }
@@ -83,6 +91,14 @@ impl<'a, T> Cursor<'a, T> {
             current: cursor.current,
             tree: cursor.tree,
         }
+    }
+}
+
+impl<'a, T> MoveParentBinTree for Cursor<'a, T> {
+    type MoveParentCursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn move_parent_cursor(&self) -> Self::MoveParentCursor<'_, Self::Elem> {
+        self.clone()
     }
 }
 
@@ -145,8 +161,6 @@ impl<'a, T> CursorMut<'a, T> {
 }
 
 impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
-    type Elem = T;
-
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.tree.get(self.current)
     }
@@ -356,6 +370,14 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         } else {
             self.tree.inner.get_mut(self.current).unwrap().take()
         }
+    }
+}
+
+impl<'a, T> MoveParentBinTree for CursorMut<'a, T> {
+    type MoveParentCursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn move_parent_cursor(&self) -> Self::MoveParentCursor<'_, Self::Elem> {
+        self.cursor()
     }
 }
 

@@ -358,7 +358,10 @@ where
         let mut cursor = MoveParentBinTreeMut::move_parent_cursor_mut(&mut self.bst.tree);
         if let Some(Ordering::Equal) = TreeMap::<Tree, _, _>::move_to_target(&mut cursor, key) {
             self.bst.len -= 1;
-            let elem = TreeMap::<Tree, _, _>::delete_at(&mut cursor).elem;
+            let elem = TreeMap::<Tree, _, _>::delete_at(&mut cursor, |x, y| {
+                mem::swap(x, y);
+            })
+            .elem;
             // 使树重新平衡.
             while cursor.parent().is_some() {
                 cursor.move_parent();

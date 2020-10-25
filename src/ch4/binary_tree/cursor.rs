@@ -1,8 +1,8 @@
+use super::BinTree;
 use super::BinTreeMut;
+use super::MoveParentBinTree;
 
-pub trait BinTreeCursor<'a> {
-    type Elem;
-
+pub trait BinTreeCursor<'a>: BinTree {
     /// 是否为空树.
     fn is_empty_subtree(&self) -> bool {
         self.as_ref().is_none()
@@ -210,7 +210,7 @@ pub trait BinTreeCursorMut<'a>: BinTreeCursor<'a> {
     }
 }
 
-pub trait MoveParentCursor<'a>: BinTreeCursor<'a> {
+pub trait MoveParentCursor<'a>: BinTreeCursor<'a> + MoveParentBinTree {
     fn move_parent(&mut self);
     fn parent(&self) -> Option<&Self::Elem>;
     /// 判断当前结点是否为左孩子.

@@ -1,5 +1,8 @@
 use super::{DoublyLinkedBinaryTree, Link, Node, NodePosi};
-use crate::ch4::{BinTree, BinTreeCursor, BinTreeCursorMut, MoveParentCursor, MoveParentCursorMut};
+use crate::ch4::{
+    BinTree, BinTreeCursor, BinTreeCursorMut, MoveParentBinTree, MoveParentCursor,
+    MoveParentCursorMut,
+};
 
 /// 不可变游标.
 /// # Safety
@@ -146,9 +149,16 @@ impl<'a, T> Clone for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
+impl<'a, T> BinTree for Cursor<'a, T> {
     type Elem = T;
+    type Cursor<'b, E: 'b> = Cursor<'b, E>;
 
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
+        self.clone()
+    }
+}
+
+impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
     fn is_parent(&self, other: &Self) -> bool {
         // 这里要求`self`和`other`所对应的是同一棵树.
         // 根据不变式[5]，`parent`为当前所指结点的父母指针.
@@ -197,6 +207,14 @@ impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
     {
         // Safety: `current_link`返回的指针(若有)是合法的.
         unsafe { elem(self.current_link()) }
+    }
+}
+
+impl<'a, T> MoveParentBinTree for Cursor<'a, T> {
+    type MoveParentCursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn move_parent_cursor(&self) -> Self::MoveParentCursor<'_, Self::Elem> {
+        self.clone()
     }
 }
 
@@ -263,8 +281,6 @@ impl<'a, T> CursorMut<'a, T> {
 }
 
 impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
-    type Elem = T;
-
     fn is_parent(&self, other: &Self) -> bool {
         other.current_link() == Some(self.parent)
     }
@@ -300,6 +316,14 @@ impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
         Self: Sized,
     {
         unsafe { elem(self.current_link()) }
+    }
+}
+
+impl<'a, T> MoveParentBinTree for CursorMut<'a, T> {
+    type MoveParentCursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn move_parent_cursor(&self) -> Self::MoveParentCursor<'_, Self::Elem> {
+        self.cursor()
     }
 }
 

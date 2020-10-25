@@ -1,11 +1,14 @@
+/// 红黑树
+pub mod rbt;
+
 /// B树.
-pub mod btree;
+pub mod bt;
 
 /// 伸展树(Splay Tree).
 pub mod st;
 
 /// AVL树.
-pub mod avl;
+pub mod avlt;
 
 /// 基础二叉查找树.
 pub mod bst;
@@ -139,7 +142,7 @@ mod test {
         doubly_linked_binary_tree::DoublyLinkedBinaryTree, linked_binary_tree::LinkedBinaryTree,
     };
     use ::test::Bencher;
-    use avl::AVLTreeMap;
+    use avlt::AVLTreeMap;
     use bst::TreeMap;
     use random::Source;
     use st::SplayTreeMap;

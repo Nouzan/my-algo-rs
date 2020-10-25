@@ -31,9 +31,16 @@ impl<'a, T> Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
+impl<'a, T> BinTree for Cursor<'a, T> {
     type Elem = T;
+    type Cursor<'b, E: 'b> = Cursor<'b, E>;
 
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
+        self.clone()
+    }
+}
+
+impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.current.map(|node| node.elem.as_ref().unwrap())
     }
@@ -137,8 +144,6 @@ impl<'a, T> CursorMut<'a, T> {
 }
 
 impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
-    type Elem = T;
-
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.current()
             .as_ref()

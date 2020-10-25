@@ -29,6 +29,14 @@ pub trait BinTree {
     fn cursor(&self) -> Self::Cursor<'_, Self::Elem>;
 }
 
+pub trait MoveParentBinTree: BinTree {
+    /// 不可变游标类型.
+    type MoveParentCursor<'a, T: 'a>: BinTreeCursor<'a, Elem = T> + MoveParentCursor<'a, Elem = T>;
+
+    /// 创建一个只读结点游标.
+    fn move_parent_cursor(&self) -> Self::MoveParentCursor<'_, Self::Elem>;
+}
+
 /// 可变二叉树特质.
 pub trait BinTreeMut: BinTree {
     /// 可变游标类型.
