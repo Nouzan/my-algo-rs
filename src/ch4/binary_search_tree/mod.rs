@@ -1,3 +1,9 @@
+/// 红黑树(只允许存在红左链)
+pub mod rbt2;
+
+/// 二叉查找树(非generic)
+pub mod bst2;
+
 /// 红黑树
 pub mod rbt;
 
