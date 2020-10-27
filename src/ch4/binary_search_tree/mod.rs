@@ -1,5 +1,5 @@
-/// 红黑树(只允许存在红左链)
-pub mod rbt2;
+/// 左倾红黑树(只允许存在红左链)
+pub mod llrbt;
 
 /// 二叉查找树(非generic)
 pub mod bst2;

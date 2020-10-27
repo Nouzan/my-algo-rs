@@ -3,16 +3,17 @@ use std::cmp::Ordering;
 
 type Link<K, V> = Option<Box<Node<K, V>>>;
 
-struct Node<K, V> {
-    left: Link<K, V>,
-    right: Link<K, V>,
-    key: K,
-    value: V,
-    size: usize,
+#[derive(Debug)]
+pub(super) struct Node<K, V> {
+    pub left: Link<K, V>,
+    pub right: Link<K, V>,
+    pub key: K,
+    pub value: V,
+    pub size: usize,
 }
 
 impl<K, V> Node<K, V> {
-    fn new(key: K, value: V) -> Self {
+    pub fn new(key: K, value: V) -> Self {
         Self {
             left: None,
             right: None,
@@ -22,7 +23,7 @@ impl<K, V> Node<K, V> {
         }
     }
 
-    fn size(link: &Link<K, V>) -> usize {
+    pub fn size(link: &Link<K, V>) -> usize {
         match link {
             None => 0,
             Some(node) => node.size,
@@ -169,7 +170,7 @@ impl<K: Ord, V> Node<K, V> {
 }
 
 pub struct TreeMap<K: Ord, V> {
-    root: Link<K, V>,
+    pub(super) root: Link<K, V>,
 }
 
 impl<K: Ord, V> Default for TreeMap<K, V> {
@@ -280,7 +281,7 @@ mod test {
     use super::*;
     use proptest::prelude::*;
     use std::collections::HashMap;
-    
+
     #[test]
     fn test_map_basic() {
         let mut data = HashMap::new();
@@ -307,7 +308,7 @@ mod test {
             assert_eq!(map.remove(k), data.get(k).copied())
         }
     }
-    
+
     proptest! {
         #[test]
         fn test_map_basic_proptest(mut data: HashMap<String, i64>, random: String) {
@@ -317,33 +318,33 @@ mod test {
             for (k, v) in data.clone() {
                 assert!(map.insert(k, v).is_none());
             }
-    
+
             assert_eq!(map.len(), data.len());
-    
+
             // get
             for k in data.keys() {
                 assert_eq!(map.get(k), data.get(k));
             }
-    
+
             // random get
             assert_eq!(map.get(&random), data.get(&random));
-    
+
             // get_mut
             for k in data.keys() {
                 if let Some(elem) = map.get_mut(k) { *elem += 1 };
                 assert_eq!(map.get(k).copied(), data.get(k).map(|elem| elem + 1));
             }
-    
+
             assert_eq!(map.len(), data.len());
-    
+
             // replace by insert
             for k in data.keys().cloned() {
                 let elem = data.get(&k).copied().unwrap();
                 assert_eq!(map.insert(k, elem), Some(elem + 1));
             }
-    
+
             assert_eq!(map.len(), data.len());
-    
+
             // remove
             for (idx, k) in data.keys().enumerate() {
                 assert_eq!(map.remove(k), data.get(k).copied());

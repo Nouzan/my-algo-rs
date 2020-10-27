@@ -201,6 +201,7 @@ mod test {
     use crate::ch4::avlt::AVLTreeMap;
     use crate::ch4::bt::BTreeMap;
     use crate::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
+    use crate::ch4::llrbt;
     use crate::ch4::rbt::RBTreeMap;
     use proptest::prelude::*;
 
@@ -273,6 +274,15 @@ mod test {
             if at_least_two_disctint_chars(&s) {
                 let encoding_tree =
                     HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>, RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>, RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,>(&s).unwrap();
+                assert_eq!(s, encoding_tree.decode());
+            }
+        }
+
+        #[test]
+        fn test_encoding_with_llrbtm_lh(s: String) {
+            if at_least_two_disctint_chars(&s) {
+                let encoding_tree =
+                    HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<LeftHeap<_>, llrbt::RBTreeMap<_, _>, llrbt::RBTreeMap<_, _>,>(&s).unwrap();
                 assert_eq!(s, encoding_tree.decode());
             }
         }

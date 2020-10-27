@@ -6,6 +6,7 @@ use my_algo::ch4::complete_heap::CompleteMaxHeap;
 use my_algo::ch4::doubly_linked_binary_tree::DoublyLinkedBinaryTree;
 use my_algo::ch4::left_heap::LeftHeap;
 use my_algo::ch4::linked_binary_tree::LinkedBinaryTree;
+use my_algo::ch4::llrbt;
 use my_algo::ch4::rbt::RBTreeMap;
 use my_algo::ch4::st::SplayTreeMap;
 use my_algo::ch4::vec_binary_tree::VecBinaryTree;
@@ -46,6 +47,7 @@ arg_enum! {
         Avl,
         Stm,
         Rbtm,
+        Lrbm,
     }
 }
 
@@ -156,6 +158,18 @@ fn main() -> std::io::Result<()> {
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
+        (Tree::Lbt, Heap::Ch, Map::Lrbm) => {
+            let tree = HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                llrbt::RBTreeMap<_, _>,
+                llrbt::RBTreeMap<_, _>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
         (Tree::Lbt, Heap::Lh, Map::Btm) => {
             let tree = HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<
                 LeftHeap<_>,
@@ -233,6 +247,18 @@ fn main() -> std::io::Result<()> {
                 LeftHeap<_>,
                 RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
                 RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Lbt, Heap::Lh, Map::Lrbm) => {
+            let tree = HuffmanCodingTree::<LinkedBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                llrbt::RBTreeMap<_, _>,
+                llrbt::RBTreeMap<_, _>,
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
@@ -324,6 +350,18 @@ fn main() -> std::io::Result<()> {
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
+        (Tree::Vbt, Heap::Ch, Map::Lrbm) => {
+            let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                llrbt::RBTreeMap<_, _>,
+                llrbt::RBTreeMap<_, _>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
         (Tree::Vbt, Heap::Lh, Map::Btm) => {
             let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<
                 LeftHeap<_>,
@@ -401,6 +439,18 @@ fn main() -> std::io::Result<()> {
                 LeftHeap<_>,
                 RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
                 RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Vbt, Heap::Lh, Map::Lrbm) => {
+            let tree = HuffmanCodingTree::<VecBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                llrbt::RBTreeMap<_, _>,
+                llrbt::RBTreeMap<_, _>,
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
@@ -492,6 +542,18 @@ fn main() -> std::io::Result<()> {
             #[cfg(debug)]
             assert_eq!(tree.decode(), contents);
         }
+        (Tree::Dlbt, Heap::Ch, Map::Lrbm) => {
+            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<
+                CompleteMaxHeap<_>,
+                llrbt::RBTreeMap<_, _>,
+                llrbt::RBTreeMap<_, _>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
         (Tree::Dlbt, Heap::Lh, Map::Btm) => {
             let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<
                 LeftHeap<_>,
@@ -569,6 +631,18 @@ fn main() -> std::io::Result<()> {
                 LeftHeap<_>,
                 RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
                 RBTreeMap<DoublyLinkedBinaryTree<_>, _, _>,
+            >(&contents)
+            .unwrap();
+            let (_, len) = tree.encoded();
+            println!("len = {}bit", len);
+            #[cfg(debug)]
+            assert_eq!(tree.decode(), contents);
+        }
+        (Tree::Dlbt, Heap::Lh, Map::Lrbm) => {
+            let tree = HuffmanCodingTree::<DoublyLinkedBinaryTree<_>>::new::<
+                LeftHeap<_>,
+                llrbt::RBTreeMap<_, _>,
+                llrbt::RBTreeMap<_, _>,
             >(&contents)
             .unwrap();
             let (_, len) = tree.encoded();
