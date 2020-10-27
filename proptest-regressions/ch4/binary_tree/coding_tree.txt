@@ -6,3 +6,8 @@
 # everyone who runs the test benefits from these saved cases.
 cc 318a9ac955740032d0b4d8599401a67e95acdc663d8a467085c4df9c90da33d2 # shrinks to s = "𑊀"
 cc bd935a6c02d88ed1b30b85b54b7348a23cebea2ab95b4aa7ababe20a19e1c60e # shrinks to s = "𑋰"
+cc 480ae4e64d3366ecbe625fc42996dde96b327d15de34c71e8b8b2193af7488be # shrinks to s = "//"
+cc afc00cf560c4607902d2c1995e3e3df39d9f73526218e28aac1a929714d2735b # shrinks to s = " a\u{bd7}"
+cc ca619aa20affffa29e7f707c6e9799a56011cf83ad779c805e2f92db58080147 # shrinks to s = "ೱ>0"
+cc 60b8e70b58fc0b00999a437685c1f3782ffab76ea92bddc4df1afbeb3b08d03b # shrinks to s = "\u{b82}0Aݍ𐫫ꫛ"
+cc ebcf31798687c851e9e071a1b9077a0d1041be8e71ea3406a359ec8bcc3f1403 # shrinks to s = "0j 1ￚ\u{a81}A_2¡𐝀®a𝒻kB￼lCVD"

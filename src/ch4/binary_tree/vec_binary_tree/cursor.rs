@@ -1,7 +1,10 @@
-use super::super::{BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut};
 use super::{
     iter::{in_order_index, InOrderIndexIter, InOrderIter},
     VecBinaryTree,
+};
+use crate::ch4::binary_tree::{
+    BinTree, BinTreeCursor, BinTreeCursorMut, BinTreeMut, MoveParentBinTree, MoveParentCursor,
+    MoveParentCursorMut,
 };
 
 pub(super) const fn left_index(index: usize) -> usize {
@@ -30,9 +33,16 @@ impl<'a, T> Clone for Cursor<'a, T> {
     }
 }
 
-impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
+impl<'a, T> BinTree for Cursor<'a, T> {
     type Elem = T;
+    type Cursor<'b, E: 'b> = Cursor<'b, E>;
 
+    fn cursor(&self) -> Self::Cursor<'_, Self::Elem> {
+        self.clone()
+    }
+}
+
+impl<'a, T> BinTreeCursor<'a> for Cursor<'a, T> {
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.tree.get(self.current)
     }
@@ -84,6 +94,34 @@ impl<'a, T> Cursor<'a, T> {
     }
 }
 
+impl<'a, T> MoveParentBinTree for Cursor<'a, T> {
+    type MoveParentCursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn move_parent_cursor(&self) -> Self::MoveParentCursor<'_, Self::Elem> {
+        self.clone()
+    }
+}
+
+impl<'a, T> MoveParentCursor<'a> for Cursor<'a, T> {
+    fn move_parent(&mut self) {
+        if !self.is_empty_subtree() && self.current != 0 {
+            self.current = parent_index(self.current);
+        }
+    }
+
+    fn parent(&self) -> Option<&Self::Elem> {
+        if self.current != 0 {
+            self.tree.get(parent_index(self.current))
+        } else {
+            None
+        }
+    }
+
+    fn is_left_child(&self) -> bool {
+        self.current % 2 == 1
+    }
+}
+
 pub struct CursorMut<'a, T> {
     pub(super) current: usize,
     pub(super) tree: &'a mut VecBinaryTree<T>,
@@ -123,8 +161,6 @@ impl<'a, T> CursorMut<'a, T> {
 }
 
 impl<'a, T> BinTreeCursor<'a> for CursorMut<'a, T> {
-    type Elem = T;
-
     fn as_ref(&self) -> Option<&Self::Elem> {
         self.tree.get(self.current)
     }
@@ -180,6 +216,11 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         self.tree.get_mut(idx)
     }
 
+    fn move_succ_and_split_mut(&mut self) -> (Option<&mut Self::Elem>, Option<&mut Self::Elem>) {
+        // Safety: `move_left`和`move_right`的实现仅仅只是修改了`current: usize`的值，并未对树进行任何修改和移动.
+        unsafe { self.move_succ_and_split_mut_unchecked() }
+    }
+
     fn insert_as_root(&mut self, elem: Self::Elem) -> Option<Self::Elem> {
         if self.is_empty_subtree() {
             if self.current >= self.tree.inner.len() {
@@ -215,6 +256,21 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
         }
     }
 
+    fn append(&mut self, mut other: Self::SubTree) {
+        let mut other = other.cursor_mut();
+        if !self.is_empty_subtree() {
+            panic!("Subtree is non-empty!");
+        } else {
+            let base = self.current;
+            for (dst, src) in other.in_order_index_iter().enumerate() {
+                let dst = in_order_index(base, dst);
+                let src_node = other.get_node_and_resize(src);
+                let dst_node = self.get_node_and_resize(dst);
+                *dst_node = src_node.take();
+            }
+        }
+    }
+
     fn append_left(&mut self, mut other: Self::SubTree) {
         let mut other = other.cursor_mut();
         if self.left_mut().is_some() {
@@ -243,6 +299,22 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
                 *dst_node = src_node.take();
             }
         }
+    }
+
+    fn take(&mut self) -> Self::SubTree {
+        let mut tree = VecBinaryTree::new();
+        let mut cursor: CursorMut<_> = tree.cursor_mut();
+        let iter = InOrderIndexIter::new(self.current, self.tree.inner.len());
+        for (dst, src) in iter.enumerate() {
+            if src < self.tree.inner.len() {
+                let src_node = self.get_node_and_resize(src);
+                let dst_node = cursor.get_node_and_resize(dst);
+                *dst_node = src_node.take();
+            } else {
+                break;
+            }
+        }
+        tree
     }
 
     fn take_left(&mut self) -> Option<VecBinaryTree<T>> {
@@ -297,6 +369,44 @@ impl<'a, T: 'static> BinTreeCursorMut<'a> for CursorMut<'a, T> {
             None
         } else {
             self.tree.inner.get_mut(self.current).unwrap().take()
+        }
+    }
+}
+
+impl<'a, T> MoveParentBinTree for CursorMut<'a, T> {
+    type MoveParentCursor<'b, E: 'b> = Cursor<'b, E>;
+
+    fn move_parent_cursor(&self) -> Self::MoveParentCursor<'_, Self::Elem> {
+        self.cursor()
+    }
+}
+
+impl<'a, T> MoveParentCursor<'a> for CursorMut<'a, T> {
+    fn move_parent(&mut self) {
+        if self.current != 0 {
+            self.current = parent_index(self.current);
+        }
+    }
+
+    fn parent(&self) -> Option<&Self::Elem> {
+        if self.current != 0 {
+            self.tree.get(parent_index(self.current))
+        } else {
+            None
+        }
+    }
+
+    fn is_left_child(&self) -> bool {
+        self.current % 2 == 1
+    }
+}
+
+impl<'a, T> MoveParentCursorMut<'a> for CursorMut<'a, T> {
+    fn parent_mut(&mut self) -> Option<&mut Self::Elem> {
+        if self.current != 0 {
+            self.tree.get_mut(parent_index(self.current))
+        } else {
+            None
         }
     }
 }
