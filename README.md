@@ -73,3 +73,18 @@ fn main() -> Result<(), IndexError> {
 - 队列特质: `ch3::{Queue, QueueExt}`.
 - 共享栈、双栈: `ch3::{SharedStack, DoubleStack}`, 并用共享栈、双栈实现`Queue`(TODO: 有一些情况下判满算法会出错, 后面发一个issue描述一下情况).
 - 循环队列: `ch3::CircularQueue`.
+
+### 树(`ch4`)
+- 基本树特质: `BinTree, BinTreeMut, BinTreeCursor, BinTreeCursorMut`
+- 可向父母移动的树特质: `MoveParentBinTree, MoveParentBinTreeMut, MoveParentCursor, MoveParentCursorMut`
+- 向量二叉树(没有处理空间释放问题，空间性能较差): `vec_binary_tree::VecBinaryTree`
+- 链式二叉树(带哨兵根结点): `linked_binary_tree::LinkedBinaryTree`
+- 带父母指针的链式二叉树: `doubly_linked_binary_tree::DoublyLinkedBinaryTree`
+- 完全二叉堆: `compelete_heap::CompeleteMaxHeap`
+- 左式堆: `left_heap::LeftHeap`
+- 非平衡二叉查找树(BST): `bst::TreeMap<Tree>`(对树generic), `bst2::TreeMap`(基于不带哨兵根的链式树)
+- AVL树: `avlt::AVLTreeMap<Tree>`(要求`Tree: MoveParentBinTreeMut`)
+- 伸展树: `st::SplayTree<Tree>`(要求`Tree: MoveParentBinTreeMut`)
+- B树: `bt::BTreeMap`(有待将`VecDeque<T>`优化为`[T]`)
+- 红黑树: `rbt::RedBackTreeMap<Tree>`(要求`Tree: MoveParentBinTreeMut`)
+- 左倾红黑树: `llrbt::RedBackTreeMap`(基于`bst2::TreeMap`)
