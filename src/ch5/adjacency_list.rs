@@ -181,8 +181,14 @@ mod test {
         assert_eq!(graph.vertex_num(), 4);
         assert_eq!(graph.edge_num(), 10);
 
-        graph.dfs(&indexs[0], |v| println!("{}", v));
-        graph.bfs(&indexs[0], |v| println!("{}", v));
+        graph.dfs_mut(&indexs[0], |v| println!("{}", v));
+        graph.bfs_mut(&indexs[0], |v| println!("{}", v));
         println!("{}", graph.to_string());
+        let paths = graph.dfs_paths(&indexs[2]);
+        print!("path to {}: ", graph.get_vertex(&indexs[1]).unwrap());
+        for v in paths.path_to(&indexs[1]) {
+            print!("{} ", graph.get_vertex(&v).unwrap());
+        }
+        println!()
     }
 }
