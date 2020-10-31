@@ -189,6 +189,13 @@ mod test {
         for v in paths.path_to(&indexs[1]) {
             print!("{} ", graph.get_vertex(&v).unwrap());
         }
+        println!();
+
+        let paths = graph.bfs_paths(&indexs[2]);
+        print!("path to {}: ", graph.get_vertex(&indexs[1]).unwrap());
+        for v in paths.path_to(&indexs[1]) {
+            print!("{} ", graph.get_vertex(&v).unwrap());
+        }
         println!()
     }
 }
