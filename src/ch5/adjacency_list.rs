@@ -222,10 +222,20 @@ mod test {
         graph.add_edge(&idxs[1], &idxs[3], 2).unwrap();
         graph.add_edge(&idxs[2], &idxs[4], 3).unwrap();
         graph.add_edge(&idxs[3], &idxs[4], 4).unwrap();
+        graph.add_edge(&idxs[3], &idxs[2], 5).unwrap();
 
         assert!(graph.find_one_cycle().is_none());
 
-        graph.add_edge(&idxs[4], &idxs[0], 5).unwrap();
+        graph.add_edge(&idxs[4], &idxs[0], 6).unwrap();
+        let cycle = graph.find_one_cycle();
+        assert!(cycle.is_some());
+        print!("cycle: ");
+        for v in cycle.unwrap() {
+            print!("{} ", graph.get_vertex(&v).unwrap());
+        }
+        println!();
+
+        graph.add_edge(&idxs[2], &idxs[0], 7).unwrap();
         let cycle = graph.find_one_cycle();
         assert!(cycle.is_some());
         print!("cycle: ");
