@@ -1,6 +1,7 @@
+use super::cycle::Cycle;
+use super::path::{BreadthFirstPaths, DepthFirstPaths, Path};
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
-use super::path::{DepthFirstPaths, BreadthFirstPaths};
 
 #[derive(Debug, Default)]
 pub struct Marked;
@@ -66,6 +67,14 @@ pub trait Graph {
         Self::VertexKey: Hash,
     {
         BreadthFirstPaths::new(self, src)
+    }
+
+    fn find_one_cycle(&self) -> Option<Path<Self>>
+    where
+        Self: Sized,
+        Self::VertexKey: Hash,
+    {
+        Cycle::new(self).path()
     }
 
     fn dfs<F>(&self, src: &Self::VertexKey, mut f: F) -> HashMap<Self::VertexKey, Marked>
@@ -163,6 +172,26 @@ pub trait Graph {
             buf.push('\n');
         }
         buf
+    }
+
+    fn reversed(&self) -> Self
+    where
+        Self: Default,
+        Self::VertexValue: Clone,
+        Self::Edge: Clone,
+    {
+        let mut g = Self::default();
+        for v in self.vertexs() {
+            g.push_vertex(self.get_vertex(&v).unwrap().clone());
+        }
+        for src in self.vertexs() {
+            for (dst, edge) in self.adj(&src) {
+                if let Err(_) = g.add_edge(&dst, &src, edge.clone()) {
+                    panic!("failed to add edge.");
+                }
+            }
+        }
+        g
     }
 }
 

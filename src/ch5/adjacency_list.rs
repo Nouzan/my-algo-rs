@@ -196,6 +196,42 @@ mod test {
         for v in paths.path_to(&indexs[1]) {
             print!("{} ", graph.get_vertex(&v).unwrap());
         }
-        println!()
+        println!();
+
+        println!("{}", graph.reversed().to_string());
+
+        let cycle = graph.find_one_cycle();
+        assert!(cycle.is_some());
+        print!("cycle: ");
+        for v in cycle.unwrap() {
+            print!("{} ", graph.get_vertex(&v).unwrap());
+        }
+        println!();
+    }
+
+    #[test]
+    fn test_directed_graph() {
+        let mut graph = LinkedGraph::default();
+        let mut idxs = Vec::new();
+        for i in 0..5 {
+            idxs.push(graph.push_vertex(i));
+        }
+
+        graph.add_edge(&idxs[0], &idxs[1], 0).unwrap();
+        graph.add_edge(&idxs[1], &idxs[2], 1).unwrap();
+        graph.add_edge(&idxs[1], &idxs[3], 2).unwrap();
+        graph.add_edge(&idxs[2], &idxs[4], 3).unwrap();
+        graph.add_edge(&idxs[3], &idxs[4], 4).unwrap();
+
+        assert!(graph.find_one_cycle().is_none());
+
+        graph.add_edge(&idxs[4], &idxs[0], 5).unwrap();
+        let cycle = graph.find_one_cycle();
+        assert!(cycle.is_some());
+        print!("cycle: ");
+        for v in cycle.unwrap() {
+            print!("{} ", graph.get_vertex(&v).unwrap());
+        }
+        println!();
     }
 }
