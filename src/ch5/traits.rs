@@ -1,10 +1,16 @@
+use super::adjacency_list::LinkedGraph;
 use super::cycle::Cycle;
+use super::order::{DepthFirstOrder, Topological};
 use super::path::{BreadthFirstPaths, DepthFirstPaths, Path};
+use super::scc::KosarajuSCC;
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 
 #[derive(Debug, Default)]
 pub struct Marked;
+
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Empty;
 
 pub trait Graph {
     type VertexKey: Eq + Clone;
@@ -174,6 +180,35 @@ pub trait Graph {
         buf
     }
 
+    fn keys(&self) -> LinkedGraph<Self::VertexKey, Empty>
+    where
+        Self::VertexKey: Hash,
+    {
+        let mut g = LinkedGraph::default();
+        let mut map = HashMap::new();
+        for v in self.vertexs() {
+            map.insert(v.clone(), g.push_vertex(v.clone()));
+        }
+        for src in self.vertexs() {
+            let src_idx = map.get(&src).unwrap();
+            for (dst, _) in self.adj(&src) {
+                let dst_idx = map.get(&dst).unwrap();
+                if let Err(_) = g.add_edge(&src_idx, &dst_idx, Empty) {
+                    panic!("failed to add edge.");
+                }
+            }
+        }
+        g
+    }
+
+    fn scc(&self) -> KosarajuSCC<Self>
+    where
+        Self: Sized,
+        Self::VertexKey: Hash,
+    {
+        KosarajuSCC::new(self)
+    }
+
     fn reversed(&self) -> Self
     where
         Self: Default,
@@ -192,6 +227,22 @@ pub trait Graph {
             }
         }
         g
+    }
+
+    fn dfs_order(&self) -> DepthFirstOrder<Self>
+    where
+        Self: Sized,
+        Self::VertexKey: Hash,
+    {
+        DepthFirstOrder::new(self)
+    }
+
+    fn topological(&self) -> Topological<Self>
+    where
+        Self: Sized,
+        Self::VertexKey: Hash,
+    {
+        Topological::new(self)
     }
 }
 

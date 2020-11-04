@@ -225,6 +225,12 @@ mod test {
         graph.add_edge(&idxs[3], &idxs[2], 5).unwrap();
 
         assert!(graph.find_one_cycle().is_none());
+        assert_eq!(graph.scc().len(), 5);
+        print!("Topological: ");
+        for v in graph.topological() {
+            print!("{} ", v)
+        }
+        println!();
 
         graph.add_edge(&idxs[4], &idxs[0], 6).unwrap();
         let cycle = graph.find_one_cycle();
@@ -241,6 +247,18 @@ mod test {
         print!("cycle: ");
         for v in cycle.unwrap() {
             print!("{} ", graph.get_vertex(&v).unwrap());
+        }
+        println!();
+
+        // SCC
+        print!("SCC: ");
+        let scc = graph.scc();
+        for v in graph.vertexs() {
+            print!(
+                "{}(in {}) ",
+                graph.get_vertex(&v).unwrap(),
+                scc.id(&v).unwrap()
+            );
         }
         println!();
     }
