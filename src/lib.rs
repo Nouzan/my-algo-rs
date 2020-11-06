@@ -2,6 +2,8 @@
 #![feature(generic_associated_types)]
 #![feature(min_const_generics)]
 #![feature(test)]
+// #![warn(missing_docs)]
+// #![warn(missing_doc_code_examples)]
 
 extern crate test;
 
