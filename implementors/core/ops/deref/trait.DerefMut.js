@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["my_algo"] = [{"text":"impl&lt;T&gt; DerefMut for RBNode&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; DerefMut for AVLNode&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; DerefMut for MyVec&lt;T&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["CircularQueue","(有限容量的)循环队列."]],"trait":[["Queue","队列特质. 具有`FIFO`性质."],["QueueExt","队列扩展特质. 实现了一些队列算法."]]});

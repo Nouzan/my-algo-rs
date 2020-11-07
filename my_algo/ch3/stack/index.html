@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `stack` mod in crate `my_algo`."><meta name="keywords" content="rust, rustlang, rust-lang, stack"><title>my_algo::ch3::stack - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../my_algo/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a><p class="location">Module stack</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li></ul></div><p class="location"><a href="../../index.html">my_algo</a>::<wbr><a href="../index.html">ch3</a></p><script>window.sidebarCurrent = {name: "stack", ty: "mod", relpath: "../"};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../../src/my_algo/ch3/stack.rs.html#1-1176" title="goto source code">[src]</a></span><span class="in-band">Module <a href="../../index.html">my_algo</a>::<wbr><a href="../index.html">ch3</a>::<wbr><a class="mod" href="">stack</a></span></h1><div class="docblock"><p>栈特质与栈算法.</p>
+<h2 id="栈操作序列与出栈顺序" class="section-header"><a href="#栈操作序列与出栈顺序">栈操作序列与出栈顺序</a></h2>
+<p><code>S</code>表示入栈, <code>X</code>表示出栈.</p>
+<ul>
+<li>
+<p>定义: 一个 <em>栈操作序列</em> 定义为<code>S</code>和<code>X</code>的一个有限序列.</p>
+</li>
+<li>
+<p>定义: 一个 <em>合法的(admissible)</em> 的栈操作序列定义为一个<code>S</code>与<code>X</code>数目相同、且沿着序列执行入栈、出栈操作, 始终不会发生 <em>下溢(underflow, 栈空时出栈)</em> 的操作序列.</p>
+</li>
+<li>
+<p>命题(<em>TAOCP2.2.1.3</em>): 一个栈操作序列是合法的, 当且仅当序列中在任何一个<code>X</code>前面的<code>X</code>的个数严格小于<code>S</code>的个数.</p>
+</li>
+</ul>
+<h3 id="命题taocp2213-对相同的输入序列-不同的相同长度合法操作序列产生不同的输出序列" class="section-header"><a href="#命题taocp2213-对相同的输入序列-不同的相同长度合法操作序列产生不同的输出序列">命题(<em>TAOCP2.2.1.3</em>): 对相同的输入序列, 不同的(相同长度)合法操作序列产生不同的输出序列.</a></h3>
+<p><strong>证明</strong>
+下面设输入序列充分长.
+不妨设合法操作序列<code>a</code>, <code>b</code>从第<code>k</code>个操作开始<code>a</code>和<code>b</code>不相同, 且<code>a</code>中为<code>S</code>, <code>b</code>中为<code>X</code>, 再设<code>k</code>个操作以前的输出序列为<code>{o[1], o[2], ..., o[n]}</code>.
+那么, 在执行第<code>k</code>个操作后, <code>a</code>的输出序列依然为<code>{o[1], o[2], ..., o[n]}</code>, 但此时<code>b</code>的输出序列为<code>{o[1], o[2], ..., o[n], o[n+1]}</code>.
+于是, <code>a</code>和<code>b</code>的输出序列不可能相同, 因为<code>a</code>中要出栈<code>o[n+1]</code>(由<code>b</code>的合法性假设知, <code>o[n+1]</code>必然存在, 且在第<code>k</code>个操作前已经入栈), 必须先要出栈第<code>k</code>次操作中入栈的元素<code>x != o[n+1]</code>,
+那么, <code>a</code>的输出序列中第<code>n+1</code>个元素为<code>x</code>与<code>b</code>的输出序列中的<code>n+1</code>个元素<code>o[n+1]</code>不相同.</p>
+<ul>
+<li>推论: 对于长度为<code>n</code>的输入序列, <code>S</code>和<code>X</code>数目分别为<code>n</code>的合法操作序列与可能的输出序列一一对应.
+因此, 不同的输出序列总数为<code>C(n) = C(2n, n) / (n + 1)</code>(<em>Catalan数</em>, 也有递推形式: <code>C(0) = 1, C(n) = C(0)C(n-1) + C(1)C(n-2) + ... + C(n-1)C(0)</code>)</li>
+</ul>
+</div><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
+<table><tr class="module-item"><td><a class="struct" href="struct.DefaultSliceStack.html" title="my_algo::ch3::stack::DefaultSliceStack struct">DefaultSliceStack</a></td><td class="docblock-short"><p>(默认)切片栈.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.DoubleStack.html" title="my_algo::ch3::stack::DoubleStack struct">DoubleStack</a></td><td class="docblock-short"><p>双栈.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.LeftStack.html" title="my_algo::ch3::stack::LeftStack struct">LeftStack</a></td><td class="docblock-short"><p>共享栈中的左栈.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.RightStack.html" title="my_algo::ch3::stack::RightStack struct">RightStack</a></td><td class="docblock-short"><p>共享栈中的右栈.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.SharedStack.html" title="my_algo::ch3::stack::SharedStack struct">SharedStack</a></td><td class="docblock-short"><p>共享栈.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.SliceStack.html" title="my_algo::ch3::stack::SliceStack struct">SliceStack</a></td><td class="docblock-short"><p>(复制)切片栈.</p>
+</td></tr></table><h2 id="traits" class="section-header"><a href="#traits">Traits</a></h2>
+<table><tr class="module-item"><td><a class="trait" href="trait.Stack.html" title="my_algo::ch3::stack::Stack trait">Stack</a></td><td class="docblock-short"><p>栈特质.
+具有<code>LIFO</code>性质.</p>
+</td></tr><tr class="module-item"><td><a class="trait" href="trait.StackExt.html" title="my_algo::ch3::stack::StackExt trait">StackExt</a></td><td class="docblock-short"><p>栈扩展特质.
+实现了一些栈算法.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "my_algo";</script><script src="../../../main.js"></script><script defer src="../../../search-index.js"></script></body></html>

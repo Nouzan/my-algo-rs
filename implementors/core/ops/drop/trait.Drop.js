@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["my_algo"] = [{"text":"impl&lt;T&gt; Drop for LinkedList&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;K:&nbsp;Ord, V, const M:&nbsp;usize&gt; Drop for BTreeMap&lt;K, V, M&gt;","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; Drop for DoublyLinkedBinaryTree&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; Drop for MyVec&lt;T&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

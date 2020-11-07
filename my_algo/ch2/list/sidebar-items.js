@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["IndexError","下标错误类型."]],"trait":[["List","元素类型为`Item`的线性表."],["ListExt","`List` trait的一个扩展trait."]]});

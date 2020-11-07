@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["PartialOrdListExt","`List` trait的一个扩展trait, 提供了一些基于偏序的方法."]]});

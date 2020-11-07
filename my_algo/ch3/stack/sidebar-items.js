@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["DefaultSliceStack","(默认)切片栈."],["DoubleStack","双栈."],["LeftStack","共享栈中的左栈."],["RightStack","共享栈中的右栈."],["SharedStack","共享栈."],["SliceStack","(复制)切片栈."]],"trait":[["Stack","栈特质. 具有`LIFO`性质."],["StackExt","栈扩展特质. 实现了一些栈算法."]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["fib","计算第n个斐波那契数(`O(lgn)`版本)"],["fib_linear","计算第n个斐波那契数(非递归版本)"],["fib_recurrence","计算第n个斐波那契数(递归版本)"],["power","幂算法. 通过平方求幂."]]});

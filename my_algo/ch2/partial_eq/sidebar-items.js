@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["PartialEqListExt","`List` trait的一个扩展trait, 提供了一些基于判等的方法."]]});
